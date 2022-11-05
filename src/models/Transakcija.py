@@ -5,7 +5,7 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-class Tip(str, Enum):
+class Transakcija_Tip(str, Enum):
 	CLANARINA = 'CLANARINA'
 	PLACA = 'PLACA'
 	STROSKI = 'STROSKI'
@@ -14,9 +14,8 @@ class Tip(str, Enum):
 
 class Transakcija(SQLModel, table=True):
 	id: Optional[int] = Field(primary_key=True)
-	tip: Tip
+	tip: Transakcija_Tip
 	znesek: float
 	placano: float
-	clan: Optional[int] = Field(default=None, foreign_key='clan.id')
 	ustvarjen: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 	rok: datetime = Field(default_factory=datetime.utcnow, nullable=False)

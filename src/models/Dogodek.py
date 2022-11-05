@@ -4,16 +4,17 @@ from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
-from src.models.Clan import Oddelek
+from src.models.Oddelek import Oddelek_Tip
 
-class Tip(str, Enum):
+
+class Dogodek_Tip(str, Enum):
 	TEKMA = 'TEKMA'
 	TRENING = 'TRENING'
 	SRECANJE = 'SRECANJE'
 	UPRAVNI_ODBOR = "UPRAVNI_ODBOR"
 
 
-class Lokacija(str, Enum):
+class Dogodek_Lokacija(str, Enum):
 	GITHUB = 'GITHUB'
 	OSNOVNA_SOLA = 'OSNOVNA_SOLA'
 	SREDNJA_SOLA = 'SREDNJA_SOLA'
@@ -27,8 +28,8 @@ class Dogodek(SQLModel, table=True):
 	ime: str
 	opis: str
 	trajanje: float
-	lokacija: Lokacija
-	oddelek: Oddelek
+	lokacija: Dogodek_Lokacija
+	oddelek: Oddelek_Tip
 	zacetek: datetime = Field(nullable=False)
 	konec: datetime = Field(nullable=False)
 	registriran: datetime = Field(default_factory=datetime.utcnow, nullable=False)
