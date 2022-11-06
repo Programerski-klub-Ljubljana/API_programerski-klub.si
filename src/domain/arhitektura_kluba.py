@@ -1,10 +1,25 @@
 from dataclasses import dataclass
 from datetime import datetime, date
+from enum import auto
 
 from persistent.list import PersistentList
 
 from src import utils
-from src.domain import Entity
+from src.domain import Entity, EntityEnum
+
+
+class TipKontakta(EntityEnum):
+	STARS = auto()
+	STARI_STARS = auto()
+	OSTALO = auto()
+
+@dataclass
+class Kontakt(Entity):
+	ime: str
+	priimek: str
+	tip: TipKontakta
+	email: list[str] = PersistentList
+	telefon: list[str] = PersistentList
 
 
 @dataclass
@@ -14,10 +29,12 @@ class Clan(Entity):
 	rojen: date
 	email: list[str] = PersistentList()
 	telefon: list[str] = PersistentList()
+	skrbniki: list[Kontakt] = PersistentList()
 
 	# DATUMI
 	vpisi: list[datetime] = PersistentList()
 	izpisi: list[datetime] = PersistentList()
+
 
 	@property
 	def starost(self) -> float:

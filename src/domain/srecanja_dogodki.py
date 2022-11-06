@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import auto
 
-from src.domain.__init__ import EnumEntity, Entity
+from src.domain.__init__ import EntityEnum, Entity
 
 
-class DogodekTip(EnumEntity):
+class DogodekTip(EntityEnum):
 	TEKMA = auto()
 	TRENING = auto()
 	SRECANJE = auto()

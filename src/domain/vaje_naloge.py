@@ -1,10 +1,10 @@
 from enum import auto
 
-from src.domain.__init__ import Entity, EnumEntity
+from src.domain.__init__ import Entity, EntityEnum
 
 
 class Naloga(Entity):
-	class Tezavnost(EnumEntity):
+	class Tezavnost(EntityEnum):
 		PREPROSTA = auto()
 		LAHKA = auto()
 		NORMALNA = auto()

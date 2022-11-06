@@ -1,9 +1,9 @@
 from enum import auto
 
-from src.domain.__init__ import EnumEntity, Entity
+from src.domain.__init__ import EntityEnum, Entity
 
 
-class ObjavaTip(EnumEntity):
+class ObjavaTip(EntityEnum):
 	ZAPOSLOVANJE = auto()
 	NOTRANJA = auto()
 	ZUNANJA = auto()
@@ -15,7 +15,7 @@ class Objava(Entity):
 	body: str
 
 
-class SporociloTip(EnumEntity):
+class SporociloTip(EntityEnum):
 	EMAIL = auto()
 	SMS = auto()
 	KONTAKT = auto()

@@ -8,7 +8,8 @@ from faker.providers import address, company, date_time, internet, person, phone
 from persistent import Persistent
 from persistent.list import PersistentList
 
-class EnumEntity(str, Enum):
+
+class EntityEnum(str, Enum):
 	def _generate_next_value_(self, start, count, last_values):
 		return self
 
@@ -17,14 +18,22 @@ class EnumEntity(str, Enum):
 		return list(map(lambda c: c.value, cls))
 
 
-class LogLevel(EnumEntity):
+class PList(PersistentList):
+	def append(self, item: object):
+		for k, v in item.__dict__.items():
+			if isinstance(v, list | tuple):
+				setattr(item, k, PersistentList(v))
+		super(PList, self).append(item)
+
+
+class LogLevel(EntityEnum):
 	DEBUG = auto()
 	INFO = auto()
 	WARNING = auto()
 	ERROR = auto()
 
 
-class LogTheme(EnumEntity):
+class LogTheme(EntityEnum):
 	OSNOVNOSOLSKI = auto()
 	SREDNJESOLSKI = auto()
 	GITHUB = auto()
@@ -54,7 +63,7 @@ class Entity:
 
 
 class Entity(Persistent):
-	def __init__(self):
+	def __init__(self, child):
 		self._ustvarjen: datetime = datetime.utcnow()
 		self._posodobljen: datetime = datetime.utcnow()
 		self._dnevnik: list[Log] = PersistentList()
