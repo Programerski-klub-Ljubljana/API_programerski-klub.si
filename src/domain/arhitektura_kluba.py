@@ -2,10 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
-from persistent.list import PersistentList
-
 from src import utils
-from src.domain import Entity, EntityEnum
+from src.domain._entity import Entity, elist, Elist
+from src.domain._enums import EntityEnum
 
 
 class TipKontakta(EntityEnum):
@@ -13,13 +12,14 @@ class TipKontakta(EntityEnum):
 	STARI_STARS = auto()
 	OSTALO = auto()
 
+
 @dataclass
 class Kontakt(Entity):
 	ime: str
 	priimek: str
 	tip: TipKontakta
-	email: list[str] = PersistentList
-	telefon: list[str] = PersistentList
+	email: elist[str] = Elist()
+	telefon: elist[str] = Elist()
 
 
 @dataclass
@@ -27,14 +27,13 @@ class Clan(Entity):
 	ime: str
 	priimek: str
 	rojen: date
-	email: list[str] = PersistentList()
-	telefon: list[str] = PersistentList()
-	skrbniki: list[Kontakt] = PersistentList()
+	email: elist[str] = Elist()
+	telefon: elist[str] = Elist()
+	skrbniki: elist[Kontakt] = Elist()
 
 	# DATUMI
-	vpisi: list[datetime] = PersistentList()
-	izpisi: list[datetime] = PersistentList()
-
+	vpisi: elist[datetime] = Elist()
+	izpisi: elist[datetime] = Elist()
 
 	@property
 	def starost(self) -> float:
@@ -64,9 +63,9 @@ class Ekipa(Entity):
 class Oddelek(Entity):
 	ime: str
 	opis: str
-	ekipe: list[Ekipa] = PersistentList
+	ekipe: elist[Ekipa] = Elist()
 
 
 @dataclass
 class Klub(Entity):
-	oddelki: list[Oddelek] | PersistentList = PersistentList()
+	oddelki: elist[Oddelek] = Elist()

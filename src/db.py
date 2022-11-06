@@ -7,7 +7,6 @@ from faker import Faker
 from faker.providers import address, company, date_time, internet, person, phone_number, ssn
 from persistent.list import PersistentList
 
-from src.domain import Entity
 from src.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt, TipKontakta
 from src.domain.bancni_racun import Transakcija, TipTransakcije, BancniRacun, KategorijaTransakcije
 
@@ -59,7 +58,6 @@ def seed(root: Root, kontakti: int, clani: int, ekipe: int, oddeleki: int, klubi
 			telefon=[fake.phone_number() for i in range(randint(1, 3))],
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
-			sk
 		))
 
 	root.ekipe = PersistentList()

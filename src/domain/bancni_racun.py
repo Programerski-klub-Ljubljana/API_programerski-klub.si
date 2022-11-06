@@ -4,7 +4,8 @@ from enum import auto
 
 from persistent.list import PersistentList
 
-from src.domain.__init__ import Entity, EntityEnum
+from src.domain._entity import Entity, Elist, elist
+from src.domain._enums import EntityEnum
 
 
 class TipTransakcije(EntityEnum):
@@ -33,7 +34,7 @@ class Transakcija(Entity):
 class BancniRacun(Entity):
 	ime: str
 	stevilka: str
-	transakcije: list[Transakcija] | PersistentList = PersistentList()
+	transakcije: elist[Transakcija] = Elist()
 
 	def stanje(self) -> float:
 		vsota = 0
