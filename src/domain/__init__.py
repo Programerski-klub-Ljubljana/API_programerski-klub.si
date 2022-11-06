@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
+from typing import Union
 
+from faker import Faker
+from faker.providers import address, company, date_time, internet, person, phone_number, ssn
 from persistent import Persistent
 from persistent.list import PersistentList
-
 
 class EnumEntity(str, Enum):
 	def _generate_next_value_(self, start, count, last_values):

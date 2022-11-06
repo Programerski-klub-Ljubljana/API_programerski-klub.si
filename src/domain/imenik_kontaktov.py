@@ -1,4 +1,4 @@
-from src.domain.utils import Entity
+from src.domain.__init__ import Entity
 
 
 class Kontakt(Entity):

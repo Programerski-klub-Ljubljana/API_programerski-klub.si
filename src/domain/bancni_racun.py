@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from src.domain.utils import Entity, EnumEntity
+from src.domain.__init__ import Entity, EnumEntity
 
 
 class TransakcijaTip(EnumEntity):

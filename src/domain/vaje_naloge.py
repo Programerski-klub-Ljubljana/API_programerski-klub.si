@@ -1,6 +1,6 @@
 from enum import auto
 
-from src.domain.utils import Entity, EnumEntity
+from src.domain.__init__ import Entity, EnumEntity
 
 
 class Naloga(Entity):

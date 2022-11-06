@@ -1,9 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
-from src import env, api, db
+from src import env, api, seed
 
-db.migration()
-# db.seed()
+seed.init()
 
 app = FastAPI()
 app.include_router(api.router)

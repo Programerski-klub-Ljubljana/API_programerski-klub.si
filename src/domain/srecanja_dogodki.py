@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import auto
 
-from src.domain.utils import EnumEntity, Entity
+from src.domain.__init__ import EnumEntity, Entity
 
 
 class DogodekTip(EnumEntity):

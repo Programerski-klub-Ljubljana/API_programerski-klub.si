@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
+
 from persistent.list import PersistentList
 
 from src import utils
-from src.domain import utils
-from src.domain.utils import Entity
+from src.domain import Entity
 
 
 @dataclass
 class Clan(Entity):
 	ime: str
 	priimek: str
-	rojen: datetime
+	rojen: date
 	email: list[str] = PersistentList()
 	telefon: list[str] = PersistentList()
 
@@ -47,9 +47,9 @@ class Ekipa(Entity):
 class Oddelek(Entity):
 	ime: str
 	opis: str
-	ekipe: list[Ekipa]
+	ekipe: list[Ekipa] = PersistentList
 
 
 @dataclass
 class Klub(Entity):
-	oddelki: list[Oddelek] = PersistentList()
+	oddelki: list[Oddelek] | PersistentList = PersistentList()
