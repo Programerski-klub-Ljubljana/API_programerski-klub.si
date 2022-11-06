@@ -1,16 +1,9 @@
-from datetime import datetime
+from sqlmodel import create_engine, Session
 
-from sqlmodel import create_engine, SQLModel, Session
-
-from src.models.Clan import *
-from src.models.Dogodek import *
-from src.models.Ekipa import *
-from src.models.Kontakt import *
-from src.models.Log import *
-from src.models.Naloga import *
-from src.models.Objava import *
-from src.models.Sporocilo import *
-from src.models.Transakcija import *
+from src.domain.Clan import *
+from src.domain.Ekipa import *
+from src.domain.Naloga import *
+from src.domain.Transakcija import *
 
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
