@@ -15,7 +15,7 @@ def error(exception) -> dict:
 def nested_path(data, value=None) -> object:
 	if value is None:
 		return data
-	path = value.split(".")
+	path = value.split("/")
 	ref = data
 	while path:
 		element, path = path[0], path[1:]
@@ -26,12 +26,12 @@ def nested_path(data, value=None) -> object:
 	return ref
 
 
-@router.get("/db/{table}")
-def table(table: str, path: str | None = None, page: int | None = 0):
+@router.get("/db/{path:path}")
+def db_table(path: str | None = None, page: int | None = 0):
 	print(locals())
 	try:
 		with db.transaction() as root:
-			result = nested_path(getattr(root, table), path)
+			result = nested_path(root, path)
 			start = 10 * page
 			end = 10 * (page + 1)
 			result = result[start:end] if is_iterable(result) else result
@@ -64,6 +64,10 @@ async def vpis_clan(
 	)
 
 	return locals()
+
+@router.get("/transaction")
+def transaction():
+	return {}
 
 
 @router.get("/izpis")
