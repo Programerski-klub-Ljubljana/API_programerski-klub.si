@@ -1,27 +1,31 @@
+from dataclasses import dataclass
 from enum import auto
 
-from src.domain.__init__ import EntityEnum, Entity
+from src.db.entity import Entity
+from src.db.enums import EntityEnum
 
 
-class ObjavaTip(EntityEnum):
+class TipObjave(EntityEnum):
 	ZAPOSLOVANJE = auto()
 	NOTRANJA = auto()
 	ZUNANJA = auto()
 
 
+@dataclass
 class Objava(Entity):
+	tip: TipObjave
 	naslov: str
-	template: str
-	body: str
+	opis: str
+	vsebina: str
 
 
-class SporociloTip(EntityEnum):
+class TipSporocila(EntityEnum):
 	EMAIL = auto()
 	SMS = auto()
 	KONTAKT = auto()
 
 
+@dataclass
 class Sporocilo(Entity):
-	tip: SporociloTip
-	template: str
-	body: str
+	tip: TipSporocila
+	vsebina: str

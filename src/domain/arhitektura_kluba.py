@@ -3,8 +3,8 @@ from datetime import datetime, date
 from enum import auto
 
 from src import utils
-from src.domain._entity import Entity, elist, Elist
-from src.domain._enums import EntityEnum
+from src.db.entity import plist, Plist, Entity
+from src.db.enums import EntityEnum
 
 
 class TipKontakta(EntityEnum):
@@ -18,8 +18,8 @@ class Kontakt(Entity):
 	ime: str
 	priimek: str
 	tip: TipKontakta
-	email: elist[str] = Elist()
-	telefon: elist[str] = Elist()
+	email: plist[str] = Plist()
+	telefon: plist[str] = Plist()
 
 
 @dataclass
@@ -27,13 +27,13 @@ class Clan(Entity):
 	ime: str
 	priimek: str
 	rojen: date
-	email: elist[str] = Elist()
-	telefon: elist[str] = Elist()
-	skrbniki: elist[Kontakt] = Elist()
+	email: plist[str] = Plist()
+	telefon: plist[str] = Plist()
+	skrbniki: plist[Kontakt] = Plist()
 
 	# DATUMI
-	vpisi: elist[datetime] = Elist()
-	izpisi: elist[datetime] = Elist()
+	vpisi: plist[datetime] = Plist()
+	izpisi: plist[datetime] = Plist()
 
 	@property
 	def starost(self) -> float:
@@ -63,9 +63,10 @@ class Ekipa(Entity):
 class Oddelek(Entity):
 	ime: str
 	opis: str
-	ekipe: elist[Ekipa] = Elist()
+	ekipe: plist[Ekipa] = Plist()
 
 
 @dataclass
 class Klub(Entity):
-	oddelki: elist[Oddelek] = Elist()
+	ime: str
+	oddelki: plist[Oddelek] = Plist()

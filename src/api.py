@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Form
-from starlette.responses import JSONResponse
 
 from src import utils
 from src.services import email as EMAIL

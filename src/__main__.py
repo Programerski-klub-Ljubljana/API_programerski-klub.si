@@ -1,7 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
-from src import env, api, seed
+from src import env, api
+from src.db import seed
 
+print(env.load_dotenv())
 seed.init()
 
 app = FastAPI()

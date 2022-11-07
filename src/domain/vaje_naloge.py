@@ -1,19 +1,31 @@
+from dataclasses import dataclass
 from enum import auto
 
-from src.domain.__init__ import Entity, EntityEnum
+from src.db.entity import plist, Plist, Entity
+from src.db.enums import EntityEnum
 
 
+class Tezavnost(EntityEnum):
+	PREPROSTA = auto()
+	LAHKA = auto()
+	NORMALNA = auto()
+	TEZKA = auto()
+	NEMOGOCA = auto()
+
+
+@dataclass
 class Naloga(Entity):
-	class Tezavnost(EntityEnum):
-		PREPROSTA = auto()
-		LAHKA = auto()
-		NORMALNA = auto()
-		TEZKA = auto()
-		NEMOGOCA = auto()
-
 	ime: str
 	opis: str
 	stevilo_algoritmov: int
 	tezavnost_algoritmov: Tezavnost
 	tezavnost_struktur: Tezavnost
 	koda: str
+	test: str
+
+
+@dataclass
+class Test(Entity):
+	ime: str
+	opis: str
+	naloge: plist[Naloga] = Plist()

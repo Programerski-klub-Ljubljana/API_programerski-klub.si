@@ -1,5 +1,4 @@
 from os import environ
-from pathlib import Path
 from typing import List, Any, Dict
 
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail

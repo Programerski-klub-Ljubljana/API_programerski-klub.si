@@ -2,10 +2,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import auto
 
-from persistent.list import PersistentList
-
-from src.domain._entity import Entity, Elist, elist
-from src.domain._enums import EntityEnum
+from src.db.entity import Plist, plist, Entity
+from src.db.enums import EntityEnum
 
 
 class TipTransakcije(EntityEnum):
@@ -34,8 +32,9 @@ class Transakcija(Entity):
 class BancniRacun(Entity):
 	ime: str
 	stevilka: str
-	transakcije: elist[Transakcija] = Elist()
+	transakcije: plist[Transakcija] = Plist()
 
+	@property
 	def stanje(self) -> float:
 		vsota = 0
 		for t in self.transakcije:
@@ -43,9 +42,9 @@ class BancniRacun(Entity):
 			vsota += predznak * t.placano
 		return vsota
 
-	def dolgovi(self, transakcijskiTip: TipTransakcije) -> list[Transakcija]:
+	def dolgovi(self, tip_transakcije: TipTransakcije) -> list[Transakcija]:
 		dolgovi = []
 		for t in self.transakcije:
-			if t.tip == transakcijskiTip and t.placano < t.znesek:
+			if t.tip == tip_transakcije and t.placano < t.znesek:
 				dolgovi.append(t)
 		return dolgovi

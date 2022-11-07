@@ -1,6 +1,7 @@
-from pathlib import Path
-from dateutil.relativedelta import *
 from datetime import date
+from pathlib import Path
+
+from dateutil.relativedelta import *
 
 
 def rootPath(*paths) -> Path:
