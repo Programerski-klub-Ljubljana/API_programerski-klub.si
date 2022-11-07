@@ -1,18 +1,36 @@
-import json
-
-import jsonpickle
 from fastapi import APIRouter, Form
-from fastapi.openapi.models import Response
 
-from src import utils
 from src import db
+from src import utils
 from src.services import email as EMAIL
+from src.utils import todict
 
 router = APIRouter()
-@router.get("/database")
-def database():
-	with db.transaction() as root:
-		return json.loads(jsonpickle.encode(root.klubi[0]))
+
+
+def error(exception) -> dict:
+	return {'error': str(exception)}
+
+
+@router.get("/db/{table}")
+def table(table: str, page: int | None = 0):
+	try:
+		with db.transaction() as root:
+			start = 10 * page
+			end = 10 * (page + 1)
+			return todict(getattr(root, table)[start:end], max_depth=3)
+	except Exception as err:
+		return error(err)
+
+
+@router.get("/db/{table}/{i}")
+def record(table: str, i: int):
+	try:
+		with db.transaction() as root:
+			return todict(getattr(root, table)[i], max_depth=3)
+	except Exception as err:
+		return error(err)
+
 
 @router.post("/vpis/clan")
 async def vpis_clan(

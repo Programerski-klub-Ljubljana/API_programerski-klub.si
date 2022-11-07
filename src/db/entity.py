@@ -38,8 +38,6 @@ class Entity(Persistent):
 	def __repr__(self):
 		return f'Entity(ustvarjen={self.ustvarjen}, posodobljen={self.posodobljen}, dnevnik={len(self.dnevnik)}, povezave={len(self.povezave)})'
 
-	def json(self):
-		return self.__dict__
 
 @dataclass
 class Log(Persistent):
