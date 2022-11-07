@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+
 from src import env, api
 from src.db import seed
 

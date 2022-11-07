@@ -18,6 +18,9 @@ class Objava(Entity):
 	opis: str
 	vsebina: str
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 class TipSporocila(EntityEnum):
 	EMAIL = auto()
@@ -29,3 +32,6 @@ class TipSporocila(EntityEnum):
 class Sporocilo(Entity):
 	tip: TipSporocila
 	vsebina: str
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()

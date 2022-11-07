@@ -10,7 +10,7 @@ from src.domain.oznanila_sporocanja import Objava, Sporocilo
 from src.domain.srecanja_dogodki import Dogodek
 from src.domain.vaje_naloge import Test, Naloga
 
-db = ZODB.DB(None)
+_db = ZODB.DB(None)
 
 
 class Root:
@@ -37,5 +37,5 @@ class Root:
 
 @contextmanager
 def transaction(note: str = None) -> Iterator[Root]:
-	with db.transaction(note=note) as con:
+	with _db.transaction(note=note) as con:
 		yield Root(con.root)

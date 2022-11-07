@@ -23,9 +23,15 @@ class Naloga(Entity):
 	koda: str
 	test: str
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 @dataclass
 class Test(Entity):
 	ime: str
 	opis: str
 	naloge: plist[Naloga] = Plist()
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()

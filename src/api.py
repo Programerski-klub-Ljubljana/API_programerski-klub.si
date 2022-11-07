@@ -1,10 +1,18 @@
+import json
+
+import jsonpickle
 from fastapi import APIRouter, Form
+from fastapi.openapi.models import Response
 
 from src import utils
+from src import db
 from src.services import email as EMAIL
 
 router = APIRouter()
-
+@router.get("/database")
+def database():
+	with db.transaction() as root:
+		return json.loads(jsonpickle.encode(root.klubi[0]))
 
 @router.post("/vpis/clan")
 async def vpis_clan(
@@ -20,7 +28,6 @@ async def vpis_clan(
 		priimek_skrbnika: str = Form(),
 		email_skrbnika: str = Form(),
 		telefon_skrbnika: str = Form()):
-
 	print(utils.age(year=leto_rojstva, month=mesec_rojstva, day=dan_rojstva))
 
 	await EMAIL.send(

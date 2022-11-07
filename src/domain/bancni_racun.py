@@ -27,12 +27,18 @@ class Transakcija(Entity):
 	znesek: float
 	placano: float = 0
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 @dataclass
 class BancniRacun(Entity):
 	ime: str
 	stevilka: str
 	transakcije: plist[Transakcija] = Plist()
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()
 
 	@property
 	def stanje(self) -> float:

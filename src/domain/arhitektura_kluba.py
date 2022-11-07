@@ -21,6 +21,9 @@ class Kontakt(Entity):
 	email: plist[str] = Plist()
 	telefon: plist[str] = Plist()
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 @dataclass
 class Clan(Entity):
@@ -34,6 +37,9 @@ class Clan(Entity):
 	# DATUMI
 	vpisi: plist[datetime] = Plist()
 	izpisi: plist[datetime] = Plist()
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()
 
 	@property
 	def starost(self) -> float:
@@ -58,6 +64,9 @@ class Ekipa(Entity):
 	ime: str
 	opis: str
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 @dataclass
 class Oddelek(Entity):
@@ -65,8 +74,14 @@ class Oddelek(Entity):
 	opis: str
 	ekipe: plist[Ekipa] = Plist()
 
+	def __post_init__(self):
+		self.entity: Entity = Entity()
+
 
 @dataclass
 class Klub(Entity):
 	ime: str
 	oddelki: plist[Oddelek] = Plist()
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()

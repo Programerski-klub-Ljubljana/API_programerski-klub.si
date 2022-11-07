@@ -5,7 +5,8 @@ from typing import Union
 from faker import Faker
 from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
 
-from src.db import Root, db
+from src import db
+from src.db import Root, _db
 from src.db.entity import Log
 from src.db.enums import LogLevel, LogTheme
 from src.domain.arhitektura_kluba import Kontakt, TipKontakta, Clan, Ekipa, Oddelek, Klub
@@ -134,20 +135,17 @@ def logs(root: Root, **kwargs):
 				log = Log(
 					nivo=choice(list(LogLevel)),
 					tema=choice(list(LogTheme)),
-					sporocilo=fake.sentence(20),
-					_ustvarjen=fake.date_time_this_year(after_now=True))
+					sporocilo=fake.sentence(20))
 				root.logs.append(log)
-				entity._dnevnik.append(log)
+				entity.entity.dnevnik.append(log)
 
 
 def init():
-	with db.transaction(note="seed.migrate") as con:
+	with _db.transaction(note="seed.migrate") as con:
 		root = Root(con.root)
 		arhitektura_kluba(root, kontakti=120, clani=60, ekipe=20, oddeleki=6, klubi=4)
 		bancni_racun(root, transakcije=180, bancni_racun=3)
 		oznanila_sporocanja(root, objave=50, sporocila=200)
 		srecanja_dogodki_tekme(root, dogodek=50)
 		vaje_naloge(root, naloge=400, test=30)
-		logs(root, logs=20)
-	with db.transaction(note="seed.migrate") as con:
-		print(con.root.kontakti[0])
+		logs(root, logs=50)

@@ -11,3 +11,4 @@ persistent~=4.9.2
 python-dotenv~=0.21.0
 python-dateutil~=2.8.2
 Faker
+jsonpickle

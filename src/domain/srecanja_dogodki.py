@@ -23,3 +23,6 @@ class Dogodek(Entity):
 	zacetek: datetime
 	konec: datetime
 	clani: plist[Clan] = Plist()
+
+	def __post_init__(self):
+		self.entity: Entity = Entity()
