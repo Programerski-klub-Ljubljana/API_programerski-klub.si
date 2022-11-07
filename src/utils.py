@@ -4,7 +4,7 @@ from pathlib import Path
 from dateutil.relativedelta import *
 
 
-def rootPath(*paths) -> Path:
+def root_path(*paths) -> Path:
 	return Path(__file__).parent.parent.joinpath(*paths)
 
 
@@ -15,17 +15,29 @@ def age(year: int, month: int, day: int) -> float:
 	return dt.years + dt.months / 12 + dt.days / 365.25
 
 
+def is_iterable(ele: object) -> bool:
+	return hasattr(ele, "__iter__") and not isinstance(ele, str)
+
+
+def is_object(ele: object) -> bool:
+	return hasattr(ele, "__dict__")
+
+
+def is_dict(ele: object) -> bool:
+	return isinstance(ele, dict)
+
+
 def todict(obj, classkey=None, depth=0, max_depth=4):
-	if isinstance(obj, dict):
+	if is_dict(obj):
 		data = {}
 		for (k, v) in obj.items():
 			data[k] = todict(v, classkey, depth + 1, max_depth)
 		return data
-	elif hasattr(obj, "__iter__") and not isinstance(obj, str):
+	elif is_iterable(obj):
 		if depth >= max_depth:
 			return ['MAX_DEPTH']
 		return [todict(v, classkey, depth, max_depth) for v in obj]
-	elif hasattr(obj, "__dict__"):
+	elif is_object(obj):
 		if depth >= max_depth:
 			return ['MAX_DEPTH']
 		data = {}

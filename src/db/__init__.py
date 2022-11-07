@@ -3,7 +3,7 @@ from typing import Iterator
 
 import ZODB.FileStorage
 
-from src.db.entity import Plist, plist, Log
+from src.db.entity import Plist, plist, Log, Povezava
 from src.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
 from src.domain.bancni_racun import Transakcija, BancniRacun
 from src.domain.oznanila_sporocanja import Objava, Sporocilo
@@ -15,6 +15,8 @@ _db = ZODB.DB(None)
 
 class Root:
 	logs: plist[Log]
+	povezave: plist[Povezava]
+
 	klubi: plist[Klub]
 	kontakti: plist[Kontakt]
 	clani: plist[Clan]

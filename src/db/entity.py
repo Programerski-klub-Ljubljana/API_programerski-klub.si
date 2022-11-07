@@ -18,10 +18,6 @@ class Plist(PersistentList):
 	def update(self):
 		self.entity.posodobljen = datetime.utcnow()
 
-	def povezi(self, entity):
-		self.entity.povezave.append(Entity)
-		entity.entity.povezave.append(self)
-
 
 T = TypeVar('T')
 plist = list[T] | Plist
@@ -38,9 +34,13 @@ class Entity(Persistent):
 	def __repr__(self):
 		return f'Entity(ustvarjen={self.ustvarjen}, posodobljen={self.posodobljen}, dnevnik={len(self.dnevnik)}, povezave={len(self.povezave)})'
 
+	def povezi(self, povezava, entity):
+		self.entity.povezave.append(povezava)
+		entity.entity.povezave.append(povezava)
+
 
 @dataclass
-class Log(Persistent):
+class Log(Entity):
 	nivo: LogLevel
 	tema: LogTheme
 	sporocilo: str
@@ -50,10 +50,14 @@ class Log(Persistent):
 
 
 @dataclass
-class Povezava(Persistent):
-	nivo: LogLevel
-	tema: LogTheme
-	sporocilo: str
+class Povezava(Entity):
+	ime: str
+	opis: str
+	jakost: float
+	child: Entity
+	parent: Entity
 
 	def __post_init__(self):
 		self.entity: Entity = Entity()
+		self.child_type: str = self.child.__class__.__name__
+		self.parent_type: str = self.parent.__class__.__name__

@@ -23,7 +23,7 @@ conf = ConnectionConfig(
 	MAIL_SSL_TLS=True,
 	USE_CREDENTIALS=True,
 	VALIDATE_CERTS=True,
-	TEMPLATE_FOLDER=str(utils.rootPath('templates')),
+	TEMPLATE_FOLDER=str(utils.root_path('templates')),
 )
 
 

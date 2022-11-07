@@ -4,10 +4,10 @@ from typing import Union
 
 from faker import Faker
 from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
+from tqdm import tqdm
 
-from src import db
 from src.db import Root, _db
-from src.db.entity import Log
+from src.db.entity import Log, Povezava
 from src.db.enums import LogLevel, LogTheme
 from src.domain.arhitektura_kluba import Kontakt, TipKontakta, Clan, Ekipa, Oddelek, Klub
 from src.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, BancniRacun
@@ -42,7 +42,7 @@ def arhitektura_kluba(root: Root, **kwargs):
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			rojen=fake.date_this_century(before_today=True),
-			email=fake.email(),
+			email=str(fake.email()),
 			telefon=[fake.phone_number() for _ in range(randint(1, 3))],
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
@@ -140,6 +140,29 @@ def logs(root: Root, **kwargs):
 				entity.entity.dnevnik.append(log)
 
 
+def povezave(root: Root, **kwargs):
+	tables = list(root.__dict__.values())
+	for i in tqdm(range(len(tables))):
+		if len(tables[i]) == 0:
+			continue
+		for j in range(len(tables)):
+			if len(tables[j]) == 0:
+				continue
+
+			parents = choices(tables[i], k=randint(0, kwargs['elementi']))
+			for parent in parents:
+				for _ in range(randint(0, kwargs['povezave'])):
+					child = choice(tables[j])
+					povezava = Povezava(
+						ime=fake.catch_phrase(),
+						opis=fake.sentence(8),
+						jakost=uniform(0, 100),
+						parent=parent,
+						child=child)
+					root.povezave.append(povezava)
+					parent.povezi(povezava, child)
+
+
 def init():
 	with _db.transaction(note="seed.migrate") as con:
 		root = Root(con.root)
@@ -149,3 +172,5 @@ def init():
 		srecanja_dogodki_tekme(root, dogodek=50)
 		vaje_naloge(root, naloge=400, test=30)
 		logs(root, logs=50)
+		povezave(root, elementi=50, povezave=5)
+		print('\nDatabase seeding finished... WAIT FOR TRANSACTION TO FINISH!\n')
