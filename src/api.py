@@ -6,10 +6,6 @@ from fastapi_utils.timing import add_timing_middleware
 from src.routes import db, forms, user
 
 
-def error(exception) -> dict:
-	return {'error': str(exception)}
-
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

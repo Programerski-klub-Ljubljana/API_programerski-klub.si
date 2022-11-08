@@ -49,3 +49,7 @@ def todict(obj, classkey=None, depth=0, max_depth=4):
 		return data
 	else:
 		return obj
+
+
+def error(exception) -> dict:
+	return {'error': str(exception)}

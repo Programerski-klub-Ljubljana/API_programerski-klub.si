@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src import db
-from src.utils import is_iterable, todict
+from src.utils import is_iterable, todict, error
 
 router = APIRouter()
 
@@ -10,6 +10,7 @@ def nested_path(data, value=None) -> object:
 	if value is None:
 		return data
 	path = value.split("/")
+	path.remove('')
 	ref = data
 	while path:
 		element, path = path[0], path[1:]
@@ -20,9 +21,8 @@ def nested_path(data, value=None) -> object:
 	return ref
 
 
-@router.get("/db/{path:path}")
-def db(path: str | None = None, page: int | None = 0):
-	print(locals())
+@router.get("{path:path}")
+def get_path(path: str, page: int | None = 0):
 	try:
 		with db.transaction() as root:
 			result = nested_path(root, path)
