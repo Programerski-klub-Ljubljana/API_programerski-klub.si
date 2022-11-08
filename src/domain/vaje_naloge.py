@@ -24,7 +24,7 @@ class Naloga(Entity):
 	test: str
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 
 @dataclass
@@ -34,4 +34,4 @@ class Test(Entity):
 	naloge: plist[Naloga] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)

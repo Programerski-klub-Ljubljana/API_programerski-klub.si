@@ -27,13 +27,11 @@ conf = ConnectionConfig(
 )
 
 
-async def send(recipients: List[str], template: str, subject: str, body: Dict[str, Any]):
-	email_schema = EmailSchema(body=body, email=[EmailStr(r) for r in recipients])
-
+async def send(recipients: List[str], subject: str, vsebina: str):
 	message = MessageSchema(
-		recipients=email_schema.email,
-		template_body=body,
+		recipients=[EmailStr(r) for r in recipients],
+		body=vsebina,
 		subject=subject,
 		subtype=MessageType.html)
 
-	await FastMail(conf).send_message(message, template)
+	await FastMail(conf).send_message(message)

@@ -1,11 +1,18 @@
-from fastapi import APIRouter, Form
+from datetime import date
 
+from fastapi import APIRouter, Form
+from starlette.templating import Jinja2Templates
+
+from src.db import Transaction
+from src.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
+from src.domain.oznanila_sporocanja import Sporocilo, TipSporocila
 from src.services import email as EMAIL
 
 router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 
-@router.post("vpis")
+@router.post("/vpis")
 async def vpis_clan(
 		ime: str = Form(),
 		priimek: str = Form(),
@@ -15,25 +22,50 @@ async def vpis_clan(
 		email: str = Form(),
 		telefon: str = Form(),
 
-		ime_skrbnika: str = Form(),
-		priimek_skrbnika: str = Form(),
-		email_skrbnika: str = Form(),
-		telefon_skrbnika: str = Form()):
+		ime_skrbnika: str = Form(None),
+		priimek_skrbnika: str = Form(None),
+		email_skrbnika: str = Form(None),
+		telefon_skrbnika: str = Form(None)):
+	html = templates.get_template('email_vpis.html').render(locals())
 	await EMAIL.send(
 		recipients=['jar.fmf@gmail.com'],
-		template="email_vpis.html",
 		subject="Programerski Klub Ljubljana | Potrdilo ob vpisu",
-		body=locals()
+		vsebina=html
 	)
 
-	return locals()
+	with Transaction() as root:
+		skrbnik = Kontakt(
+			ime=ime_skrbnika,
+			priimek=priimek_skrbnika,
+			tip=TipKontakta.SKRBNIK,
+			email=email_skrbnika,
+			telefon=telefon_skrbnika)
+		clan = Clan(
+			ime=ime,
+			priimek=priimek,
+			rojen=date(year=leto_rojstva, month=mesec_rojstva, day=dan_rojstva),
+			email=email,
+			telefon=telefon,
+			skrbniki=[skrbnik],
+			vpisi=[date.today()])
+		sporocilo = Sporocilo(
+			tip=TipSporocila.FORMS_VPIS,
+			vsebina=html)
+
+		clan.povezi(sporocilo)
+
+		root.clani.append(clan)
+		root.kontakti.append(skrbnik)
+		root.sporocilo.append(sporocilo)
+
+		return locals()
 
 
-@router.get("izpis")
+@router.post("/izpis")
 def izpis():
 	return {}
 
 
-@router.post('kontakt')
+@router.post('/kontakt')
 def kontakt():
 	return {'kontakt': True}

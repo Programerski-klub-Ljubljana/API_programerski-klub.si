@@ -25,4 +25,4 @@ class Dogodek(Entity):
 	clani: plist[Clan] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)

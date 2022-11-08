@@ -7,7 +7,7 @@ from faker.providers import address, company, date_time, internet, person, phone
 from tqdm import tqdm
 
 from src.db import Root, _db
-from src.db.entity import Log, Povezava
+from src.db.entity import Log
 from src.db.enums import LogLevel, LogTheme
 from src.domain.arhitektura_kluba import Kontakt, TipKontakta, Clan, Ekipa, Oddelek, Klub
 from src.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, BancniRacun
@@ -33,7 +33,7 @@ def arhitektura_kluba(root: Root, **kwargs):
 		root.kontakti.append(Kontakt(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
-			tip=choice(list(TipKontakta)),
+			tip=choice(TipKontakta.values()),
 			email=[str(fake.email) for _ in range(randint(0, 4))],
 			telefon=[fake.phone_number() for _ in range(randint(0, 4))]))
 
@@ -70,8 +70,8 @@ def bancni_racun(root: Root, **kwargs):
 		znesek = round(uniform(0, 1000), 3)
 		placano = choice([0, znesek] + [round(uniform(0, int(znesek))) for _ in range(8)])
 		root.transakcije.append(Transakcija(
-			tip=choice(list(TipTransakcije)),
-			kategorija=choice(list(KategorijaTransakcije)),
+			tip=choice(TipTransakcije.values()),
+			kategorija=choice(KategorijaTransakcije.values()),
 			rok=fake.date_this_month(after_today=True),
 			opis=fake.sentence(9),
 			znesek=znesek,
@@ -87,14 +87,14 @@ def bancni_racun(root: Root, **kwargs):
 def oznanila_sporocanja(root: Root, **kwargs):
 	for _ in range(kwargs['objave']):
 		root.objava.append(Objava(
-			tip=choice(list(TipObjave)),
+			tip=choice(TipObjave.values()),
 			naslov=fake.catch_phrase(),
 			opis=fake.sentence(9),
 			vsebina=fake.sentence(50)))
 
 	for _ in range(kwargs['sporocila']):
 		root.sporocilo.append(Sporocilo(
-			tip=choice(list(TipSporocila)),
+			tip=choice(TipSporocila.values()),
 			vsebina=fake.sentence(50)))
 
 
@@ -105,7 +105,7 @@ def srecanja_dogodki_tekme(root: Root, **kwargs):
 			ime=fake.catch_phrase(),
 			trajanje=randint(30, 240),
 			opis=fake.sentence(20),
-			tip=choice(list(TipDogodka)),
+			tip=choice(TipDogodka.values()),
 			zacetek=zacetek,
 			konec=zacetek + timedelta(minutes=randint(30, 300))))
 
@@ -116,8 +116,8 @@ def vaje_naloge(root: Root, **kwargs):
 			ime=fake.catch_phrase(),
 			opis=fake.sentence(20),
 			stevilo_algoritmov=randint(1, 10),
-			tezavnost_algoritmov=choice(list(Tezavnost)),
-			tezavnost_struktur=choice(list(Tezavnost)),
+			tezavnost_algoritmov=choice(Tezavnost.values()),
+			tezavnost_struktur=choice(Tezavnost.values()),
 			koda=fake.sentence(30),
 			test=fake.sentence(30)))
 
@@ -134,11 +134,11 @@ def logs(root: Root, **kwargs):
 		for entity in table:
 			for _ in range(randint(0, kwargs['logs'])):
 				log = Log(
-					nivo=choice(list(LogLevel)),
-					tema=choice(list(LogTheme)),
+					nivo=choice(LogLevel.values()),
+					tema=choice(LogTheme.values()),
 					sporocilo=fake.sentence(20))
 				root.logs.append(log)
-				entity.entity.dnevnik.append(log)
+				entity._dnevnik.append(log)
 
 
 def povezave(root: Root, **kwargs):
@@ -154,14 +154,7 @@ def povezave(root: Root, **kwargs):
 			for parent in parents:
 				for _ in range(randint(0, kwargs['povezave'])):
 					child = choice(tables[j])
-					povezava = Povezava(
-						ime=fake.catch_phrase(),
-						opis=fake.sentence(8),
-						jakost=uniform(0, 100),
-						parent=parent,
-						child=child)
-					root.povezave.append(povezava)
-					parent.povezi(povezava, child)
+					parent.povezi(child)
 
 
 def init():

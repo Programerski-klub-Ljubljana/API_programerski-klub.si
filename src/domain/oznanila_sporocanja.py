@@ -19,13 +19,14 @@ class Objava(Entity):
 	vsebina: str
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 
 class TipSporocila(EntityEnum):
 	EMAIL = auto()
 	SMS = auto()
-	KONTAKT = auto()
+	FORMS_KONTAKT = auto()
+	FORMS_VPIS = auto()
 
 
 @dataclass
@@ -34,4 +35,4 @@ class Sporocilo(Entity):
 	vsebina: str
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)

@@ -39,7 +39,7 @@ def todict(obj, classkey=None, depth=0, max_depth=4):
 		return [todict(v, classkey, depth, max_depth) for v in obj]
 	elif is_object(obj):
 		if depth >= max_depth:
-			return ['MAX_DEPTH']
+			return 'MAX_DEPTH'
 		data = {}
 		for key, value in obj.__dict__.items():
 			if not callable(value) and not key.startswith('_'):

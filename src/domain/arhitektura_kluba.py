@@ -8,8 +8,7 @@ from src.db.enums import EntityEnum
 
 
 class TipKontakta(EntityEnum):
-	STARS = auto()
-	STARI_STARS = auto()
+	SKRBNIK = auto()
 	OSTALO = auto()
 
 
@@ -22,7 +21,7 @@ class Kontakt(Entity):
 	telefon: plist[str] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 
 @dataclass
@@ -39,7 +38,7 @@ class Clan(Entity):
 	izpisi: plist[datetime] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 	@property
 	def starost(self) -> float:
@@ -65,7 +64,7 @@ class Ekipa(Entity):
 	opis: str
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 
 @dataclass
@@ -75,7 +74,7 @@ class Oddelek(Entity):
 	ekipe: plist[Ekipa] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)
 
 
 @dataclass
@@ -85,4 +84,4 @@ class Klub(Entity):
 	oddelki: plist[Oddelek] = Plist()
 
 	def __post_init__(self):
-		self.entity: Entity = Entity()
+		self.entity: Entity = Entity(self)

@@ -1,9 +1,7 @@
-from contextlib import contextmanager
-from typing import Iterator
-
 import ZODB.FileStorage
+import transaction
 
-from src.db.entity import Plist, plist, Log, Povezava
+from src.db.entity import Plist, plist, Log
 from src.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
 from src.domain.bancni_racun import Transakcija, BancniRacun
 from src.domain.oznanila_sporocanja import Objava, Sporocilo
@@ -15,7 +13,6 @@ _db = ZODB.DB(None)
 
 class Root:
 	logs: plist[Log]
-	povezave: plist[Povezava]
 
 	klubi: plist[Klub]
 	kontakti: plist[Kontakt]
@@ -36,8 +33,22 @@ class Root:
 			setattr(root, k, value)
 			setattr(self, k, value)
 
+	def append(self, entity: object):
+		for k, v in Root.__annotations__.items():
+			print(k, v)
 
-@contextmanager
-def transaction(note: str = None) -> Iterator[Root]:
-	with _db.transaction(note=note) as con:
-		yield Root(con.root)
+
+
+class Transaction:
+	def __init__(self, note: str = None):
+		self.note = note
+		self.manager = None
+
+	def __enter__(self) -> Root:
+		print('enter method called')
+		self.manager = transaction.TransactionManager()
+		connection = _db.open(self.manager)
+		return Root(connection.root)
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		self.manager.commit()
