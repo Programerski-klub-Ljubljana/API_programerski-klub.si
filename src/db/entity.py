@@ -25,27 +25,27 @@ elist = dict[int, T] | Elist
 
 
 class Entity(Persistent):
-	p_razred: str = 'Entity'
-	p_ustvarjen: datetime = datetime.utcnow()
-	p_posodobljen: datetime = datetime.utcnow()
-	p_dnevnik: elist = Elist()
-	p_povezave: elist = Elist()
+	_razred: str = 'Entity'
+	_ustvarjen: datetime = datetime.utcnow()
+	_posodobljen: datetime = datetime.utcnow()
+	_dnevnik: elist = Elist()
+	_povezave: elist = Elist()
 
 	@staticmethod
 	def save(child: any):
 		attr = {
-			'p_razred': child.__class__.__name__.upper(),
-			'p_ustvarjen': datetime.utcnow(),
-			'p_posodobljen': datetime.utcnow(),
-			'p_dnevnik': Elist(),
-			'p_povezave': Elist(),
+			'_razred': child.__class__.__name__.upper(),
+			'_ustvarjen': datetime.utcnow(),
+			'_posodobljen': datetime.utcnow(),
+			'_dnevnik': Elist(),
+			'_povezave': Elist(),
 		}
 		for k, v in attr.items():
 			setattr(child, k, v)
 
 	def povezi(self, entity):
-		self.p_povezave.append(entity)
-		entity.p_povezave.append(self)
+		self._povezave.append(entity)
+		entity._povezave.append(self)
 
 
 @dataclass
@@ -55,4 +55,4 @@ class Log(Entity):
 	sporocilo: str
 
 	def __post_init__(self):
-		self.entity: Entity = Entity(self)
+		Entity.save(self)

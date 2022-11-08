@@ -34,7 +34,7 @@ def arhitektura_kluba(root: Root, **kwargs):
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			tip=TipKontakta.random(),
-			email=[str(fake.email) for _ in range(randint(0, 4))],
+			email=[fake.email() for _ in range(randint(0, 4))],
 			telefon=[fake.phone_number() for _ in range(randint(0, 4))]))
 
 	for _ in range(kwargs['clani']):
@@ -42,7 +42,7 @@ def arhitektura_kluba(root: Root, **kwargs):
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			rojen=fake.date_this_century(before_today=True),
-			email=str(fake.email()),
+			email=fake.email(),
 			telefon=[fake.phone_number() for _ in range(randint(1, 3))],
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
@@ -137,7 +137,7 @@ def logs(root: Root, **kwargs):
 					tema=LogTheme.random(),
 					sporocilo=fake.sentence(20))
 				root.save(log)
-				entity.p_dnevnik.append(log)
+				entity._dnevnik.append(log)
 
 
 def povezave(root: Root, **kwargs):

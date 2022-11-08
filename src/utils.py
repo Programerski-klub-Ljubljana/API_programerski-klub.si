@@ -23,27 +23,21 @@ def is_object(ele: object) -> bool:
 	return hasattr(ele, "__dict__")
 
 
-def is_dict(ele: object) -> bool:
-	return isinstance(ele, dict)
+def todict(obj, classkey=None, depth=0, max_depth=1, ignore: list[str] = ('_dnevnik', '_povezave')):
+	if classkey in ignore:
+		return 'IGNORE'
 
-
-def todict(obj, classkey=None, depth=0, max_depth=4):
-	if is_dict(obj):
-		data = {}
-		for (k, v) in obj.items():
-			data[k] = todict(v, classkey, depth + 1, max_depth)
-		return data
-	elif is_iterable(obj):
+	if is_iterable(obj):
 		if depth >= max_depth:
 			return ['MAX_DEPTH']
-		return [todict(v, classkey, depth, max_depth) for v in obj]
+		return [todict(v, classkey, depth+1, max_depth, ignore) for v in obj]
 	elif is_object(obj):
 		if depth >= max_depth:
 			return 'MAX_DEPTH'
 		data = {}
 		for key, value in obj.__dict__.items():
-			if not callable(value) and not key.startswith('_'):
-				data[key] = todict(value, classkey, depth + 1, max_depth)
+			if not callable(value) and key not in ignore:
+				data[key] = todict(value, classkey, depth, max_depth, ignore)
 		if classkey is not None and hasattr(obj, "__class__"):
 			data[classkey] = obj.__class__.__name__
 		return data

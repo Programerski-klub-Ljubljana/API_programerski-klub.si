@@ -21,11 +21,11 @@ def nested_path(data, value=None) -> object:
 	return ref
 
 
-@router.get("{path:path}")
-def get_path(path: str, page: int | None = 0):
+@router.get("/{table}/{path:path}")
+def get_path(table: str, path: str=None, page: int | None = 0):
 	try:
 		with Transaction() as root:
-			result = nested_path(root, path)
+			result = nested_path(getattr(root, table), path)
 			start = 10 * page
 			end = 10 * (page + 1)
 			result = result[start:end] if is_iterable(result) else result
