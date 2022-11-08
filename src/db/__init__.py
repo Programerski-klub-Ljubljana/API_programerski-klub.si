@@ -1,9 +1,9 @@
 import ZODB.FileStorage
 import transaction
 
-from src.db.entity import Plist, plist, Log
+from src.db.entity import Elist, elist, Log
 from src.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
-from src.domain.bancni_racun import Transakcija, BancniRacun
+from src.domain.bancni_racun import Transakcija, Bancni_racun
 from src.domain.oznanila_sporocanja import Objava, Sporocilo
 from src.domain.srecanja_dogodki import Dogodek
 from src.domain.vaje_naloge import Test, Naloga
@@ -12,31 +12,29 @@ _db = ZODB.DB(None)
 
 
 class Root:
-	logs: plist[Log]
-
-	klubi: plist[Klub]
-	kontakti: plist[Kontakt]
-	clani: plist[Clan]
-	ekipe: plist[Ekipa]
-	oddelki: plist[Oddelek]
-	transakcije: plist[Transakcija]
-	bancni_racun: plist[BancniRacun]
-	objava: plist[Objava]
-	sporocilo: plist[Sporocilo]
-	dogodki: plist[Dogodek]
-	testi: plist[Test]
-	naloge: plist[Naloga]
+	log: elist[Log]
+	klub: elist[Klub]
+	kontakt: elist[Kontakt]
+	clan: elist[Clan]
+	ekipa: elist[Ekipa]
+	oddelek: elist[Oddelek]
+	transakcija: elist[Transakcija]
+	bancni_racun: elist[Bancni_racun]
+	objava: elist[Objava]
+	sporocilo: elist[Sporocilo]
+	dogodek: elist[Dogodek]
+	test: elist[Test]
+	naloga: elist[Naloga]
 
 	def __init__(self, root):
 		for k, v in Root.__annotations__.items():
-			value = getattr(root, k, Plist())
+			value = getattr(root, k, Elist())
 			setattr(root, k, value)
 			setattr(self, k, value)
 
-	def append(self, entity: object):
-		for k, v in Root.__annotations__.items():
-			print(k, v)
-
+	def save(self, *entities):
+		for entity in entities:
+			getattr(self, entity.__class__.__name__.lower()).append(entity)
 
 
 class Transaction:

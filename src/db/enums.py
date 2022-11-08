@@ -1,13 +1,15 @@
+import random
 from enum import Enum, auto
 
 
 class EntityEnum(str, Enum):
-	def _generate_next_value_(self, start, count, last_values):
-		return self
-
 	@classmethod
 	def values(cls) -> list[str]:
 		return list(map(lambda c: c.value, cls))
+
+	@classmethod
+	def random(cls):
+		return random.choice(cls.values())
 
 
 class LogLevel(EntityEnum):

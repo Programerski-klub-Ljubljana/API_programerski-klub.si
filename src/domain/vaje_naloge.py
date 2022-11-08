@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import auto
 
-from src.db.entity import plist, Plist, Entity
+from src.db.entity import elist, Elist, Entity
 from src.db.enums import EntityEnum
 
 
@@ -31,7 +31,7 @@ class Naloga(Entity):
 class Test(Entity):
 	ime: str
 	opis: str
-	naloge: plist[Naloga] = Plist()
+	naloge: elist[Naloga] = Elist()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

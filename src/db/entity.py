@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from random import choices, choice
 from typing import TypeVar
 
 from persistent import Persistent
@@ -8,33 +9,43 @@ from persistent.list import PersistentList
 from src.db.enums import LogLevel, LogTheme
 
 
-class Plist(PersistentList):
+class Elist(PersistentList):
 	def append(self, item: object):
-		item.entity.razred = item.__class__.__name__.upper()
 		for k, v in item.__dict__.items():
 			if isinstance(v, list | tuple):
 				setattr(item, k, PersistentList(v))
-		super(Plist, self).append(item)
+		super(Elist, self).append(item)
 
-	def update(self):
-		self.entity.posodobljen = datetime.utcnow()
+	def random(self, k: int = None):
+		return choice(self) if k is None else choices(self, k=k)
 
 
 T = TypeVar('T')
-plist = list[T] | Plist
+elist = dict[int, T] | Elist
 
 
-@dataclass
 class Entity(Persistent):
-	def __init__(self):
-		self.ustvarjen: datetime = datetime.utcnow()
-		self.posodobljen: datetime = datetime.utcnow()
-		self.dnevnik: Plist = Plist()
-		self.povezave: Plist = Plist()
+	p_razred: str = 'Entity'
+	p_ustvarjen: datetime = datetime.utcnow()
+	p_posodobljen: datetime = datetime.utcnow()
+	p_dnevnik: elist = Elist()
+	p_povezave: elist = Elist()
+
+	@staticmethod
+	def save(child: any):
+		attr = {
+			'p_razred': child.__class__.__name__.upper(),
+			'p_ustvarjen': datetime.utcnow(),
+			'p_posodobljen': datetime.utcnow(),
+			'p_dnevnik': Elist(),
+			'p_povezave': Elist(),
+		}
+		for k, v in attr.items():
+			setattr(child, k, v)
 
 	def povezi(self, entity):
-		self.povezave.append(entity)
-		entity.povezave.append(self)
+		self.p_povezave.append(entity)
+		entity.p_povezave.append(self)
 
 
 @dataclass

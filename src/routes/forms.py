@@ -54,9 +54,7 @@ async def vpis_clan(
 
 		clan.povezi(sporocilo)
 
-		root.clani.append(clan)
-		root.kontakti.append(skrbnik)
-		root.sporocilo.append(sporocilo)
+		root.save(clan, skrbnik, sporocilo)
 
 		return locals()
 

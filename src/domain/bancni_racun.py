@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import auto
 
-from src.db.entity import Plist, plist, Entity
+from src.db.entity import Elist, elist, Entity
 from src.db.enums import EntityEnum
 
 
@@ -32,10 +32,10 @@ class Transakcija(Entity):
 
 
 @dataclass
-class BancniRacun(Entity):
+class Bancni_racun(Entity):
 	ime: str
 	stevilka: str
-	transakcije: plist[Transakcija] = Plist()
+	transakcije: elist[Transakcija] = Elist()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

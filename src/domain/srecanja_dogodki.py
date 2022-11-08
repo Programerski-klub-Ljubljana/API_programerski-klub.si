@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import auto
 
-from src.db.entity import plist, Plist, Entity
+from src.db.entity import elist, Elist, Entity
 from src.db.enums import EntityEnum
 from src.domain.arhitektura_kluba import Clan
 
@@ -22,7 +22,7 @@ class Dogodek(Entity):
 	tip: TipDogodka
 	zacetek: datetime
 	konec: datetime
-	clani: plist[Clan] = Plist()
+	clani: elist[Clan] = Elist()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)
