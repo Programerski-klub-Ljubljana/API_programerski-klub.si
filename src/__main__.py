@@ -2,7 +2,7 @@ import uvicorn
 
 from src import env, api
 from src.db import seed
-from src.services import bank
+from src.services import stripe
 
 env.load_dotenv()
 seed.init()

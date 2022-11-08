@@ -60,6 +60,7 @@ def arhitektura_kluba(root: Root, **kwargs):
 
 	for _ in range(kwargs['klubi']):
 		root.klubi.append(Klub(
+			clanarina=uniform(15, 60),
 			ime=fake.catch_phrase(),
 			oddelki=root.oddelki))
 

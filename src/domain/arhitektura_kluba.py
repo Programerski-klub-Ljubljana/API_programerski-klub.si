@@ -81,6 +81,7 @@ class Oddelek(Entity):
 @dataclass
 class Klub(Entity):
 	ime: str
+	clanarina: float
 	oddelki: plist[Oddelek] = Plist()
 
 	def __post_init__(self):
