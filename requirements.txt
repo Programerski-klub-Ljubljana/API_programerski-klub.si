@@ -15,6 +15,10 @@ ZODB~=5.7.0
 persistent~=4.9.2
 Faker
 
+# PASS
+python-jose[cryptography]
+passlib[bcrypt]
+
 # UTILS
 python-dotenv~=0.21.0
 python-dateutil~=2.8.2
