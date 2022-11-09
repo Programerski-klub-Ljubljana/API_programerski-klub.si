@@ -88,7 +88,9 @@ async def vpis_clan(
 		clan.povezi(sporocilo)
 		root.save(clan, skrbnik, sporocilo)
 
-	return templates.TemplateResponse("forms_success.html", {"sporocilo": "Preveri če si dobil potrditveni email!", "request": request, **locals()})
+	kwargs = {"request": request, **locals()}
+	kwargs["sporocilo"] = "Preveri če si dobil potrditveni email!"
+	return templates.TemplateResponse("forms_success.html", kwargs)
 
 
 @router.post("/izpis")
