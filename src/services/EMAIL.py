@@ -1,10 +1,10 @@
-from os import environ
 from typing import List, Any, Dict
 
+import requests
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
-from src import utils
+from src import utils, env
 
 
 class EmailSchema(BaseModel):
@@ -13,7 +13,7 @@ class EmailSchema(BaseModel):
 
 
 conf = ConnectionConfig(
-	MAIL_PASSWORD=environ['MAIL_PASSWORD'],
+	MAIL_PASSWORD=env.MAIL_PASSWORD,
 	MAIL_USERNAME="info@programerski-klub.si",
 	MAIL_FROM="info@programerski-klub.si",
 	MAIL_PORT=465,
@@ -23,8 +23,22 @@ conf = ConnectionConfig(
 	MAIL_SSL_TLS=True,
 	USE_CREDENTIALS=True,
 	VALIDATE_CERTS=True,
-	TEMPLATE_FOLDER=str(utils.root_path('templates')),
-)
+	TEMPLATE_FOLDER=str(utils.root_path('templates')))
+
+
+def exist(email):
+	response = requests.get(
+		"https://isitarealemail.com/api/email/validate",
+		params={'email': email},
+		headers={'Authorization': f"Bearer {env.IS_REAL_EMAIL_BEARER}"})
+
+	status = response.json()['status']
+	if status == "valid":
+		return True
+	elif status == "invalid":
+		return False
+	else:
+		raise Exception('Could not check email existance!')
 
 
 async def send(recipients: List[str], subject: str, vsebina: str):

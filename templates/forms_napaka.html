@@ -1,0 +1,21 @@
+{% include "HEAD.html" %}
+<h1>{{ime}} {{priimek}}</h1>
+<p>
+    V naslednjih podatkih smo našli napake, prosim popravi podatke in jih še enkrat vnesi...
+</p>
+
+<br>
+
+<code>
+    <table>
+        {% for napaka in napake %}
+        <tr>
+            <td><h3>{{napaka}}</h3></td>
+        </tr>
+        {% endfor %}
+    </table>
+</code>
+
+
+
+{% include "FOOT.html" %}

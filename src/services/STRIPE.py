@@ -1,16 +1,14 @@
-import os
 from enum import auto, Enum
 
-from stripe.api_resources.customer import Customer
-from stripe.api_resources.invoice import Invoice
-from stripe.api_resources.transfer import Transfer
-from stripe.api_resources.webhook_endpoint import WebhookEndpoint
+from STRIPE.api_resources.customer import Customer
+from STRIPE.api_resources.invoice import Invoice
+from STRIPE.api_resources.transfer import Transfer
+from STRIPE.api_resources.webhook_endpoint import WebhookEndpoint
 
-import stripe
+import STRIPE
+from src import env
 
-
-def init():
-	stripe.api_key = os.environ['STRIPE_API_KEY']
+stripe.api_key = env.STRIPE_API_KEY
 
 
 def webhook_create(
@@ -37,6 +35,7 @@ def webhook_list():
 	}
 	WebhookEndpoint.list(**kwargs)
 
+
 def webhook_delete(webhook_id: str):
 	kwargs = {
 		**locals()
@@ -55,7 +54,7 @@ def customer_create(
 	"""https://stripe.com/docs/api/customers/create"""
 	kwargs = {
 		'payment_method': payment_method
-		**locals()
+		                  ** locals()
 	}
 	print(Customer.create(description="asdfsdfdf"))
 

@@ -1,6 +1,9 @@
+import sys
+
 import ZODB.FileStorage
 import transaction
 
+from src import env
 from src.db.entity import Elist, elist, Log
 from src.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
 from src.domain.bancni_racun import Transakcija, Bancni_racun
@@ -8,7 +11,7 @@ from src.domain.oznanila_sporocanja import Objava, Sporocilo
 from src.domain.srecanja_dogodki import Dogodek
 from src.domain.vaje_naloge import Test, Naloga
 
-_db = ZODB.DB(None)
+_db = ZODB.DB(env.DB_PATH)
 
 
 class Root:
@@ -43,7 +46,6 @@ class Transaction:
 		self.manager = None
 
 	def __enter__(self) -> Root:
-		print('enter method called')
 		self.manager = transaction.TransactionManager()
 		connection = _db.open(self.manager)
 		return Root(connection.root)

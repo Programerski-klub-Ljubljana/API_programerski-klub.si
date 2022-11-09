@@ -1,16 +1,25 @@
+# SERVER
 fastapi~=0.86.0
 starlette~=0.20.4
 uvicorn~=0.19.0
 python-multipart
 pydantic~=1.10.2
+
+# SERVER UTILS
 fastapi-mail
 fastapi-utils
+requests
 
+# DB
 ZODB~=5.7.0
 persistent~=4.9.2
+Faker
 
+# UTILS
 python-dotenv~=0.21.0
 python-dateutil~=2.8.2
-Faker
 tqdm
+
+# SERVICES
 stripe
+twilio

@@ -1,19 +1,23 @@
 from datetime import date
 
 from fastapi import APIRouter, Form
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
+from src import utils
 from src.db import Transaction
 from src.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from src.domain.oznanila_sporocanja import Sporocilo, TipSporocila
-from src.services import email as EMAIL
+from src.services import EMAIL, TWILIO
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=utils.root_path("templates"))
 
 
-@router.post("/vpis")
+@router.post("/vpis", response_class=HTMLResponse)
 async def vpis_clan(
+		request: Request,
 		ime: str = Form(),
 		priimek: str = Form(),
 		dan_rojstva: int = Form(),
@@ -26,9 +30,36 @@ async def vpis_clan(
 		priimek_skrbnika: str = Form(None),
 		email_skrbnika: str = Form(None),
 		telefon_skrbnika: str = Form(None)):
-	html = templates.get_template('email_vpis.html').render(locals())
+	age = utils.age(leto_rojstva, mesec_rojstva, dan_rojstva)
+	otrok = False
+	validation = [(EMAIL.exist, email),
+	              (TWILIO.exist, telefon)]
+
+	if age < 18:
+		otrok = True
+		validation += [(TWILIO.exist, telefon_skrbnika),
+		               (EMAIL.exist, email_skrbnika)]
+
+	NAPAKE = []
+	GOOD_PERSON_SCORE = 0
+	for validation_function, data in validation:
+		if validation_function(data):
+			GOOD_PERSON_SCORE += 1
+		else:
+			NAPAKE += [data]
+	if GOOD_PERSON_SCORE <= 0:
+		client = {
+			'IP.....': request.client.host,
+			'PORT...': request.client.port,
+			'USER...': request.headers['user-agent']
+		}
+		return templates.TemplateResponse("forms_prekrsek.html", {"request": request, 'client': client})
+	elif len(NAPAKE) > 0:
+		return templates.TemplateResponse("forms_napaka.html", {"request": request, 'napake': NAPAKE, **locals()})
+
+	html = templates.get_template('forms_vpis.html').render(locals())
 	await EMAIL.send(
-		recipients=['jar.fmf@gmail.com'],
+		recipients=[email] + ([email_skrbnika] if otrok else []),
 		subject="Programerski Klub Ljubljana | Potrdilo ob vpisu",
 		vsebina=html
 	)
@@ -40,6 +71,7 @@ async def vpis_clan(
 			tip=TipKontakta.SKRBNIK,
 			email=email_skrbnika,
 			telefon=telefon_skrbnika)
+
 		clan = Clan(
 			ime=ime,
 			priimek=priimek,
@@ -48,15 +80,15 @@ async def vpis_clan(
 			telefon=telefon,
 			skrbniki=[skrbnik],
 			vpisi=[date.today()])
+
 		sporocilo = Sporocilo(
 			tip=TipSporocila.FORMS_VPIS,
 			vsebina=html)
 
 		clan.povezi(sporocilo)
-
 		root.save(clan, skrbnik, sporocilo)
 
-		return locals()
+	return templates.TemplateResponse("forms_success.html", {"sporocilo": "Preveri če si dobil potrditveni email!", "request": request, **locals()})
 
 
 @router.post("/izpis")
