@@ -33,9 +33,10 @@ app.add_middleware(
 add_timing_middleware(app, record=logger.info, prefix="app", exclude="untimed")
 
 # ROUTES REGISTER
-app.include_router(db.router, prefix='/db')
-app.include_router(forms.router, prefix='/forms')
-app.include_router(user.router, prefix='/user')
+app.include_router(db.router, prefix='/db', tags=['Database'])
+app.include_router(forms.router, prefix='/forms', tags=['Forms'])
+app.include_router(user.router, prefix='/user', tags=['User'])
+
 
 seed.init()
 

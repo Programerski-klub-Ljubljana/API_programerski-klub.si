@@ -1,11 +1,11 @@
 from enum import auto, Enum
 
-from STRIPE.api_resources.customer import Customer
-from STRIPE.api_resources.invoice import Invoice
-from STRIPE.api_resources.transfer import Transfer
-from STRIPE.api_resources.webhook_endpoint import WebhookEndpoint
+import stripe
+from stripe.api_resources.customer import Customer
+from stripe.api_resources.invoice import Invoice
+from stripe.api_resources.transfer import Transfer
+from stripe.api_resources.webhook_endpoint import WebhookEndpoint
 
-import STRIPE
 from src import env
 
 stripe.api_key = env.STRIPE_API_KEY
