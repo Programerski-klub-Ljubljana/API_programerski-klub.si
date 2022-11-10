@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Form
+from fastapi import Form
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
@@ -11,12 +11,12 @@ from src.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from src.domain.oznanila_sporocanja import Sporocilo, TipSporocila
 from src.services import EMAIL, TWILIO
 
-router = APIRouter()
+router = utils.router(__name__)
 templates = Jinja2Templates(directory=utils.root_path("templates"))
 
 
 @router.post("/vpis", response_class=HTMLResponse)
-async def vpis_clan(
+async def vpis(
 		request: Request,
 		ime: str = Form(),
 		priimek: str = Form(),

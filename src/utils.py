@@ -2,6 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from dateutil.relativedelta import *
+from fastapi import APIRouter
 
 
 def root_path(*paths) -> Path:
@@ -30,7 +31,7 @@ def todict(obj, classkey=None, depth=0, max_depth=1, ignore: list[str] = ('_dnev
 	if is_iterable(obj):
 		if depth >= max_depth:
 			return ['MAX_DEPTH']
-		return [todict(v, classkey, depth+1, max_depth, ignore) for v in obj]
+		return [todict(v, classkey, depth + 1, max_depth, ignore) for v in obj]
 	elif is_object(obj):
 		if depth >= max_depth:
 			return 'MAX_DEPTH'
@@ -47,3 +48,23 @@ def todict(obj, classkey=None, depth=0, max_depth=1, ignore: list[str] = ('_dnev
 
 def error(exception) -> dict:
 	return {'error': str(exception)}
+
+
+def nested_path(data, value=None) -> object:
+	if value is None:
+		return data
+	path = value.split("/")
+	path.remove('')
+	ref = data
+	while path:
+		element, path = path[0], path[1:]
+		if is_iterable(ref):
+			ref = ref[int(element)]
+		else:
+			ref = getattr(ref, element)
+	return ref
+
+
+def router(_name_) -> APIRouter:
+	name = _name_.split('.')[-1]
+	return APIRouter(prefix=f'/{name}', tags=[name])
