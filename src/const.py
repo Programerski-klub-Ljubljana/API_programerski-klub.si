@@ -12,12 +12,13 @@ fastapi = {
 	'version': version,
 	'title': f"API - {klub}",
 	'contact': {'email': email, 'web': web, 'github': github},
-	'description': """
-		API server ki ga uporablja Programerski klub Ljubljana za svoje delovanje.
+	'description': f"""
+		API server ki ga uporablja {klub} za svoje delovanje.
 		Notri se nahaja vse stvari za popolno avtomatizacijo kluba ter spletne strani
-		na "https://rogramerski-klub.si" naslovu. """.removeprefix('\t'),
-	'servers': [{'url': 'http://localhost:8000', 'description': 'Development'},
-	            {'url': web_api, 'description': 'Production'}]
+		na "{web}" naslovu. """.removeprefix('\t'),
+	'servers': [
+		{'url': 'http://localhost:8000', 'description': 'Development'},
+		{'url': web_api, 'description': 'Production'}]
 }
 
 cors = {
