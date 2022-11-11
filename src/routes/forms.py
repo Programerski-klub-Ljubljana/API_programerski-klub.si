@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from src import utils
+from src import utils, const
 from src.db import Transaction
 from src.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from src.domain.oznanila_sporocanja import Sporocilo, TipSporocila
@@ -61,7 +61,7 @@ async def vpis(
 	html = templates.get_template('forms_vpis.html').render(locals())
 	await EMAIL.send(
 		recipients=[email] + ([email_skrbnika] if otrok else []),
-		subject="Programerski Klub Ljubljana | Potrdilo ob vpisu",
+		subject=const.forms.vpis.subject,
 		vsebina=html
 	)
 
@@ -90,7 +90,7 @@ async def vpis(
 		root.save(clan, skrbnik, sporocilo)
 
 	kwargs = {"request": request, **locals()}
-	kwargs["sporocilo"] = "Preveri če si dobil potrditveni email!"
+	kwargs["sporocilo"] = const.forms.vpis.msg
 	return templates.TemplateResponse("forms_success.html", kwargs)
 
 

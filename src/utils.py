@@ -1,8 +1,11 @@
+import inspect
 from datetime import date
 from pathlib import Path
 
 from dateutil.relativedelta import *
 from fastapi import APIRouter
+
+from src import const
 
 
 def root_path(*paths) -> Path:
@@ -85,4 +88,15 @@ def openapi(data):
 		schemaKey = f'Body_{old_name}'
 		if schemaKey in schemas:
 			schemas[schemaKey]['title'] = new_name.replace('_', ' ').capitalize()
+	data["info"]["x-logo"] = {"url": const.logo}
 	return data
+
+
+def filter_dict(func, kwarg_dict):
+	sign = inspect.signature(func).parameters.values()
+	sign = set([val.name for val in sign])
+
+	common_args = sign.intersection(kwarg_dict.keys())
+	filtered_dict = {key: kwarg_dict[key] for key in common_args}
+
+	return filtered_dict

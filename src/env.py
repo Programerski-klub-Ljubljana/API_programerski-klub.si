@@ -12,6 +12,7 @@ TWILIO_ACCOUNT_SID: None | str = ''
 TWILIO_AUTH_TOKEN: None | str = ''
 DB_PATH: None | str = None
 SECRET_KEY: None | str = ''
+PHONE_CODE: str = '+386'
 
 
 def init():
@@ -20,3 +21,5 @@ def init():
 		key = str(k)
 		if not key.startswith('__') and key.isupper():
 			setattr(this, k, os.environ.get(k))
+
+	return None

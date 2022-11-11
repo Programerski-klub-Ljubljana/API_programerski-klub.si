@@ -2,38 +2,26 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi_utils.timing import add_timing_middleware
 
-from src import utils
+from src import utils, const
 from src.routes import db, forms, user
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # MIDLE WARE
-app = FastAPI(
-	version='0.1.0',
-	title="API Programerskega kluba Ljubljana",
-	contact={
-		'email': 'info@programerski-klub.si',
-		'web': 'http://programerski-klub.si',
-		'github': 'https://github.com/programerski-klub-ljubljana'
-	},
-	description="""
-		API server ki ga uporablja Programerski klub Ljubljana za svoje delovanje.
-		Notri se nahaja vse stvari za popolno avtomatizacijo kluba ter spletne strani
-		na "https://rogramerski-klub.si" naslovu.
-	""".removeprefix('\t'),
-	servers=[
-		{'url': 'http://localhost:8000', 'description': 'Development'},
-		{'url': 'https://programerski-klub.si/api', 'description': 'Production'}
-	]
-)
+app = FastAPI(**const.fastapi)
 
 
-@app.get('/schema', include_in_schema=False)
-def openapi():
-	return utils.openapi(app.openapi())
+def custom_openapi():
+	if app.openapi_schema:
+		return app.openapi_schema
+	kwargs = utils.filter_dict(get_openapi, app.__dict__)
+	kwargs['routes'] = app.routes
+	app.openapi_schema = utils.openapi(get_openapi(**kwargs))
+	return app.openapi_schema
 
 
 def init():
@@ -41,14 +29,12 @@ def init():
 	add_timing_middleware(app, record=logger.info, prefix="app", exclude="untimed")
 
 	# CORS
-	app.add_middleware(
-		CORSMiddleware,
-		allow_credentials=True,
-		allow_origins=['http://localhost:5173'],
-		allow_methods=["*"],
-		allow_headers=["*"])
+	app.add_middleware(CORSMiddleware, **const.cors)
 
 	# ROUTES REGISTER
 	app.include_router(db.router)
 	app.include_router(forms.router)
 	app.include_router(user.router)
+
+	# SETUP CUSTOM OPENAPI
+	app.openapi = custom_openapi
