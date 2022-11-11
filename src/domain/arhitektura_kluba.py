@@ -7,6 +7,16 @@ from src.db.entity import elist, Elist, Entity
 from src.db.enums import EntityEnum
 
 
+class Dovoljenja(EntityEnum):
+	READ = auto()
+	WRITE = auto()
+	EXEC = auto()
+
+	@classmethod
+	def scopes(cls):
+		return {k: f'Dovoljenje za {k}' for k in Dovoljenja._member_names_}
+
+
 class TipKontakta(EntityEnum):
 	SKRBNIK = auto()
 	OSTALO = auto()
@@ -29,6 +39,9 @@ class Clan(Entity):
 	ime: str
 	priimek: str
 	rojen: date
+	geslo: str
+	dovoljenja: elist[Dovoljenja] = Elist()
+
 	email: elist[str] = Elist()
 	telefon: elist[str] = Elist()
 	skrbniki: elist[Kontakt] = Elist()
