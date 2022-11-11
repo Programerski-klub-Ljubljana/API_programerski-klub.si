@@ -1,5 +1,3 @@
-# to get a string like this run:
-# openssl rand -hex 32
 from datetime import datetime, timedelta
 from http.client import HTTPException
 from typing import Union, List
@@ -16,7 +14,6 @@ from src import env
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
 fake_users_db = {
 	"johndoe": {
 		"username": "johndoe",

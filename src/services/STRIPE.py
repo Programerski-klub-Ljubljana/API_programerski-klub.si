@@ -8,7 +8,9 @@ from stripe.api_resources.webhook_endpoint import WebhookEndpoint
 
 from src import env
 
-stripe.api_key = env.STRIPE_API_KEY
+
+def init():
+	stripe.api_key = env.STRIPE_API_KEY
 
 
 def webhook_create(

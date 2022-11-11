@@ -37,8 +37,9 @@ async def vpis(
 
 	if age < 18:
 		otrok = True
-		validation += [(TWILIO.exist, telefon_skrbnika),
-		               (EMAIL.exist, email_skrbnika)]
+		validation += [
+			(TWILIO.exist, telefon_skrbnika),
+			(EMAIL.exist, email_skrbnika)]
 
 	NAPAKE = []
 	GOOD_PERSON_SCORE = 0

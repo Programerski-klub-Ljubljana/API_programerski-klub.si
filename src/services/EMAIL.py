@@ -1,3 +1,4 @@
+import sys
 from typing import List, Any, Dict
 
 import requests
@@ -12,18 +13,23 @@ class EmailSchema(BaseModel):
 	body: Dict[str, Any]
 
 
-conf = ConnectionConfig(
-	MAIL_PASSWORD=env.MAIL_PASSWORD,
-	MAIL_USERNAME="info@programerski-klub.si",
-	MAIL_FROM="info@programerski-klub.si",
-	MAIL_PORT=465,
-	MAIL_SERVER="programerski-klub.si",
-	MAIL_FROM_NAME="Programerski klub Ljubljana",
-	MAIL_STARTTLS=False,
-	MAIL_SSL_TLS=True,
-	USE_CREDENTIALS=True,
-	VALIDATE_CERTS=True,
-	TEMPLATE_FOLDER=str(utils.root_path('templates')))
+this = sys.modules[__name__]
+this.connection: ConnectionConfig
+
+
+def init():
+	this.connection = ConnectionConfig(
+		MAIL_PASSWORD=env.MAIL_PASSWORD,
+		MAIL_USERNAME="info@programerski-klub.si",
+		MAIL_FROM="info@programerski-klub.si",
+		MAIL_PORT=465,
+		MAIL_SERVER="programerski-klub.si",
+		MAIL_FROM_NAME="Programerski klub Ljubljana",
+		MAIL_STARTTLS=False,
+		MAIL_SSL_TLS=True,
+		USE_CREDENTIALS=True,
+		VALIDATE_CERTS=True,
+		TEMPLATE_FOLDER=str(utils.root_path('templates')))
 
 
 def exist(email):
@@ -48,4 +54,4 @@ async def send(recipients: List[str], subject: str, vsebina: str):
 		subject=subject,
 		subtype=MessageType.html)
 
-	await FastMail(conf).send_message(message)
+	await FastMail(this.connection).send_message(message)

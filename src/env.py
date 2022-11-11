@@ -1,9 +1,7 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 import sys
+
+from dotenv import load_dotenv
 
 this = sys.modules[__name__]
 
@@ -15,7 +13,10 @@ TWILIO_AUTH_TOKEN: None | str = ''
 DB_PATH: None | str = None
 SECRET_KEY: None | str = ''
 
-for (k, v) in list(this.__dict__.items()):
-	key = str(k)
-	if not key.startswith('__') and key.isupper():
-		setattr(this, k, os.environ.get(k))
+
+def init():
+	load_dotenv()
+	for (k, v) in list(this.__dict__.items()):
+		key = str(k)
+		if not key.startswith('__') and key.isupper():
+			setattr(this, k, os.environ.get(k))
