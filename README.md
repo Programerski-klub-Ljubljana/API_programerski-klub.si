@@ -12,7 +12,7 @@ In rečeš da hočeš vse inštalirati.
 Server poženeš z ukazom, deluje podobno kot deamon.
 
 ```bash
-uvicorn src.__main__:app --host 0.0.0.0 
+uvicorn api.__main__:app --host 0.0.0.0 
 ```
 
 # Arhitektura
