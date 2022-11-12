@@ -5,22 +5,22 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 
 from app import env
 from app.services.neoserv import NeoServ
-from app.services.oauth2 import OAuth2
+from app.services.jwt_auth import JwtAuth
 from app.services.stripe import Stripe
 from app.services.twilio import Twilio
-from app.services.zodb import ZoDB
+from app.db.zodb import ZoDB
 from core.use_cases import validation
 
 
 class Adapters(DeclarativeContainer):
-	auth = Singleton(OAuth2)
+	auth = Singleton(JwtAuth)
 	db = Singleton(ZoDB)
 	email = Singleton(NeoServ)
 	payment = Singleton(Stripe)
 	sms = Singleton(Twilio, account_sid=env.TWILIO_ACCOUNT_SID, auth_token=env.TWILIO_AUTH_TOKEN)
 
 class FakeAdapters(DeclarativeContainer):
-	auth = Singleton(OAuth2)
+	auth = Singleton(JwtAuth)
 	db = Singleton(ZoDB)
 	email = Singleton(NeoServ)
 	payment = Singleton(Stripe)

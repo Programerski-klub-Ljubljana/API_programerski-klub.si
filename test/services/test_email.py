@@ -1,7 +1,6 @@
 import unittest
 
 from app import app
-from core.services.utils import Validation
 
 
 class test_email(unittest.TestCase):
@@ -10,19 +9,15 @@ class test_email(unittest.TestCase):
 		app.init()
 		self.service = app.adapters.email()
 
-	def test_obstaja_0(self):
-		email = 'jar.fmf@gmail.com'
-		validation = self.service.obstaja(email)
-		self.assertIsInstance(validation, Validation)
-		self.assertTrue(validation.ok)
-		self.assertEqual(validation.data, email)
+	def test_obstaja_pass(self):
+		self.assertTrue(
+			self.service.obstaja('jar.fmf@gmail.com')
+		)
 
-	def test_obstaja_1(self):
-		email = 'krneki'
-		validation = self.service.obstaja(email)
-		self.assertIsInstance(validation, Validation)
-		self.assertFalse(validation.ok)
-		self.assertEqual(validation.data, email)
+	def test_obstaja_fail(self):
+		self.assertFalse(
+			self.service.obstaja('krneki')
+		)
 
 
 if __name__ == '__main__':

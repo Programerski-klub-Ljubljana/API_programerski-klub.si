@@ -1,5 +1,5 @@
 from api import utils
-from api.db import Transaction
+from app.db import Transaction
 
 router = utils.router(__name__)
 

@@ -17,7 +17,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	if not user:
 		raise HTTPException(status_code=400, detail="Incorrect username or password")
 	access_token_expires = timedelta(minutes=AUTH.ACCESS_TOKEN_EXPIRE_MINUTES)
-	access_token = AUTH.create_access_token(
+	access_token = AUTH.encode(
 		data={"sub": user.username, "scopes": form_data.scopes},
 		expires_delta=access_token_expires,
 	)
@@ -35,5 +35,5 @@ async def items(current_user: AUTH.User = Security(AUTH.get_current_active_user,
 
 
 @router.get("/status")
-async def status(current_user: AUTH.User = Depends(AUTH.get_current_user)):
+async def status(current_user: AUTH.User = Depends(AUTH.decode)):
 	return {"status": "ok"}

@@ -1,11 +1,9 @@
 from abc import abstractmethod, ABC
 
-from core.services.utils import Validation
-
 
 class EmailService(ABC):
 	@abstractmethod
-	def obstaja(self, email) -> Validation:
+	def obstaja(self, email) -> bool:
 		pass
 
 	@abstractmethod

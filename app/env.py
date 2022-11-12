@@ -13,6 +13,7 @@ TWILIO_AUTH_TOKEN: None | str = ''
 DB_PATH: None | str = None
 SECRET_KEY: None | str = ''
 PHONE_CODE: str = '+386'
+TOKEN_URL: str = '/user/login'
 
 
 def init():
@@ -20,6 +21,6 @@ def init():
 	for (k, v) in list(this.__dict__.items()):
 		key = str(k)
 		if not key.startswith('__') and key.isupper():
-			setattr(this, k, os.environ.get(k))
+			setattr(this, k, os.environ[k])
 
 	return None

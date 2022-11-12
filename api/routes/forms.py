@@ -6,11 +6,9 @@ from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
 from api import utils, const
-from api.db import Transaction
+from app.db import Transaction
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.domain.oznanila_sporocanja import Sporocilo, TipSporocila
-from app import sms
-from app.services import neoserv
 
 router = utils.router(__name__)
 templates = Jinja2Templates(directory=utils.root_path("templates"))

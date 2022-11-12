@@ -1,44 +1,45 @@
-import datetime
 import unittest
 from unittest.mock import Mock
 
 from app import app
-from core.domain.arhitektura_kluba import Clan, Dovoljenja
+from core.domain.arhitektura_kluba import Clan, Kontakt
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
-from core.services.utils import Validation
-from core.use_cases.validation import ValidateClan
+from core.services._utils import Validation
+from core.use_cases.validation import ValidateClan, ValidateKontakt
 
 
-class test_validate_clan(unittest.TestCase):
+class test_validate(unittest.TestCase):
 
 	def setUp(self) -> None:
 		app.init()
 
 		# MOCKS
 		self.clan: Clan = Mock(Clan)
-		self.clan.email = 'email'
-		self.clan.telefon = 'telefon'
+		self.kontakt: Kontakt = Mock(Kontakt)
 
 		self.email_service: EmailService = Mock(EmailService)
-		self.email_service.obstaja.return_value = Validation(data=, ok=True)
+		self.email_service.obstaja.return_value = True
 		self.sms_service: SmsService = Mock(SmsService)
-		self.sms_service.obstaja.return_value = Validation(data='sms_service', ok=True)
+		self.sms_service.obstaja.return_value = True
 
-		# SETUP
-		# self.validation.ok = True
-		# self.validation.data = 'data'
-		# self.sms_service.obstaja.return_value = self.validation
-		# self.email_service.obstaja.return_value = self.validation
+		# USE CASE
+		self.validate_clan = ValidateClan(emailService=self.email_service, smsService=self.sms_service)
+		self.validate_kontakt = ValidateKontakt(emailService=self.email_service, smsService=self.sms_service)
 
-		self.use_case = ValidateClan(emailService=self.email_service, smsService=self.sms_service)
+	def test_validate_clan(self):
+		validations = self.validate_clan.invoke(self.clan)
+		oks = [val.ok for val in validations]
+		datas = [val.data for val in validations]
+		self.assertListEqual([self.clan.telefon, self.clan.email], datas)  # Should check only telephone and email.
+		self.assertListEqual([True, True], oks)
 
-	def test_vpis_clana(self):
-		validations = self.use_case.invoke(self.clan)
-
-		for validation in validations:
-			self.assertIsInstance(validation, Validation)
-			self.assertEqual(validation)
+	def test_validate_kontakt(self):
+		validations = self.validate_kontakt.invoke(self.kontakt)
+		oks = [val.ok for val in validations]
+		datas = [val.data for val in validations]
+		self.assertListEqual([self.kontakt.telefon, self.kontakt.email], datas)  # Should check only telephone and email.
+		self.assertListEqual([True, True], oks)
 
 
 if __name__ == '__main__':

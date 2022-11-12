@@ -1,7 +1,6 @@
 from twilio.rest import Client
 
 from core.services.sms_service import SmsService
-from core.services.utils import Validation
 
 
 class Twilio(SmsService):
@@ -12,10 +11,10 @@ class Twilio(SmsService):
 	def poslji(self):
 		print('poslji sms')
 
-	def obstaja(self, phone: str) -> Validation:
+	def obstaja(self, phone: str) -> bool:
 		phone = phone.strip()
 		try:
 			self.client.lookups.phone_numbers(phone).fetch()
-			return Validation(data=phone, ok=True)
+			return True
 		except Exception as err:
-			return Validation(data=phone, ok=False)
+			return False

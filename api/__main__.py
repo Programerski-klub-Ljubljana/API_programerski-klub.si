@@ -2,7 +2,7 @@ import uvicorn
 
 from api import api
 from app import env
-from api.db import seed
+from app.db import seed
 
 env.init()
 EMAIL.init_api()

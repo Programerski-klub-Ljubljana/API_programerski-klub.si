@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr
 from api import utils
 from app import env
 from core.services.email_service import EmailService
-from core.services.utils import Validation
+from core.services._utils import Validation
 
 
 class NeoServ(EmailService):
@@ -20,7 +20,7 @@ class NeoServ(EmailService):
 			headers={'Authorization': f"Bearer {env.IS_REAL_EMAIL_BEARER}"})
 
 		status = response.json()['status']
-		return Validation(data=email, ok=status == 'valid')
+		return status == 'valid'
 
 	def poslji(self):
 		pass
@@ -48,7 +48,6 @@ def init():
 		USE_CREDENTIALS=True,
 		VALIDATE_CERTS=True,
 		TEMPLATE_FOLDER=str(utils.root_path('templates')))
-
 
 
 async def send(recipients: List[str], subject: str, vsebina: str):
