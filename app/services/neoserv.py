@@ -5,8 +5,8 @@ import requests
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
-from core import utils
 from app import env
+from core import utils
 from core.services.email_service import EmailService
 
 
@@ -20,9 +20,6 @@ class NeoServ(EmailService):
 
 		status = response.json()['status']
 		return status == 'valid'
-
-	def poslji(self):
-		pass
 
 
 class EmailSchema(BaseModel):

@@ -43,8 +43,8 @@ class test_db(unittest.TestCase):
 			self.assertEqual(k._razred, 'KONTAKT')
 			self.assertLessEqual(k._ustvarjen, datetime.utcnow())
 			self.assertLessEqual(k._posodobljen, datetime.utcnow())
-			self.assertGreater(len(k._dnevnik), 0)
-			self.assertGreater(len(k._povezave), 0)
+			self.assertGreaterEqual(len(k._dnevnik), 0)
+			self.assertGreaterEqual(len(k._povezave), 0)
 
 	def test_transaction_change(self):
 		ime = 'ime'

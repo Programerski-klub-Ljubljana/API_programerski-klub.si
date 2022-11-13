@@ -10,7 +10,3 @@ class SmsService(ABC):
 		Must put phone with country code inside: +386
 		"""
 		pass
-
-	@abstractmethod
-	def poslji(self):
-		pass

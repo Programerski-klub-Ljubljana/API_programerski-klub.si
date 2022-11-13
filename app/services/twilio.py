@@ -8,9 +8,6 @@ class Twilio(SmsService):
 	def __init__(self, account_sid: str, auth_token: str):
 		self.client = Client(account_sid, auth_token)
 
-	def poslji(self):
-		print('poslji sms')
-
 	def obstaja(self, phone: str) -> bool:
 		phone = phone.strip()
 		try:
