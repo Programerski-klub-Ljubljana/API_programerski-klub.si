@@ -6,6 +6,7 @@ from typing import TypeVar
 from persistent import Persistent
 from persistent.list import PersistentList
 
+from core import utils
 from core.domain._enums import LogLevel, LogTheme
 
 
@@ -18,6 +19,17 @@ class Elist(PersistentList):
 
 	def random(self, k: int = None):
 		return choice(self) if k is None else choices(self, k=k)
+
+	def path(
+			self,
+			path: str | None = None,
+			page: int = 0,
+			max_width: int = 10) -> any:
+
+		result = utils.object_path(self, path)
+		start = max_width * page
+		end = max_width * (page + 1)
+		return result[start:end] if utils.is_iterable(result) else result
 
 
 T = TypeVar('T')

@@ -5,8 +5,7 @@ from fastapi.security import (
 	OAuth2PasswordRequestForm,
 )
 
-from api import utils
-from app import auth
+from core import utils
 
 router = utils.router(__name__)
 

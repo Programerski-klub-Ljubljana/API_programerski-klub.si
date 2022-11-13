@@ -5,10 +5,9 @@ import requests
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
-from api import utils
+from core import utils
 from app import env
 from core.services.email_service import EmailService
-from core.services._utils import Validation
 
 
 class NeoServ(EmailService):

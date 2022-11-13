@@ -5,7 +5,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from api import utils, const
+from api import const
+from core import utils
 from app.db import Transaction
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.domain.oznanila_sporocanja import Sporocilo, TipSporocila

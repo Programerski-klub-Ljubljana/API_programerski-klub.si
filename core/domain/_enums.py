@@ -5,7 +5,7 @@ from enum import Enum, auto
 class EntityEnum(str, Enum):
 	@classmethod
 	def values(cls) -> list[str]:
-		return list(map(lambda c: c.value, cls))
+		return list(cls)
 
 	@classmethod
 	def random(cls):

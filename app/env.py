@@ -21,6 +21,7 @@ def init():
 	for (k, v) in list(this.__dict__.items()):
 		key = str(k)
 		if not key.startswith('__') and key.isupper():
-			setattr(this, k, os.environ[k])
+			val = os.environ[k]
+			setattr(this, k, None if len(val) == 0 else val)
 
 	return None

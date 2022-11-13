@@ -4,7 +4,6 @@ from typing import Union
 
 from faker import Faker
 from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
-from tqdm import tqdm
 
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
@@ -40,6 +39,7 @@ def arhitektura_kluba(root, **kwargs):
 		root.save(Clan(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
+			geslo=fake.numerify("##################"),
 			rojen=fake.date_this_century(before_today=True),
 			email=fake.email(),
 			telefon=[fake.phone_number() for _ in range(randint(1, 3))],
@@ -141,7 +141,7 @@ def logs(root, **kwargs):
 
 def povezave(root, **kwargs):
 	tables = list(root.__dict__.values())
-	for i in tqdm(range(len(tables))):
+	for i in range(len(tables)):
 		if len(tables[i]) == 0:
 			continue
 		for j in range(len(tables)):

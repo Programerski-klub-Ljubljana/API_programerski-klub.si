@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
-from api import utils
+from core import utils
 from core.domain._entity import elist, Elist, Entity
 from core.domain._enums import EntityEnum
 

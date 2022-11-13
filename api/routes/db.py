@@ -1,4 +1,4 @@
-from api import utils
+from core import utils
 from app.db import Transaction
 
 router = utils.router(__name__)
@@ -12,6 +12,6 @@ def get_table_data(table: str, path: str | None = None, page: int | None = 0):
 			start = 10 * page
 			end = 10 * (page + 1)
 			result = result[start:end] if utils.is_iterable(result) else result
-			return utils.todict(result, max_depth=3)
+			return utils.object_json(result, max_depth=3)
 	except Exception as err:
 		return utils.error(err)

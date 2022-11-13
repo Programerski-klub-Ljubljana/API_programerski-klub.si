@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi_utils.timing import add_timing_middleware
 
-from api import utils, const
+from api import const
+from core import utils
 from api.routes import db, forms, user
 
 logging.basicConfig(level=logging.INFO)
