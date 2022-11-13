@@ -22,5 +22,5 @@ coverage run -m unittest discover test
 ```
 
 ```bash
-coverage report --omit="*/test*"
+coverage html --omit="*/test*"
 ```

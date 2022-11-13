@@ -17,15 +17,14 @@ def age(year: int, month: int, day: int) -> float:
 
 
 def is_iterable(ele: object) -> bool:
-	return hasattr(ele, "__iter__") and not isinstance(ele, str)
-
+	return hasattr(ele, "__iter__") and not isinstance(ele, str | dict)
 
 def is_object(ele: object) -> bool:
 	return hasattr(ele, "__dict__")
 
 
 def object_path(data: list | dict | object, path: str = None) -> object:
-	if path is None:
+	if path in [None, '/', '']:
 		return data
 	path = path.split("/")
 	path.remove('')
@@ -34,7 +33,10 @@ def object_path(data: list | dict | object, path: str = None) -> object:
 		element, path = path[0], path[1:]
 		if is_iterable(ref):
 			ref = ref[int(element)]
+		elif isinstance(ref, dict):
+			ref = ref[element]
 		else:
+			print(ref, element)
 			ref = getattr(ref, element)
 	return ref
 
