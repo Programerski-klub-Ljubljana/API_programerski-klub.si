@@ -32,23 +32,50 @@ class test_validate(unittest.TestCase):
 		self.assertEqual(12.5027, round(utils.age(today.year - 12, today.month - 6, today.day - 1), 4))
 
 	def test_is_iterable(self):
-		self.assertTrue(utils.is_iterable([1, 2, 3]))
-		self.assertTrue(utils.is_iterable(PersistentList([1, 2])))
-		self.assertTrue(utils.is_iterable((1,)))
+		data = [
+			True,
+			1,
+			1.2,
+			"asdf",
+			{'key': 1, 'key2': 'asdf'},
+			[1, "asdf", True],
+			(1, "asdf", True),
+			{1, 2, 3}
+		]
 
-		self.assertFalse(utils.is_iterable(123))
-		self.assertFalse(utils.is_iterable("asdf"))
-		self.assertFalse(utils.is_iterable(Path()))
+		for ele in data[:4]:
+			self.assertFalse(utils.is_iterable(ele), ele)
+		for ele in data[5:]:
+			self.assertTrue(utils.is_iterable(ele), ele)
+
+	def test_is_mappable(self):
+		data = [
+			{'key': 1, 'key2': 'asdf'},
+			True,
+			1,
+			1.2,
+			"asdf",
+			[1, "asdf", True],
+			(1, "asdf", True),
+			{1, 2, 3}
+		]
+
+		for ele in data[1:]:
+			self.assertFalse(utils.is_mappable(ele), ele)
+		for ele in data[:1]:
+			self.assertTrue(utils.is_mappable(ele), ele)
 
 	def test_is_object(self):
-		self.assertTrue(Path())
-		self.assertTrue({1: 3})
-		self.assertTrue(123)
+		n = Node(c=[])
+		self.assertTrue(utils.is_object(n))
+		self.assertFalse(utils.is_object({1: 3}))
+		self.assertTrue(utils.is_object(123))
 
 		# WTF ???
-		self.assertFalse(0)
-		self.assertFalse({})
-		self.assertTrue(1)
+		self.assertFalse(utils.is_object(0))
+		self.assertFalse(utils.is_object({}))
+		self.assertFalse(utils.is_object())
+		self.assertTrue(utils.is_object(1))
 
 	def test_object_path(self):
 		n = Node(c=[

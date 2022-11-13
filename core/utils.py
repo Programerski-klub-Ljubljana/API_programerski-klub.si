@@ -1,6 +1,7 @@
 import inspect
 from datetime import date
 from pathlib import Path
+from typing import Mapping
 
 from dateutil.relativedelta import *
 
@@ -19,6 +20,11 @@ def age(year: int, month: int, day: int) -> float:
 def is_iterable(ele: object) -> bool:
 	return hasattr(ele, "__iter__") and not isinstance(ele, str | dict)
 
+
+def is_mappable(ele: object) -> bool:
+	return isinstance(ele, Mapping)
+
+
 def is_object(ele: object) -> bool:
 	return hasattr(ele, "__dict__")
 
@@ -33,10 +39,9 @@ def object_path(data: list | dict | object, path: str = None) -> object:
 		element, path = path[0], path[1:]
 		if is_iterable(ref):
 			ref = ref[int(element)]
-		elif isinstance(ref, dict):
+		elif is_mappable(ref):
 			ref = ref[element]
 		else:
-			print(ref, element)
 			ref = getattr(ref, element)
 	return ref
 
@@ -45,7 +50,7 @@ def object_json(
 		obj: object | list,
 		obj_key: str = None,
 		depth: int = 0,
-		max_depth: int = 1,
+		max_depth: int = 3,
 		max_width: int = 10,
 		ignore: list[str] = ('_dnevnik', '_povezave')):
 	if obj_key in ignore:
