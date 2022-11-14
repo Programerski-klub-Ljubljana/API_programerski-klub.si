@@ -18,7 +18,7 @@ def age(year: int, month: int, day: int) -> float:
 
 
 def is_iterable(ele: object) -> bool:
-	return hasattr(ele, "__iter__") and not isinstance(ele, str | dict)
+	return hasattr(ele, "__iter__") and not is_mappable(ele) and not isinstance(ele, str)
 
 
 def is_mappable(ele: object) -> bool:
@@ -26,7 +26,7 @@ def is_mappable(ele: object) -> bool:
 
 
 def is_object(ele: object) -> bool:
-	return hasattr(ele, "__dict__")
+	return hasattr(ele, "__dict__") and not is_iterable(ele)
 
 
 def object_path(data: list | dict | object, path: str = None) -> object:
@@ -62,7 +62,7 @@ def object_json(
 
 		# LIMIT WIDTH OF INTERNAL LIST
 		returned = []
-		for v in obj[:max_width]:
+		for v in list(obj)[:max_width]:
 			returned.append(object_json(obj=v, obj_key=obj_key, depth=depth + 1, max_depth=max_depth, max_width=max_width, ignore=ignore))
 		if len(obj) > max_width:
 			returned.append('MAX_WIDTH')

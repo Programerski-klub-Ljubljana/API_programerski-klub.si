@@ -9,19 +9,31 @@ from core import utils
 
 class Node:
 	def __init__(self, c):
-		self.i = 123
-		self.f = 12.34
-		self.s = 'abc'
-		self.t = (1, 'a')
-		self.d = {'a': 'b', 'c': 'd'}
+		# 15
+		self.a = None
 		self.b = True
-		self.c = c
+		self.c = 1
+		self.d = 1.2
+		self.e = "abc"
+		self.f = [None, True, 1, 1.2, "asdf", [1, 2, 3], {'a': 1, 'b': 2}]
+		self.g = {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}}
+		self.h = (None, True, 1, 1.2, "asdf")
+		self.i = {None, True, 1, 1.2, "asdf"}
+		self.j = PersistentList([1, 2, 3])
+		self.k = []
+		self.l = {}
+		self.m = ()
+		self.n = PersistentList()
+		self.o = c
 
 
 class test_validate(unittest.TestCase):
 
 	def setUp(self) -> None:
-		pass
+		self.dict = [{'key': 1, 'key2': 'asdf'}, {}]
+		self.iterable = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
+		self.values = [None, True, 1, 1.2, "asdf"]
+		self.objects = [Node(c=[])]
 
 	def test_root_path(self):
 		result = utils.root_path('api')
@@ -32,50 +44,25 @@ class test_validate(unittest.TestCase):
 		self.assertEqual(12.5027, round(utils.age(today.year - 12, today.month - 6, today.day - 1), 4))
 
 	def test_is_iterable(self):
-		data = [
-			True,
-			1,
-			1.2,
-			"asdf",
-			{'key': 1, 'key2': 'asdf'},
-			[1, "asdf", True],
-			(1, "asdf", True),
-			{1, 2, 3}
-		]
-
-		for ele in data[:4]:
-			self.assertFalse(utils.is_iterable(ele), ele)
-		for ele in data[5:]:
+		for ele in self.iterable:
 			self.assertTrue(utils.is_iterable(ele), ele)
 
-	def test_is_mappable(self):
-		data = [
-			{'key': 1, 'key2': 'asdf'},
-			True,
-			1,
-			1.2,
-			"asdf",
-			[1, "asdf", True],
-			(1, "asdf", True),
-			{1, 2, 3}
-		]
+		for ele in self.dict + self.values + self.objects:
+			self.assertFalse(utils.is_iterable(ele), ele)
 
-		for ele in data[1:]:
-			self.assertFalse(utils.is_mappable(ele), ele)
-		for ele in data[:1]:
+	def test_is_mappable(self):
+		for ele in self.dict:
 			self.assertTrue(utils.is_mappable(ele), ele)
 
-	def test_is_object(self):
-		n = Node(c=[])
-		self.assertTrue(utils.is_object(n))
-		self.assertFalse(utils.is_object({1: 3}))
-		self.assertTrue(utils.is_object(123))
+		for ele in self.iterable + self.values + self.objects:
+			self.assertFalse(utils.is_mappable(ele), ele)
 
-		# WTF ???
-		self.assertFalse(utils.is_object(0))
-		self.assertFalse(utils.is_object({}))
-		self.assertFalse(utils.is_object())
-		self.assertTrue(utils.is_object(1))
+	def test_is_object(self):
+		for ele in self.objects:
+			self.assertTrue(utils.is_object(ele), ele)
+
+		for ele in self.dict + self.iterable + self.values:
+			self.assertFalse(utils.is_object(ele), ele)
 
 	def test_object_path(self):
 		n = Node(c=[
@@ -101,44 +88,58 @@ class test_validate(unittest.TestCase):
 		self.assertEqual(n.c[1].c, utils.object_path(n, path='/c/1/c'))
 
 	def test_object_json(self):
-		n = Node(c=[
-			Node(c=Node(c=[])),
-			Node([])
-		])
-		self.assertEqual(utils.object_json(n), {
-			'i': 123,
-			'f': 12.34,
-			's': 'abc',
-			't': (1, 'a'),
-			'd': {'a': 'b', 'c': 'd'},
+		n = Node(c=[Node(c=Node(c=[])), ])
+		json = {
+			'a': None,
 			'b': True,
-			'c': [{
-				'i': 123,
-				'f': 12.34,
-				's': 'abc',
-				't': (1, 'a'),
-				'd': {'a': 'b', 'c': 'd'},
-				'b': True,
-				'c': {
-					'i': 123,
-					'f': 12.34,
-					's': 'abc',
-					't': (1, 'a'),
-					'd': {'a': 'b', 'c': 'd'},
+			'c': 1,
+			'd': 1.2,
+			'e': 'abc',
+			'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+			'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+			'h': [None, True, 1, 1.2, 'asdf'],
+			'i': list({1.2, True, 'asdf', None}),
+			'j': [1, 2, 3],
+			'k': [],
+			'l': {},
+			'm': [],
+			'n': [],
+			'o': [
+				{
+					'a': None,
 					'b': True,
-					'c': []
-				}
-
-			}, {
-				'i': 123,
-				'f': 12.34,
-				's': 'abc',
-				't': (1, 'a'),
-				'd': {'a': 'b', 'c': 'd'},
-				'b': True,
-				'c': []
-			}]
-		})
+					'c': 1,
+					'd': 1.2,
+					'e': 'abc',
+					'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+					'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+					'h': [None, True, 1, 1.2, 'asdf'],
+					'i': list({1.2, True, 'asdf', None}),
+					'j': [1, 2, 3],
+					'k': [],
+					'l': {},
+					'm': [],
+					'n': [],
+					'o': {
+						'a': None,
+						'b': True,
+						'c': 1,
+						'd': 1.2,
+						'e': 'abc',
+						'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+						'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+						'h': [None, True, 1, 1.2, 'asdf'],
+						'i': list({1.2, True, 'asdf', None}),
+						'j': [1, 2, 3],
+						'k': [],
+						'l': {},
+						'm': [],
+						'n': [],
+						'o': [],
+					},
+				}],
+		}
+		self.assertEqual(utils.object_json([n, n], max_depth=10), [json, json])
 
 
 if __name__ == '__main__':
