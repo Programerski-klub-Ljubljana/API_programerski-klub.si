@@ -33,7 +33,7 @@ def object_path(data: list | dict | object, path: str = None) -> object:
 	if path in [None, '/', '']:
 		return data
 	path = path.split("/")
-	path.remove('')
+	path = list(filter(lambda x: x != '', path))
 	ref = data
 	while path:
 		element, path = path[0], path[1:]
@@ -64,6 +64,7 @@ def object_json(
 		returned = []
 		for v in list(obj)[:max_width]:
 			returned.append(object_json(obj=v, obj_key=obj_key, depth=depth + 1, max_depth=max_depth, max_width=max_width, ignore=ignore))
+
 		if len(obj) > max_width:
 			returned.append('MAX_WIDTH')
 		# ============================

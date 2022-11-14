@@ -17,14 +17,56 @@ class Node:
 		self.e = "abc"
 		self.f = [None, True, 1, 1.2, "asdf", [1, 2, 3], {'a': 1, 'b': 2}]
 		self.g = {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}}
-		self.h = (None, True, 1, 1.2, "asdf")
-		self.i = {None, True, 1, 1.2, "asdf"}
 		self.j = PersistentList([1, 2, 3])
 		self.k = []
 		self.l = {}
-		self.m = ()
 		self.n = PersistentList()
 		self.o = c
+
+
+
+json_object = Node(c=[Node(c=Node(c=[]))])
+json = {
+	'a': None,
+	'b': True,
+	'c': 1,
+	'd': 1.2,
+	'e': 'abc',
+	'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+	'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+	'j': [1, 2, 3],
+	'k': [],
+	'l': {},
+	'n': [],
+	'o': [
+		{
+			'a': None,
+			'b': True,
+			'c': 1,
+			'd': 1.2,
+			'e': 'abc',
+			'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+			'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+			'j': [1, 2, 3],
+			'k': [],
+			'l': {},
+			'n': [],
+			'o': {
+				'a': None,
+				'b': True,
+				'c': 1,
+				'd': 1.2,
+				'e': 'abc',
+				'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+				'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+				'j': [1, 2, 3],
+				'k': [],
+				'l': {},
+				'n': [],
+				'o': [],
+			},
+		}]
+}
 
 
 class test_validate(unittest.TestCase):
@@ -65,81 +107,31 @@ class test_validate(unittest.TestCase):
 			self.assertFalse(utils.is_object(ele), ele)
 
 	def test_object_path(self):
-		n = Node(c=[
-			Node(c=Node(c=[
-				Node(c=Node([]))
-			])),
-			Node([])
-		])
+		self.assertEqual(json_object, utils.object_path(json_object, '/'))
+		self.assertEqual(json_object, utils.object_path(json_object))
+		self.assertEqual(json_object, utils.object_path(json_object, ''))
 
-		# TESTING EDGE CASES
-		self.assertEqual(n, utils.object_path(n, path='/'))
-		self.assertEqual(n, utils.object_path(n))
-		self.assertEqual(n, utils.object_path(n, path=''))
+		def test(obj, path):
+			self.assertEqual(obj, utils.object_path(json_object, path))
+			if isinstance(obj, list):
+				return True
+			self.assertEqual(obj.j, utils.object_path(json_object, f'{path}/j'))
+			self.assertEqual(obj.f[3], utils.object_path(json_object, f'{path}/f/3'))
+			self.assertEqual(obj.g['d'], utils.object_path(json_object, f'{path}/g/d'))
+			self.assertEqual(obj.j[-1], utils.object_path(json_object, f'{path}/j/-1'))
+			self.assertEqual(obj.k, utils.object_path(json_object, f'{path}/k'))
+			self.assertEqual(obj.l, utils.object_path(json_object, f'{path}/l'))
+			self.assertEqual(obj.n, utils.object_path(json_object, f'{path}/n'))
+			self.assertEqual(obj.o, utils.object_path(json_object, f'{path}/o'))
+			return True
 
-		# TESTING ALL CASES
-		self.assertEqual(n.c, utils.object_path(n, path='/c'))
-		self.assertEqual(n.i, utils.object_path(n, path='/i'))
-		self.assertEqual(n.t[0], utils.object_path(n, path='/t/0'))
-		self.assertEqual(n.t[1], utils.object_path(n, path='/t/1'))
-		self.assertEqual(n.d['c'], utils.object_path(n, path='/d/c'))
-		self.assertEqual(n.c[0], utils.object_path(n, path='/c/0'))
-		self.assertEqual(n.c[1], utils.object_path(n, path='/c/1'))
-		self.assertEqual(n.c[1].c, utils.object_path(n, path='/c/1/c'))
+		self.assertTrue(test(json_object, ''))
+		self.assertTrue(test(json_object.o, '/o'))
+		self.assertTrue(test(json_object.o[0], '/o/0/'))
+		self.assertTrue(test(json_object.o[0].o, '/o/0/o'))
 
 	def test_object_json(self):
-		n = Node(c=[Node(c=Node(c=[])), ])
-		json = {
-			'a': None,
-			'b': True,
-			'c': 1,
-			'd': 1.2,
-			'e': 'abc',
-			'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-			'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-			'h': [None, True, 1, 1.2, 'asdf'],
-			'i': list({1.2, True, 'asdf', None}),
-			'j': [1, 2, 3],
-			'k': [],
-			'l': {},
-			'm': [],
-			'n': [],
-			'o': [
-				{
-					'a': None,
-					'b': True,
-					'c': 1,
-					'd': 1.2,
-					'e': 'abc',
-					'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-					'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-					'h': [None, True, 1, 1.2, 'asdf'],
-					'i': list({1.2, True, 'asdf', None}),
-					'j': [1, 2, 3],
-					'k': [],
-					'l': {},
-					'm': [],
-					'n': [],
-					'o': {
-						'a': None,
-						'b': True,
-						'c': 1,
-						'd': 1.2,
-						'e': 'abc',
-						'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-						'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-						'h': [None, True, 1, 1.2, 'asdf'],
-						'i': list({1.2, True, 'asdf', None}),
-						'j': [1, 2, 3],
-						'k': [],
-						'l': {},
-						'm': [],
-						'n': [],
-						'o': [],
-					},
-				}],
-		}
-		self.assertEqual(utils.object_json([n, n], max_depth=10), [json, json])
+		self.assertEqual(utils.object_json([json_object, json_object], max_depth=10), [json, json])
 
 
 if __name__ == '__main__':
