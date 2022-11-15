@@ -53,12 +53,9 @@ def object_json(
 		max_depth: int = 3,
 		max_width: int = 10,
 		ignore: list[str] = ('_dnevnik', '_povezave')):
-	if obj_key in ignore:
-		return 'IGNORE'
-
 	if is_iterable(obj):  # LIST PROCESSING...
 		if depth >= max_depth:
-			return ['MAX_DEPTH']
+			return 'MAX_DEPTH_LIST'
 
 		# LIMIT WIDTH OF INTERNAL LIST
 		returned = []
@@ -72,13 +69,13 @@ def object_json(
 
 	elif is_object(obj):  # OBJECT PROCESSING
 		if depth >= max_depth:
-			return 'MAX_DEPTH'
+			return 'MAX_DEPTH_OBJECT'
 
 		# PROCESSING OBJECT KEYS
 		data = {}
 		for key, value in obj.__dict__.items():
 			if not callable(value) and key not in ignore:
-				data[key] = object_json(obj=value, obj_key=obj_key, depth=depth, max_depth=max_depth, ignore=ignore)
+				data[key] = object_json(obj=value, obj_key=obj_key, depth=depth + 1, max_depth=max_depth, ignore=ignore)
 		# ======================
 		return data
 	else:

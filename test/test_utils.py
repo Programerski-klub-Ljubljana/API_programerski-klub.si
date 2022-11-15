@@ -2,137 +2,132 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
-from persistent.list import PersistentList
-
 from core import utils
-
-
-class Node:
-	def __init__(self, c):
-		# 15
-		self.a = None
-		self.b = True
-		self.c = 1
-		self.d = 1.2
-		self.e = "abc"
-		self.f = [None, True, 1, 1.2, "asdf", [1, 2, 3], {'a': 1, 'b': 2}]
-		self.g = {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}}
-		self.j = PersistentList([1, 2, 3])
-		self.k = []
-		self.l = {}
-		self.n = PersistentList()
-		self.o = c
-
-
-
-json_object = Node(c=[Node(c=Node(c=[]))])
-json = {
-	'a': None,
-	'b': True,
-	'c': 1,
-	'd': 1.2,
-	'e': 'abc',
-	'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-	'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-	'j': [1, 2, 3],
-	'k': [],
-	'l': {},
-	'n': [],
-	'o': [
-		{
-			'a': None,
-			'b': True,
-			'c': 1,
-			'd': 1.2,
-			'e': 'abc',
-			'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-			'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-			'j': [1, 2, 3],
-			'k': [],
-			'l': {},
-			'n': [],
-			'o': {
-				'a': None,
-				'b': True,
-				'c': 1,
-				'd': 1.2,
-				'e': 'abc',
-				'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-				'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-				'j': [1, 2, 3],
-				'k': [],
-				'l': {},
-				'n': [],
-				'o': [],
-			},
-		}]
-}
+from test import helpers
 
 
 class test_validate(unittest.TestCase):
 
-	def setUp(self) -> None:
-		self.dict = [{'key': 1, 'key2': 'asdf'}, {}]
-		self.iterable = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
-		self.values = [None, True, 1, 1.2, "asdf"]
-		self.objects = [Node(c=[])]
-
 	def test_root_path(self):
 		result = utils.root_path('api')
-		self.assertEqual(result, Path('../api').resolve().absolute())
+		self.assertEqual(result, (Path(__file__).parent.joinpath('../api').resolve().absolute()))
 
 	def test_age(self):
 		today = datetime.utcnow()
 		self.assertEqual(12.5027, round(utils.age(today.year - 12, today.month - 6, today.day - 1), 4))
 
 	def test_is_iterable(self):
-		for ele in self.iterable:
+		for ele in helpers.iterables:
 			self.assertTrue(utils.is_iterable(ele), ele)
 
-		for ele in self.dict + self.values + self.objects:
+		for ele in helpers.dicts + helpers.values + helpers.objects:
 			self.assertFalse(utils.is_iterable(ele), ele)
 
 	def test_is_mappable(self):
-		for ele in self.dict:
+		for ele in helpers.dicts:
 			self.assertTrue(utils.is_mappable(ele), ele)
 
-		for ele in self.iterable + self.values + self.objects:
+		for ele in helpers.iterables + helpers.values + helpers.objects:
 			self.assertFalse(utils.is_mappable(ele), ele)
 
 	def test_is_object(self):
-		for ele in self.objects:
+		for ele in helpers.objects:
 			self.assertTrue(utils.is_object(ele), ele)
 
-		for ele in self.dict + self.iterable + self.values:
+		for ele in helpers.dicts + helpers.iterables + helpers.values:
 			self.assertFalse(utils.is_object(ele), ele)
 
 	def test_object_path(self):
-		self.assertEqual(json_object, utils.object_path(json_object, '/'))
-		self.assertEqual(json_object, utils.object_path(json_object))
-		self.assertEqual(json_object, utils.object_path(json_object, ''))
+		self.assertEqual(helpers.tree, utils.object_path(helpers.tree, '/'))
+		self.assertEqual(helpers.tree, utils.object_path(helpers.tree))
+		self.assertEqual(helpers.tree, utils.object_path(helpers.tree, ''))
 
 		def test(obj, path):
-			self.assertEqual(obj, utils.object_path(json_object, path))
+			self.assertEqual(obj, utils.object_path(helpers.tree, path))
 			if isinstance(obj, list):
 				return True
-			self.assertEqual(obj.j, utils.object_path(json_object, f'{path}/j'))
-			self.assertEqual(obj.f[3], utils.object_path(json_object, f'{path}/f/3'))
-			self.assertEqual(obj.g['d'], utils.object_path(json_object, f'{path}/g/d'))
-			self.assertEqual(obj.j[-1], utils.object_path(json_object, f'{path}/j/-1'))
-			self.assertEqual(obj.k, utils.object_path(json_object, f'{path}/k'))
-			self.assertEqual(obj.l, utils.object_path(json_object, f'{path}/l'))
-			self.assertEqual(obj.n, utils.object_path(json_object, f'{path}/n'))
-			self.assertEqual(obj.o, utils.object_path(json_object, f'{path}/o'))
+			self.assertEqual(obj.j, utils.object_path(helpers.tree, f'{path}/j'))
+			self.assertEqual(obj.f[3], utils.object_path(helpers.tree, f'{path}/f/3'))
+			self.assertEqual(obj.g['d'], utils.object_path(helpers.tree, f'{path}/g/d'))
+			self.assertEqual(obj.j[-1], utils.object_path(helpers.tree, f'{path}/j/-1'))
+			self.assertEqual(obj.k, utils.object_path(helpers.tree, f'{path}/k'))
+			self.assertEqual(obj.l, utils.object_path(helpers.tree, f'{path}/l'))
+			self.assertEqual(obj.n, utils.object_path(helpers.tree, f'{path}/n'))
+			self.assertEqual(obj.o, utils.object_path(helpers.tree, f'{path}/o'))
 			return True
 
-		self.assertTrue(test(json_object, ''))
-		self.assertTrue(test(json_object.o, '/o'))
-		self.assertTrue(test(json_object.o[0], '/o/0/'))
-		self.assertTrue(test(json_object.o[0].o, '/o/0/o'))
+		self.assertTrue(test(helpers.tree, ''))
+		self.assertTrue(test(helpers.tree.o, '/o'))
+		self.assertTrue(test(helpers.tree.o[0], '/o/0/'))
+		self.assertTrue(test(helpers.tree.o[0].o, '/o/0/o'))
 
 	def test_object_json(self):
-		self.assertEqual(utils.object_json([json_object, json_object], max_depth=10), [json, json])
+		self.assertEqual(utils.object_json([helpers.tree, helpers.tree], max_depth=10), [helpers.tree_json, helpers.tree_json])
 
+	def test_object_json_max_depth_width(self):
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=2, max_depth=0), 'MAX_DEPTH_LIST')
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=2, max_depth=1), ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_WIDTH'])
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=1, max_depth=2), [
+			{'child': 'MAX_DEPTH_LIST', 'data': 1},
+			'MAX_WIDTH'
+		])
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=3, max_depth=3), [
+			{'child': ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT'], 'data': 1},
+			{'child': [], 'data': 2},
+			{'child': [], 'data': 3},
+			'MAX_WIDTH'
+		])
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=4, max_depth=4), [
+			{
+				'child': [
+					{'child': 'MAX_DEPTH_LIST', 'data': 11},
+					{'child': 'MAX_DEPTH_LIST', 'data': 12},
+					{'child': 'MAX_DEPTH_LIST', 'data': 13},
+					{'child': 'MAX_DEPTH_LIST', 'data': 14}
+				],
+				'data': 1
+			},
+			{'child': [], 'data': 2},
+			{'child': [], 'data': 3},
+			{'child': [], 'data': 4}
+		])
+		self.assertEqual(utils.object_json(helpers.tree2, max_width=10, max_depth=5), [
+			{
+				'child': [
+					{
+						'child': ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT'],
+						'data': 11
+					},
+					{'child': [], 'data': 12},
+					{'child': [], 'data': 13},
+					{'child': [], 'data': 14}
+				],
+				'data': 1
+			},
+			{'child': [], 'data': 2},
+			{'child': [], 'data': 3},
+			{'child': [], 'data': 4}
+		])
+
+	def test_filter_dict(self):
+		def test(a, b, c, d):
+			raise Exception()
+
+		kwargs = {
+			'a': 'a',
+			'b': 'b',
+			'c': 'c',
+			'd': 'd',
+			'e': 'e',
+			'f': 'f',
+		}
+
+		self.assertEqual({
+			'a': 'a',
+			'b': 'b',
+			'c': 'c',
+			'd': 'd',
+		}, utils.filter_dict(test, kwargs))
 
 if __name__ == '__main__':
 	unittest.main()

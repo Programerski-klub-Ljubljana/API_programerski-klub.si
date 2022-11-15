@@ -22,5 +22,6 @@ coverage run -m unittest discover test
 ```
 
 ```bash
-coverage html --omit="*/test*"
+coverage html --omit="*/test*,*/core/services/*"
+firefox htmlcov/index.html
 ```
