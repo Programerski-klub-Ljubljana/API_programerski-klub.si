@@ -5,14 +5,13 @@ from app import app
 from core.domain.arhitektura_kluba import Clan, Kontakt
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
-from core.services._utils import Validation
-from core.use_cases.validation import ValidateClan, ValidateKontakt
+from core.use_cases.validation_cases import Validate_clan, Validate_kontakt
 
 
 class test_validate(unittest.TestCase):
 
 	def setUp(self) -> None:
-		app.init()
+		app.init(True)
 
 		# MOCKS
 		self.clan: Clan = Mock(Clan)
@@ -24,8 +23,8 @@ class test_validate(unittest.TestCase):
 		self.sms_service.obstaja.return_value = True
 
 		# USE CASE
-		self.validate_clan = ValidateClan(emailService=self.email_service, smsService=self.sms_service)
-		self.validate_kontakt = ValidateKontakt(emailService=self.email_service, smsService=self.sms_service)
+		self.validate_clan = Validate_clan(emailService=self.email_service, smsService=self.sms_service)
+		self.validate_kontakt = Validate_kontakt(emailService=self.email_service, smsService=self.sms_service)
 
 	def test_validate_clan(self):
 		validations = self.validate_clan.invoke(self.clan)

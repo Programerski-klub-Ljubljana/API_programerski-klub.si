@@ -6,7 +6,6 @@ from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
 from app import env
-from core import cutils
 from core.services.email_service import EmailService
 
 

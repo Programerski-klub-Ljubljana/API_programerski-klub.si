@@ -1,16 +1,11 @@
 from api import autils
+from app import app
+from core import cutils
 
 router = autils.router(__name__)
 
 
 @router.get("/{table}/{path:path}")
-def get_table_data(table: str, path: str | None = None, page: int | None = 0):
-	try:
-		with Transaction() as root:
-			result = utils.nested_path(getattr(root, table), path)
-			start = 10 * page
-			end = 10 * (page + 1)
-			result = result[start:end] if utils.is_iterable(result) else result
-			return utils.object_json(result, max_depth=3)
-	except Exception as err:
-		return utils.error(err)
+def get_table_data(table: str, path: str = None, page: int = 0, per_page: int = 10, max_depth: int = 3, max_width: int = 10):
+	db = app.useCases.db_path()
+	return db.invoke(**cutils.filter_dict(db.invoke, locals()))

@@ -8,7 +8,7 @@ from core.services.auth_service import AuthService
 class test_auth(unittest.TestCase):
 
 	def setUp(self) -> None:
-		app.init()
+		app.init(seed=False)
 		self.service: AuthService = app.services.auth()
 		self.data = {'key1': 'value1', 'key2': 'value2'}
 

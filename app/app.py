@@ -1,5 +1,4 @@
 import sys
-from typing import Callable
 
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
@@ -15,8 +14,7 @@ from core.services.db_service import DbService
 from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
 from core.services.sms_service import SmsService
-from core.use_cases import validation
-from core.use_cases.validation import ValidateKontakt, ValidateClan
+from core.use_cases import validation_cases, db_cases
 
 
 class Services(DeclarativeContainer):
@@ -31,9 +29,13 @@ class UseCases(DeclarativeContainer):
 	dc = DependenciesContainer()
 
 	# CLAN
-	__deps = [dc.emailService, dc.smsService]
-	validate_kontakt: Provider[ValidateKontakt] = Factory(validation.ValidateKontakt, *__deps)
-	validate_clan: Provider[ValidateClan] = Factory(validation.ValidateClan, *__deps)
+	__deps = [dc.email, dc.sms]
+	validate_kontakt = Factory(validation_cases.Validate_kontakt, *__deps)
+	validate_clan = Factory(validation_cases.Validate_clan, *__deps)
+
+	# DB
+	__deps = [dc.db]
+	db_path = Factory(db_cases.Db_path, *__deps)
 
 
 this = sys.modules[__name__]
@@ -41,7 +43,7 @@ services: Services
 useCases: UseCases
 
 
-def init(seed: bool):
+def init(seed: bool = False):
 	env.init()
 	this.services = Services()
 	this.useCases = UseCases(dc=this.services)

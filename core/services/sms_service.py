@@ -1,7 +1,5 @@
 from abc import abstractmethod, ABC
 
-from core.services._utils import Validation
-
 
 class SmsService(ABC):
 	@abstractmethod

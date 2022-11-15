@@ -1,13 +1,4 @@
-from datetime import timedelta
-
-from fastapi import Depends, HTTPException, Security
-from fastapi.security import (
-	OAuth2PasswordRequestForm,
-)
-
 from api import autils
-from app.services.jwt_auth import *
-from core.domain.arhitektura_kluba import Clan
 
 router = autils.router(__name__)
 

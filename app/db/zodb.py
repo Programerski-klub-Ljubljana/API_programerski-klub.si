@@ -10,8 +10,7 @@ from core.services.db_service import DbService, Transaction, DbRoot
 
 
 class ZoDB(DbService):
-	def __init__(self):
-		self.db: ZODB.DB = ZODB.DB(env.DB_PATH)
+	db: ZODB.DB = ZODB.DB(env.DB_PATH)
 
 	def seed(self):
 		with self.db.transaction(note="seed.migrate") as connection:

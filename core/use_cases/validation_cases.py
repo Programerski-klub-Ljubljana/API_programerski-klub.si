@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from core.domain.arhitektura_kluba import Kontakt, Clan
-from core.services._utils import Validation
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
+from core.services.sutils import Validation
 
 
 @dataclass
@@ -12,7 +12,7 @@ class ClanUseCase:
 	smsService: SmsService
 
 
-class ValidateKontakt(ClanUseCase):
+class Validate_kontakt(ClanUseCase):
 	def invoke(self, kontakt: Kontakt) -> list[Validation]:
 		validations = []
 		for fun, data in [
@@ -23,7 +23,7 @@ class ValidateKontakt(ClanUseCase):
 		return validations
 
 
-class ValidateClan(ClanUseCase):
+class Validate_clan(ClanUseCase):
 
 	def invoke(self, clan: Clan) -> list[Validation]:
 		validations = []

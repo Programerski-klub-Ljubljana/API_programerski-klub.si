@@ -41,8 +41,6 @@ def arhitektura_kluba(root, **kwargs):
 			priimek=fake.last_name(),
 			geslo=fake.numerify("##################"),
 			rojen=fake.date_this_century(before_today=True),
-			email=fake.email(),
-			telefon=[fake.phone_number() for _ in range(randint(1, 3))],
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
 

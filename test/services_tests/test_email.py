@@ -6,7 +6,7 @@ from app import app
 class test_email(unittest.TestCase):
 
 	def setUp(self) -> None:
-		app.init()
+		app.init(seed=False)
 		self.service = app.services.email()
 
 	def test_obstaja_pass(self):

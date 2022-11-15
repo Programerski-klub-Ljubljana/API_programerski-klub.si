@@ -2,7 +2,6 @@ import unittest
 from datetime import datetime, timedelta
 from random import randint
 
-from core.domain._entity import Elist
 from core.domain.arhitektura_kluba import Dovoljenja, Clan
 from core.domain.bancni_racun import Bancni_racun, TipTransakcije, Transakcija, KategorijaTransakcije
 
@@ -10,9 +9,7 @@ from core.domain.bancni_racun import Bancni_racun, TipTransakcije, Transakcija, 
 class test_arhitektura_kluba(unittest.TestCase):
 
 	def clan(self, dni):
-		return Clan(
-			ime=None, priimek=None, rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, email=None, telefon=None,
-			skrbniki=None)
+		return Clan(kontakt=None, ime=None, priimek=None, rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, skrbniki=None)
 
 	def test_scopes(self):
 		vals = Dovoljenja.values()

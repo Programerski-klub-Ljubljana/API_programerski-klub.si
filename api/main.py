@@ -4,16 +4,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi_utils.timing import add_timing_middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from api import const, autils
-from core import cutils
 from api.routes import db, forms, user
+from core import cutils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # MIDLE WARE
 api = FastAPI(**const.fastapi)
+
+
+@api.exception_handler(Exception)
+async def exception_handler(request: Request, exc: Exception):
+	return JSONResponse(
+		status_code=400,
+		content={"error": str(exc)},
+	)
 
 
 def custom_openapi():

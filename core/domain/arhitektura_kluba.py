@@ -42,8 +42,7 @@ class Clan(Entity):
 	geslo: str
 	dovoljenja: elist[Dovoljenja] = Elist()
 
-	email: elist[str] = Elist()
-	telefon: elist[str] = Elist()
+	kontakt: elist[Kontakt] = Elist()
 	skrbniki: elist[Kontakt] = Elist()
 
 	# DATUMI
