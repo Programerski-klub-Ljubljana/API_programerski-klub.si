@@ -1,15 +1,10 @@
 import uvicorn
 
-from api import api
-from app import env
-from app.db import seed
+import main as api
+from app import app
 
-env.init()
-EMAIL.init_api()
-STRIPE.init_api()
-TWILIO.init_api()
-seed.init()
+app.init(seed=True)
 api.init()
 
 if __name__ == "__main__":
-	uvicorn.run(api.app, host="0.0.0.0", port=8000)
+	uvicorn.run(api.api, host="0.0.0.0", port=8000)

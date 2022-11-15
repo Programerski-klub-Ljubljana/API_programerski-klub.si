@@ -6,13 +6,13 @@ from typing import TypeVar
 from persistent import Persistent
 from persistent.list import PersistentList
 
-from core import utils
+from core import cutils
 from core.domain._enums import LogLevel, LogTheme
 
 
 class Elist(PersistentList):
 	def append(self, item: object):
-		if utils.is_object(item):
+		if cutils.is_object(item):
 			for k, v in item.__dict__.items():
 				if isinstance(v, list | tuple):
 					setattr(item, k, PersistentList(v))
@@ -27,10 +27,10 @@ class Elist(PersistentList):
 			page: int = 0,
 			max_width: int = 10) -> any:
 
-		result = utils.object_path(self, path)
+		result = cutils.object_path(self, path)
 		start = max_width * page
 		end = max_width * (page + 1)
-		return result[start:end] if utils.is_iterable(result) else result
+		return result[start:end] if cutils.is_iterable(result) else result
 
 
 T = TypeVar('T')

@@ -5,14 +5,13 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from api import const
-from core import utils
-from app.db import Transaction
+from api import const, autils
+from core import cutils
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.domain.oznanila_sporocanja import Sporocilo, TipSporocila
 
-router = utils.router(__name__)
-templates = Jinja2Templates(directory=utils.root_path("templates"))
+router = autils.router(__name__)
+templates = Jinja2Templates(directory=cutils.root_path("templates"))
 
 
 @router.post("/vpis", response_class=HTMLResponse)
@@ -30,7 +29,7 @@ async def vpis(
 		priimek_skrbnika: str = Form(None),
 		email_skrbnika: str = Form(None),
 		telefon_skrbnika: str = Form(None)):
-	age = utils.age(leto_rojstva, mesec_rojstva, dan_rojstva)
+	age = cutils.age(leto_rojstva, mesec_rojstva, dan_rojstva)
 	otrok = False
 	validation = [(EMAIL.exist, email),
 	              (TWILIO.exist, telefon)]

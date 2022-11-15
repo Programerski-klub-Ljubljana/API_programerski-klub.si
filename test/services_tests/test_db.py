@@ -17,7 +17,7 @@ class test_db(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		app.init()
 
-		cls.service: DbService = app.adapters.db()
+		cls.service: DbService = app.services.db()
 
 		# TEST IF EMPTY
 		count = 0

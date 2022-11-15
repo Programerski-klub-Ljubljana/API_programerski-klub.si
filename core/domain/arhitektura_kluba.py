@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
-from core import utils
+from core import cutils
 from core.domain._entity import elist, Elist, Entity
 from core.domain._enums import EntityEnum
 
@@ -55,7 +55,7 @@ class Clan(Entity):
 
 	@property
 	def starost(self) -> float:
-		return utils.age(
+		return cutils.age(
 			year=self.rojen.year,
 			month=self.rojen.month,
 			day=self.rojen.day)

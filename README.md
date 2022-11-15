@@ -12,7 +12,7 @@ In rečeš da hočeš vse inštalirati.
 Server poženeš z ukazom, deluje podobno kot deamon.
 
 ```bash
-uvicorn src.__main__:api.app --host 0.0.0.0
+uvicorn src.__main__:api.services_tests --host 0.0.0.0
 ```
 
 ## Testing

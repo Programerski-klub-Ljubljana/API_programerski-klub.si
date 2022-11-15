@@ -1,7 +1,6 @@
-from core import utils
-from app.db import Transaction
+from api import autils
 
-router = utils.router(__name__)
+router = autils.router(__name__)
 
 
 @router.get("/{table}/{path:path}")

@@ -9,7 +9,7 @@ class test_auth(unittest.TestCase):
 
 	def setUp(self) -> None:
 		app.init()
-		self.service: AuthService = app.adapters.auth()
+		self.service: AuthService = app.services.auth()
 		self.data = {'key1': 'value1', 'key2': 'value2'}
 
 	def test_encode_decode_pass(self):

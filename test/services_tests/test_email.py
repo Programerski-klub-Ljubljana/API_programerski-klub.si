@@ -7,7 +7,7 @@ class test_email(unittest.TestCase):
 
 	def setUp(self) -> None:
 		app.init()
-		self.service = app.adapters.email()
+		self.service = app.services.email()
 
 	def test_obstaja_pass(self):
 		self.assertTrue(
