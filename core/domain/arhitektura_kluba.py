@@ -66,12 +66,15 @@ class Clan(Entity):
 
 	@property
 	def vpisan(self) -> bool:
-		zadnji_vpis = self.vpisi[-1]
-
 		if len(self.izpisi) == 0:
-			return True
+			if len(self.vpisi) > 0:
+				return True
+			else:
+				return False
 
-		zadnji_izpis = self.izpis[-1]
+		zadnji_vpis = self.vpisi[-1]
+		zadnji_izpis = self.izpisi[-1]
+
 		return zadnji_vpis > zadnji_izpis
 
 

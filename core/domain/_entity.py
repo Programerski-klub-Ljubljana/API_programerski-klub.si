@@ -12,9 +12,10 @@ from core.domain._enums import LogLevel, LogTheme
 
 class Elist(PersistentList):
 	def append(self, item: object):
-		for k, v in item.__dict__.items():
-			if isinstance(v, list | tuple):
-				setattr(item, k, PersistentList(v))
+		if utils.is_object(item):
+			for k, v in item.__dict__.items():
+				if isinstance(v, list | tuple):
+					setattr(item, k, PersistentList(v))
 		super(Elist, self).append(item)
 
 	def random(self, k: int = None):

@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 from random import randint
 
+from core.domain._entity import Elist
 from core.domain.arhitektura_kluba import Dovoljenja, Clan
 from core.domain.bancni_racun import Bancni_racun, TipTransakcije, Transakcija, KategorijaTransakcije
 
@@ -11,7 +12,7 @@ class test_arhitektura_kluba(unittest.TestCase):
 	def clan(self, dni):
 		return Clan(
 			ime=None, priimek=None, rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, email=None, telefon=None,
-			skrbniki=None, vpisi=None, izpisi=None)
+			skrbniki=None)
 
 	def test_scopes(self):
 		vals = Dovoljenja.values()
@@ -33,8 +34,16 @@ class test_arhitektura_kluba(unittest.TestCase):
 
 	def test_clan_vpisan(self):
 		clan = self.clan(0)
-		clan.vpisi.append(datetime.utcnow() - timedelta(days=-1))
-		clan.izpisi.append(datetime.utcnow() - timedelta(days=1))
+		self.assertFalse(clan.vpisan)
+		clan.vpisi.append(datetime.utcnow() + timedelta(days=5))
+		self.assertTrue(clan.vpisan)
+
+		clan.vpisi.append(datetime.utcnow() + timedelta(days=5))
+		clan.izpisi.append(datetime.utcnow() + timedelta(days=10))
+		self.assertFalse(clan.vpisan)
+
+		clan.vpisi.append(datetime.utcnow() + timedelta(days=10))
+		clan.izpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(clan.vpisan)
 
 
