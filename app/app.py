@@ -4,10 +4,10 @@ from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory
 
 from app import env
-from app.services.neoserv import NeoServ
+from app.services.db_neoserv import NeoServ
 from app.services.jwt_auth import JwtAuth
-from app.services.stripe import Stripe
-from app.services.twilio import Twilio
+from app.services.payment_stripe import Stripe
+from app.services.sms_twilio import Twilio
 from app.db.zodb import ZoDB
 from core.use_cases import validation
 
