@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import autologging
 from autologging import traced
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
@@ -54,8 +55,8 @@ services: Services
 useCases: UseCases
 
 logging.basicConfig(
-	level=logging.INFO,
-	format="%(name)+20s ┃ %(levelname)s ┃ %(message)s",
+	level=logging.INFO if False else autologging.TRACE,
+	format="%(filename)+20s ┃ %(funcName)-30s ┃ %(levelname)+8s ┃ %(message)s",
 	handlers=[
 		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
 		logging.StreamHandler()
