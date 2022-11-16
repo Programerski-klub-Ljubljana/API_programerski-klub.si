@@ -13,7 +13,6 @@ class test_auth_route(unittest.TestCase):
 		app.init(seed=True)
 		api.init()
 		cls.client = TestClient(api.api)
-		cls.dbService = app.services.db()
 
 	def test_login_fail(self):
 		res = self.client.post('/auth/login', data={'username': 'asdf', 'password': 'adsf'})
