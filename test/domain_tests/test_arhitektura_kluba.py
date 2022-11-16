@@ -1,15 +1,11 @@
 import unittest
 from datetime import datetime, timedelta
-from random import randint
 
-from core.domain.arhitektura_kluba import Dovoljenja, Clan
-from core.domain.bancni_racun import Bancni_racun, TipTransakcije, Transakcija, KategorijaTransakcije
+from app.db import db_entities
+from core.domain.arhitektura_kluba import Dovoljenja
 
 
 class test_arhitektura_kluba(unittest.TestCase):
-
-	def clan(self, dni):
-		return Clan(kontakt=None, ime='kožušček', priimek='kral šđčć', rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, skrbniki=None)
 
 	def test_scopes(self):
 		vals = Dovoljenja.values()
@@ -20,17 +16,17 @@ class test_arhitektura_kluba(unittest.TestCase):
 			self.assertIn(sk, sv)
 
 	def test_clan_starost(self):
-		clan = self.clan(12 * 365 + 6 * 31)
+		clan = db_entities.init_clan(rojstro_delta_days=12 * 365 + 6 * 31)
 		self.assertLess(clan.starost - 12.5, 0.01)
 
 	def test_clan_mladoletnik(self):
-		clan1 = self.clan(18 * 365 + 1 * 30)
-		clan2 = self.clan(18 * 365 - 1 * 30)
+		clan1 = db_entities.init_clan(rojstro_delta_days=18 * 365 + 1 * 30)
+		clan2 = db_entities.init_clan(rojstro_delta_days=18 * 365 - 1 * 30)
 		self.assertFalse(clan1.mladoletnik)
 		self.assertTrue(clan2.mladoletnik)
 
 	def test_clan_vpisan(self):
-		clan = self.clan(0)
+		clan = db_entities.init_clan()
 		self.assertFalse(clan.vpisan)
 		clan.vpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(clan.vpisan)
@@ -44,47 +40,8 @@ class test_arhitektura_kluba(unittest.TestCase):
 		self.assertTrue(clan.vpisan)
 
 	def test_username(self):
-		clan = self.clan(0)
-		self.assertEqual(clan.username, 'kozuscekkralsdcc')
-
-class test_bancni_racun(unittest.TestCase):
-
-	def transakcija(self, prihodek=True, znesek: float = 0, placano: float = 0):
-		return Transakcija(
-			tip=TipTransakcije.PRIHODEK if prihodek else TipTransakcije.ODHODEK,
-			kategorija=KategorijaTransakcije.random(),
-			rok=datetime.utcnow() + timedelta(days=randint(-5, 5)),
-			opis='opis',
-			znesek=znesek,
-			placano=placano
-		)
-
-	def test_stanje(self):
-		bancni_racun = Bancni_racun(
-			ime='racun', stevilka='000', transakcije=[
-				self.transakcija(prihodek=True, znesek=10, placano=0),
-				self.transakcija(prihodek=True, znesek=10, placano=5),
-				self.transakcija(prihodek=True, znesek=10, placano=10),
-				self.transakcija(prihodek=False, znesek=5, placano=0),
-				self.transakcija(prihodek=False, znesek=5, placano=2.5),
-				self.transakcija(prihodek=False, znesek=5, placano=5),
-			])
-
-		self.assertEqual(bancni_racun.stanje, 0 + 5 + 10 - 2.5 - 5)
-
-	def test_dolgovi(self):
-		br = Bancni_racun(
-			ime='racun', stevilka='000', transakcije=[
-				self.transakcija(prihodek=True, znesek=10, placano=0),
-				self.transakcija(prihodek=True, znesek=10, placano=5),
-				self.transakcija(prihodek=True, znesek=10, placano=10),
-				self.transakcija(prihodek=False, znesek=5, placano=0),
-				self.transakcija(prihodek=False, znesek=5, placano=2.5),
-				self.transakcija(prihodek=False, znesek=5, placano=5),
-			])
-
-		self.assertListEqual(br.transakcije[3:5], br.dolgovi(tip_transakcije=TipTransakcije.ODHODEK))
-		self.assertEqual(br.transakcije[:2], br.dolgovi(tip_transakcije=TipTransakcije.PRIHODEK))
+		clan = db_entities.init_clan(ime='kožušček', priimek='šđžćč-ŠĐŽČĆ')
+		self.assertEqual(clan.username, 'kozusceksdzcc-sdzcc')
 
 
 if __name__ == '__main__':

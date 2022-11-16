@@ -1,13 +1,16 @@
 import unittest
 
+from starlette.testclient import TestClient
+
+from api import API
+
 
 class test_db(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		app.init(seed=True)
-		api.init()
-		cls.client = TestClient(api.api)
+		API.init()
+		cls.client = TestClient(API.fapi)
 
 	def test_db_table_path(self):
 		res = self.client.get('/db/clan/0')

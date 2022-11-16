@@ -3,34 +3,33 @@ from datetime import datetime
 
 from persistent.list import PersistentList
 
-from app import app
+from app import APP
+from app.db import db_entities
 from core.domain._entity import Elist, Log
 from core.domain._enums import LogTheme, LogLevel
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta
-from core.services.db_service import DbService
 
 
 class test_db(unittest.TestCase):
-	service = None
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		app.init()
-
-		cls.service: DbService = app.services.db()
+		APP.init(seed=False)
 
 		# TEST IF EMPTY
 		count = 0
-		with cls.service.transaction() as root:
+		with APP.db.transaction() as root:
+			print(type(root))
 			for k, v in root.__dict__.items():
-				count += 1
-				assert len(v) == 0 and isinstance(v, Elist)
+				if isinstance(v, Elist):
+					count += 1
+					assert len(v) == 0 and isinstance(v, Elist)
+		assert count > 0
 
-		cls.service.seed()
+		APP.db.seed()
 
 	def test_transaction(self):
 		count = 0
-		with self.service.transaction() as root:
+		with APP.db.transaction() as root:
 			for k, v in root.__dict__.items():
 				count += 1
 				self.assertGreater(len(v), 0, k)
@@ -38,9 +37,9 @@ class test_db(unittest.TestCase):
 		self.assertGreater(count, 0)
 
 	def test_entity_properties(self):
-		with self.service.transaction() as root:
-			k = root.kontakt[0]
-			self.assertEqual(k._razred, 'KONTAKT')
+		with APP.db.transaction() as root:
+			k = root.clan[0]
+			self.assertEqual(k._razred, 'CLAN')
 			self.assertLessEqual(k._ustvarjen, datetime.utcnow())
 			self.assertLessEqual(k._posodobljen, datetime.utcnow())
 			self.assertGreaterEqual(len(k._dnevnik), 0)
@@ -48,71 +47,72 @@ class test_db(unittest.TestCase):
 
 	def test_transaction_change(self):
 		ime = 'ime'
-		with self.service.transaction() as root:
+		with APP.db.transaction() as root:
 			self.assertNotEqual(root.clan[0].ime, ime)
 			root.clan[0].ime = ime
 
-		with self.service.transaction() as root:
+		with APP.db.transaction() as root:
 			self.assertEqual(root.clan[0].ime, ime)
 
 	def test_transaction_save_append(self):
-		# CREATE KONTACTS
-		kontakt_new = Kontakt(ime='ime', priimek='priimek', tip=TipKontakta.SKRBNIK, email=['jar.fmf@gmail.com'], telefon=['051248885'])
-		kontakt_new2 = Kontakt(ime='ime2', priimek='priimek2', tip=TipKontakta.SKRBNIK, email=['jar.fmf@gmail.com'], telefon=['051248885'])
 
-		# ARE THEY EQUAL?
-		self.assertNotEqual(kontakt_new2, kontakt_new)
+		with APP.db.transaction() as root:
+			# CREATE KONTACTS
+			clan1 = db_entities.init_clan(ime='ime1')
+			clan2 = db_entities.init_clan(ime='ime2')
 
-		# TEST IF LIST ARE NOT YET CONVERTED TO PERSISTENT LISTS
-		self.assertNotIsInstance(kontakt_new.email, PersistentList)
-		self.assertNotIsInstance(kontakt_new2.email, PersistentList)
+			# ARE THEY EQUAL?
+			self.assertNotEqual(clan2, clan1)
 
-		# TEST IF KONTACTS NOT EXISTS IN DB
-		with self.service.transaction() as root:
-			assert kontakt_new not in root.kontakt
-			assert kontakt_new2 not in root.kontakt
+			# TEST IF LIST ARE NOT YET CONVERTED TO PERSISTENT LISTS
+			self.assertNotIsInstance(clan1.vpisi, PersistentList)
+			self.assertNotIsInstance(clan2.vpisi, PersistentList)
+
+			# TEST IF KONTACTS NOT EXISTS IN DB
+			assert clan1 not in root.clan
+			assert clan2 not in root.clan
 
 			# INSERT NEW CONTACTS
-			root.save(kontakt_new)
-			root.kontakt.append(kontakt_new2)
+			root.save(clan1, clan2)
 
 		# FIND CONTACTS
-		kontakt_find = None
-		kontakt_find2 = None
-		with self.service.transaction() as root:
-			for kontakt in root.kontakt:
-				if kontakt == kontakt_new:
-					kontakt_find = kontakt
-				if kontakt == kontakt_new2:
-					kontakt_find2 = kontakt
+		# clan_find1 = None
+		# clan_find2 = None
 
-		# TEST IF FOUND EQUAL TO INSERTED
-		self.assertEqual(kontakt_find, kontakt_new)
-		self.assertEqual(kontakt_find2, kontakt_new2)
-
-		# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-		self.assertIsInstance(kontakt_find.email, PersistentList)
-		self.assertIsInstance(kontakt_find2.email, PersistentList)
-
-		# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-		self.assertIsInstance(kontakt_new.email, PersistentList)
-		self.assertIsInstance(kontakt_new2.email, PersistentList)
+		# with APP.db.transaction() as root:
+		# 	for clan in root.clan:
+		# 		if clan == clan1:
+		# 			clan_find1 = clan
+		# 		if clan == clan2:
+		# 			clan_find2 = clan
+		#
+		# 	TEST IF FOUND EQUAL TO INSERTED
+			# self.assertEqual(clan_find1, clan1)
+			# self.assertEqual(clan_find2, clan2)
+			#
+			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+			# self.assertIsInstance(clan_find1.vpisi, PersistentList)
+			# self.assertIsInstance(clan_find2.vpisi, PersistentList)
+			#
+			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+			# self.assertIsInstance(clan1.vpisi, PersistentList)
+			# self.assertIsInstance(clan2.vpisi, PersistentList)
 
 	def test_transaction_random_0(self):
-		with self.service.transaction() as root:
-			kontakt = root.kontakt.random()
-			kontakt2 = root.kontakt.random()
-			self.assertNotEqual(kontakt, kontakt2)
-			self.assertIn(kontakt, root.kontakt)
-			self.assertIn(kontakt2, root.kontakt)
-			self.assertNotEqual(root.kontakt.index(kontakt), root.kontakt.index(kontakt2))
+		with APP.db.transaction() as root:
+			clan1 = root.clan.random()
+			clan2 = root.clan.random()
+			self.assertNotEqual(clan1, clan2)
+			self.assertIn(clan1, root.clan)
+			self.assertIn(clan2, root.clan)
+			self.assertNotEqual(root.clan.index(clan1), root.clan.index(clan2))
 
 	def test_transaction_random_1(self):
-		with self.service.transaction() as root:
-			kontakts = root.kontakt.random(k=3)
-			self.assertTrue(kontakts[0] != kontakts[1] != kontakts[2])
-			for k in kontakts:
-				self.assertIn(k, root.kontakt)
+		with APP.db.transaction() as root:
+			clani = root.clan.random(k=3)
+			self.assertTrue(clani[0] != clani[1] != clani[2])
+			for k in clani:
+				self.assertIn(k, root.clan)
 
 	def test_povezi(self):
 		log = Log(nivo=LogLevel.ERROR, tema=LogTheme.PROBLEM, sporocilo="Sporocilo0")
@@ -124,9 +124,9 @@ class test_db(unittest.TestCase):
 		self.assertIn(log1, log._povezave)
 
 	def test_path(self):
-		with self.service.transaction() as root:
-			kontakti = root.kontakt.path(page=0, max_width=10)
-			self.assertEqual(kontakti, root.kontakt[:10])
+		with APP.db.transaction() as root:
+			kontakti = root.clan.path(page=0, max_width=10)
+			self.assertEqual(kontakti, root.clan[:10])
 			self.assertEqual(len(kontakti), 10)
 			self.assertIsNotNone(kontakti[0]._povezave[0]._povezave[0]._povezave[0])
 

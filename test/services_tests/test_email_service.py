@@ -1,13 +1,15 @@
 import unittest
 
-from app import app
+from app import APP
 
 
 class test_email(unittest.TestCase):
 
-	def setUp(self) -> None:
-		app.init(seed=False)
-		self.service = app.services.email()
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		APP.init(seed=False)
+		cls.service = APP.services.email()
 
 	def test_obstaja_pass(self):
 		self.assertTrue(

@@ -1,7 +1,8 @@
 import unittest
 from datetime import timedelta
 
-from app import APP
+from app import APP, ENV
+from app.db import db_entities
 from core.services.auth_service import AuthService
 
 
@@ -29,20 +30,18 @@ class test_auth(unittest.TestCase):
 		self.assertEqual(data_new, None)
 
 	def test_hash_verify_pass(self):
-		password = 'geslo'
-		hash = self.service.hash(password)
-		print(hash)
-		self.assertTrue(self.service.verify(password, hash))
+		token = self.service.hash(db_entities.geslo)
+		self.assertTrue(self.service.verify(db_entities.geslo, token))
 
 	def test_hash_verify_fail_0(self):
 		password = '1234567890'
-		hash = self.service.hash(password)[:-1] + 'a'
-		self.assertFalse(self.service.verify(password, hash))
+		token = self.service.hash(password)[:-1] + 'a'
+		self.assertFalse(self.service.verify(password, token))
 
 	def test_hash_verify_fail_1(self):
 		password = '1234567890'
-		hash = self.service.hash(password)
-		self.assertFalse(self.service.verify(password[:-1] + 'a', hash))
+		token = self.service.hash(password)
+		self.assertFalse(self.service.verify(password[:-1] + 'a', token))
 
 
 if __name__ == '__main__':

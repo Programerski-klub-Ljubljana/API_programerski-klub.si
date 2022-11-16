@@ -16,7 +16,7 @@ from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 
 @traced
 def entities(root, **kwargs):
-	clan = db_entities.clan
+	clan = db_entities.init_clan(ime='Uroš', priimek='Jarc', rojstro_delta_days=30 * 365)
 	root.save(clan)
 
 

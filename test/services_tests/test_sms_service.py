@@ -1,13 +1,13 @@
 import unittest
 
-from app import app
+from app import APP
 
 
 class test_sms(unittest.TestCase):
-
-	def setUp(self) -> None:
-		app.init()
-		self.service = app.services.sms()
+	@classmethod
+	def setUpClass(cls) -> None:
+		APP.init(seed=False)
+		cls.service = APP.services.sms()
 
 	def test_obstaja_0(self):
 		phone = '+386051240885'

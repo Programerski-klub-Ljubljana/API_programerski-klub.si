@@ -1,18 +1,21 @@
 import unittest
 
+from starlette.testclient import TestClient
+
+from api import API
+
 
 class test_root(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		app.init(seed=True)
-		api.init()
-		cls.client = TestClient(api.api)
+		API.init()
+		cls.client = TestClient(API.fapi)
 
 	def test_openapi(self):
 		res = self.client.get('/openapi.json')
 		body = res.json()
-		self.assertIsInstance(body['title'], str)
+		self.assertIsInstance(body['info'], dict)
 
 
 

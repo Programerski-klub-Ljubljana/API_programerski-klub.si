@@ -3,22 +3,8 @@ import sys
 from persistent.list import PersistentList
 from starlette.testclient import TestClient
 
-from api import API
-from app import APP
-
 this = sys.modules[__name__]
 client: TestClient | None = None
-
-
-def e2e_init():
-	API.init()
-	if this.client is None:
-		this.client = TestClient(API.fapi)
-	return this.client
-
-
-def init(seed=True):
-	APP.init(seed=seed)
 
 
 class BigNode:
