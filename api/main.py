@@ -8,7 +8,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from api import const, autils
-from api.routes import db, forms, user
+from api.routes import db, forms, auth
 from core import cutils
 
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +45,7 @@ def init():
 	# ROUTES REGISTER
 	api.include_router(db.router)
 	api.include_router(forms.router)
-	api.include_router(user.router)
+	api.include_router(auth.router)
 
 	# SETUP CUSTOM OPENAPI
 	api.openapi = custom_openapi

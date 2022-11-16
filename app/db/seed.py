@@ -43,6 +43,13 @@ def arhitektura_kluba(root, **kwargs):
 			rojen=fake.date_this_century(before_today=True),
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
+	root.save(Clan(
+		ime='Uroš',
+		priimek='Jarc',
+		geslo='$2b$12$JvPWCEnvDDC2YxXB/l/0S.NTQuaXdEDp5wLLG923QpX2s2os0jPMq',
+		rojen=fake.date_this_century(before_today=True),
+		vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
+		izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))]))
 
 	for _ in range(kwargs['ekipe']):
 		root.save(Ekipa(

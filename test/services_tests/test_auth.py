@@ -10,18 +10,18 @@ class test_auth(unittest.TestCase):
 	def setUp(self) -> None:
 		app.init(seed=False)
 		self.service: AuthService = app.services.auth()
-		self.data = {'key1': 'value1', 'key2': 'value2'}
+		self.data = {'username': 'urosjarc'}
 
 	def test_encode_decode_pass(self):
 		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=1))
-		data_new = self.service.decode(jwt)
+		data_new = self.service.decode(jwt.data)
 
 		for k, v in self.data.items():
 			self.assertEqual(self.data[k], data_new[k], k)
 
 	def test_encode_decode_expirated(self):
 		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=-1))
-		data_new = self.service.decode(jwt)
+		data_new = self.service.decode(jwt.data)
 		self.assertEqual(data_new, None)
 
 	def test_decode_wrong_token(self):
@@ -29,8 +29,9 @@ class test_auth(unittest.TestCase):
 		self.assertEqual(data_new, None)
 
 	def test_hash_verify_pass(self):
-		password = '1234567890'
+		password = 'urosjarc'
 		hash = self.service.hash(password)
+		print(hash)
 		self.assertTrue(self.service.verify(password, hash))
 
 	def test_hash_verify_fail_0(self):

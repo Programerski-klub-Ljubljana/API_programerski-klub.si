@@ -6,6 +6,7 @@ from transaction import TransactionManager
 from app import env
 from app.db import seed
 from core.domain._entity import Elist
+from core.domain.arhitektura_kluba import Clan
 from core.services.db_service import DbService, Transaction, DbRoot
 
 
@@ -26,6 +27,12 @@ class ZoDB(DbService):
 	def transaction(self, note: str | None = None):
 		return ZoDbTransaction(self.db, note=note)
 
+	def get_clan(self, username) -> Clan | None:
+		with self.transaction() as root:
+			for user in root.clan:
+				if user.username == username:
+					return user
+		return None
 
 class ZoDbRoot(DbRoot):
 	def __init__(self, root):

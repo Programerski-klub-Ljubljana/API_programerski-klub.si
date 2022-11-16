@@ -14,6 +14,7 @@ DB_PATH: None | str = None
 SECRET_KEY: None | str = ''
 PHONE_CODE: str = '+386'
 TOKEN_URL: str = '/user/login'
+TOKEN_EXPIRE: int = 20
 
 
 def init():
@@ -22,6 +23,8 @@ def init():
 		key = str(k)
 		if not key.startswith('__') and key.isupper():
 			val = os.environ[k]
-			setattr(this, k, None if len(val) == 0 else val)
-
-	return None
+			if val.isnumeric():
+				val = float(val)
+			elif len(val) == 0:
+				val = None
+			setattr(this, k, val)

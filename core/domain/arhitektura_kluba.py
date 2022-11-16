@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
+from unidecode import unidecode
+
 from core import cutils
 from core.domain._entity import elist, Elist, Entity
 from core.domain._enums import EntityEnum
@@ -76,6 +78,9 @@ class Clan(Entity):
 
 		return zadnji_vpis > zadnji_izpis
 
+	@property
+	def username(self) -> str:
+		return unidecode(f'{self.ime}{self.priimek}'.replace(' ', '').lower())
 
 @dataclass
 class Ekipa(Entity):

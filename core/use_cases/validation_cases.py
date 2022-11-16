@@ -3,7 +3,12 @@ from dataclasses import dataclass
 from core.domain.arhitektura_kluba import Kontakt, Clan
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
-from core.services.sutils import Validation
+
+
+@dataclass
+class Validation:
+	data: str
+	ok: bool
 
 
 @dataclass

@@ -2,15 +2,10 @@ from datetime import datetime, timedelta
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from app import env
-from core.services.auth_service import AuthService
-
-
-class Token(BaseModel):
-	access_token: str
-	token_type: str
+from core.services.auth_service import AuthService, Token
 
 
 class JwtAuth(AuthService):
@@ -18,12 +13,12 @@ class JwtAuth(AuthService):
 		self.algo = "HS256"
 		self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-	def encode(self, data: dict, expiration: timedelta):
+	def encode(self, data: dict, expiration: timedelta) -> Token:
 		to_encode = data.copy()  # Because you don't want to change dict instance
 		expire = datetime.utcnow() + expiration
 		to_encode.update({"exp": expire})
 		encoded_jwt = jwt.encode(to_encode, env.SECRET_KEY, algorithm=self.algo)
-		return encoded_jwt
+		return Token(type='bearer', data=encoded_jwt)
 
 	def decode(self, token: str):
 		try:

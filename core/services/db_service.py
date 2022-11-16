@@ -53,3 +53,11 @@ class DbService(ABC):
 	@abstractmethod
 	def seed(self):
 		pass
+
+	@abstractmethod
+	def get_clan(self, username) -> Clan | None:
+		with self.transaction() as root:
+			for user in root.clan:
+				if user.username == username:
+					return user
+		return None

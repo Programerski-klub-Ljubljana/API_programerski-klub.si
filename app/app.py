@@ -5,7 +5,7 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 
 from app import env
 from app.db.zodb import ZoDB
-from app.services.db_neoserv import NeoServ
+from app.services.email_neoserv import NeoServ
 from app.services.jwt_auth import JwtAuth
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio
@@ -14,7 +14,7 @@ from core.services.db_service import DbService
 from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
 from core.services.sms_service import SmsService
-from core.use_cases import validation_cases, db_cases
+from core.use_cases import validation_cases, db_cases, auth_cases
 
 
 class Services(DeclarativeContainer):
@@ -32,6 +32,10 @@ class UseCases(DeclarativeContainer):
 	__deps = [dc.email, dc.sms]
 	validate_kontakt = Factory(validation_cases.Validate_kontakt, *__deps)
 	validate_clan = Factory(validation_cases.Validate_clan, *__deps)
+
+	# AUTH
+	__deps = [dc.auth, dc.db]
+	auth_login = Factory(auth_cases.Auth_login, *__deps)
 
 	# DB
 	__deps = [dc.db]

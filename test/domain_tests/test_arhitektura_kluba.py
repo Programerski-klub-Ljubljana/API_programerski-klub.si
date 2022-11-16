@@ -9,7 +9,7 @@ from core.domain.bancni_racun import Bancni_racun, TipTransakcije, Transakcija, 
 class test_arhitektura_kluba(unittest.TestCase):
 
 	def clan(self, dni):
-		return Clan(kontakt=None, ime=None, priimek=None, rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, skrbniki=None)
+		return Clan(kontakt=None, ime='kožušček', priimek='kral šđčć', rojen=datetime.utcnow() - timedelta(days=dni), geslo=None, dovoljenja=None, skrbniki=None)
 
 	def test_scopes(self):
 		vals = Dovoljenja.values()
@@ -43,6 +43,9 @@ class test_arhitektura_kluba(unittest.TestCase):
 		clan.izpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(clan.vpisan)
 
+	def test_username(self):
+		clan = self.clan(0)
+		self.assertEqual(clan.username, 'kozuscekkralsdcc')
 
 class test_bancni_racun(unittest.TestCase):
 

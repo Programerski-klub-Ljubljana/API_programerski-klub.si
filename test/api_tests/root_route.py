@@ -14,12 +14,11 @@ class test_db_route(unittest.TestCase):
 		api.init()
 		cls.client = TestClient(api.api)
 
-	def test_db_table_path(self):
-		res = self.client.get('/db/clan/0')
+	def test_openapi(self):
+		res = self.client.get('/openapi.json')
 		body = res.json()
-		self.assertEqual(res.status_code, 200)
-		self.assertIsInstance(body['ime'], str)
-		self.assertEqual(body['_razred'], 'CLAN')
+		self.assertIsInstance(body['title'], str)
+
 
 
 if __name__ == '__main__':
