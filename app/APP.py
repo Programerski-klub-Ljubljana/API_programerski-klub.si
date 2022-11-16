@@ -1,10 +1,11 @@
+import logging
 import sys
 
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
 
-from app import env
-from app.db.zodb import ZoDB
+from app import ENV
+from app.db.db_zodb import ZoDB
 from app.services.email_neoserv import NeoServ
 from app.services.jwt_auth import JwtAuth
 from app.services.payment_stripe import Stripe
@@ -16,13 +17,24 @@ from core.services.payment_service import PaymentService
 from core.services.sms_service import SmsService
 from core.use_cases import validation_cases, db_cases, auth_cases
 
+log = logging.getLogger(__name__)
+
+logging.basicConfig(
+	level=logging.INFO,
+	format="%(levelname)s | %(message)s",
+	handlers=[
+		logging.FileHandler("log_file.log"),
+		logging.StreamHandler()
+	]
+)
+
 
 class Services(DeclarativeContainer):
 	auth: Provider[AuthService] = Singleton(JwtAuth)
-	db: Provider[DbService] = Singleton(ZoDB)
+	db: Provider[DbService] = Singleton(ZoDB, storage=ENV.DB_PATH)
 	email: Provider[EmailService] = Singleton(NeoServ)
 	payment: Provider[PaymentService] = Singleton(Stripe)
-	sms: Provider[SmsService] = Singleton(Twilio, account_sid=env.TWILIO_ACCOUNT_SID, auth_token=env.TWILIO_AUTH_TOKEN)
+	sms: Provider[SmsService] = Singleton(Twilio, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 
 
 class UseCases(DeclarativeContainer):
@@ -43,14 +55,29 @@ class UseCases(DeclarativeContainer):
 
 
 this = sys.modules[__name__]
+inited: bool = False
+db: DbService
 services: Services
 useCases: UseCases
 
 
 def init(seed: bool = False):
-	env.init()
-	this.services = Services()
-	this.useCases = UseCases(dc=this.services)
+	if this.inited:
+		print('APP already inited!!!')
+		return
 
-	if seed:
-		this.services.db().seed()
+	log.info("loguru info log")
+
+	ENV.init()
+
+	this.services = Services()
+	this.useCases = UseCases(dc=services)
+	this.db = this.services.db()
+
+	this.db.open()
+	if seed: this.db.seed()
+
+	this.inited = True
+
+
+__all__ = ['ENV', 'init', 'services', 'useCases']

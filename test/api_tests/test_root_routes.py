@@ -1,12 +1,7 @@
 import unittest
 
-from starlette.testclient import TestClient
 
-from api import main as api
-from app import app
-
-
-class test_db_route(unittest.TestCase):
+class test_root(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:

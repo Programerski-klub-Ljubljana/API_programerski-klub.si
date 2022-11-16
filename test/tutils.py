@@ -1,7 +1,27 @@
+import sys
+
 from persistent.list import PersistentList
+from starlette.testclient import TestClient
+
+from api import API
+from app import APP
+
+this = sys.modules[__name__]
+client: TestClient | None = None
 
 
-class Node:
+def e2e_init():
+	API.init()
+	if this.client is None:
+		this.client = TestClient(API.fapi)
+	return this.client
+
+
+def init(seed=True):
+	APP.init(seed=seed)
+
+
+class BigNode:
 	def __init__(self, c):
 		# 15
 		self.a = None
@@ -18,45 +38,33 @@ class Node:
 		self.o = c
 
 
-class Node2:
+class SmallNode:
 	def __init__(self, v, child):
 		self.data = v
 		self.child = child
 		self._dnevnik = '_dnevnik'
 
 
-dicts = [{'key': 1, 'key2': 'asdf'}, {}]
-iterables = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
-values = [None, True, 1, 1.2, "asdf"]
-objects = [Node(c=[])]
-
-tree = Node(c=[Node(c=Node(c=[]))])
-tree_json = {
-	'a': None,
-	'b': True,
-	'c': 1,
-	'd': 1.2,
-	'e': 'abc',
-	'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-	'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-	'j': [1, 2, 3],
-	'k': [],
-	'l': {},
-	'n': [],
-	'o': [
-		{
-			'a': None,
-			'b': True,
-			'c': 1,
-			'd': 1.2,
-			'e': 'abc',
-			'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
-			'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
-			'j': [1, 2, 3],
-			'k': [],
-			'l': {},
-			'n': [],
-			'o': {
+class Fixtures:
+	dicts = [{'key': 1, 'key2': 'asdf'}, {}]
+	iterables = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
+	values = [None, True, 1, 1.2, "asdf"]
+	objects = [BigNode(c=[])]
+	tree_wide = BigNode(c=[BigNode(c=BigNode(c=[]))])
+	tree_wide_json = {
+		'a': None,
+		'b': True,
+		'c': 1,
+		'd': 1.2,
+		'e': 'abc',
+		'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+		'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+		'j': [1, 2, 3],
+		'k': [],
+		'l': {},
+		'n': [],
+		'o': [
+			{
 				'a': None,
 				'b': True,
 				'c': 1,
@@ -68,29 +76,40 @@ tree_json = {
 				'k': [],
 				'l': {},
 				'n': [],
-				'o': [],
-			}
-		}]
-}
-
-tree2 = [
-	Node2(1, child=[
-		Node2(11, child=[
-			Node2(21, child=[
-				Node2(31, child=[]),
-				Node2(32, child=[]),
-				Node2(33, child=[]),
-				Node2(34, child=[]),
+				'o': {
+					'a': None,
+					'b': True,
+					'c': 1,
+					'd': 1.2,
+					'e': 'abc',
+					'f': [None, True, 1, 1.2, 'asdf', [1, 2, 3], {'a': 1, 'b': 2}],
+					'g': {'a': None, 'b': True, 'c': 1, 'd': 1.2, 'e': 'asdf', 'f': [1, 2, 3], 'g': {'a': 1, 'b': 2}},
+					'j': [1, 2, 3],
+					'k': [],
+					'l': {},
+					'n': [],
+					'o': [],
+				}
+			}]
+	}
+	tree_deep = [
+		SmallNode(1, child=[
+			SmallNode(11, child=[
+				SmallNode(21, child=[
+					SmallNode(31, child=[]),
+					SmallNode(32, child=[]),
+					SmallNode(33, child=[]),
+					SmallNode(34, child=[]),
+				]),
+				SmallNode(22, child=[]),
+				SmallNode(23, child=[]),
+				SmallNode(24, child=[]),
 			]),
-			Node2(22, child=[]),
-			Node2(23, child=[]),
-			Node2(24, child=[]),
+			SmallNode(12, child=[]),
+			SmallNode(13, child=[]),
+			SmallNode(14, child=[]),
 		]),
-		Node2(12, child=[]),
-		Node2(13, child=[]),
-		Node2(14, child=[]),
-	]),
-	Node2(2, child=[]),
-	Node2(3, child=[]),
-	Node2(4, child=[]),
-]
+		SmallNode(2, child=[]),
+		SmallNode(3, child=[]),
+		SmallNode(4, child=[]),
+	]

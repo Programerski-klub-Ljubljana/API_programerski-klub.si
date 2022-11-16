@@ -47,6 +47,10 @@ class Transaction(ABC):
 class DbService(ABC):
 
 	@abstractmethod
+	def open(self):
+		pass
+
+	@abstractmethod
 	def transaction(self, note: str | None = None) -> Transaction:
 		pass
 
@@ -56,8 +60,4 @@ class DbService(ABC):
 
 	@abstractmethod
 	def get_clan(self, username) -> Clan | None:
-		with self.transaction() as root:
-			for user in root.clan:
-				if user.username == username:
-					return user
-		return None
+		pass

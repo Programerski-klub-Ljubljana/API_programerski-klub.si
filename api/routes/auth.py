@@ -4,10 +4,11 @@ from pydantic import BaseModel
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from api import autils
-from app import app
+from app import APP
 
 router = autils.router(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
 
 class TokenResponse(BaseModel):
 	access_token: str
@@ -16,7 +17,7 @@ class TokenResponse(BaseModel):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-	login = app.useCases.auth_login()
+	login = APP.useCases.auth_login()
 	token = login.invoke(username=form_data.username, password=form_data.password)
 
 	if token is not None:
@@ -27,7 +28,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 		detail="Incorrect username or password",
 		headers={"WWW-Authenticate": "Bearer"},
 	)
-
 
 
 @router.get("/info")

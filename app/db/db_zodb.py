@@ -3,26 +3,32 @@ from dataclasses import dataclass
 import ZODB
 from transaction import TransactionManager
 
-from app import env
-from app.db import seed
+from app.db import db_seed, db_entities
 from core.domain._entity import Elist
 from core.domain.arhitektura_kluba import Clan
 from core.services.db_service import DbService, Transaction, DbRoot
 
 
 class ZoDB(DbService):
-	db: ZODB.DB = ZODB.DB(env.DB_PATH)
+	def __init__(self, storage: str):
+		self.storage = storage
+		self.db = None
+
+	def open(self):
+		self.db = ZODB.DB(storage=self.storage)
 
 	def seed(self):
 		with self.db.transaction(note="seed.migrate") as connection:
 			root = ZoDbRoot(connection.root)
-			seed.arhitektura_kluba(root, kontakti=60, clani=30, ekipe=10, oddeleki=4, klubi=3)
-			seed.bancni_racun(root, transakcije=180, bancni_racun=3)
-			seed.oznanila_sporocanja(root, objave=50, sporocila=90)
-			seed.srecanja_dogodki_tekme(root, dogodek=20)
-			seed.vaje_naloge(root, naloge=40, test=10)
-			seed.logs(root, logs=10)
-			seed.povezave(root, elementi=10, povezave=5)
+
+			db_seed.entities(root)
+			db_seed.arhitektura_kluba(root, kontakti=60, clani=30, ekipe=10, oddeleki=4, klubi=3)
+			db_seed.bancni_racun(root, transakcije=180, bancni_racun=3)
+			db_seed.oznanila_sporocanja(root, objave=50, sporocila=90)
+			db_seed.srecanja_dogodki_tekme(root, dogodek=20)
+			db_seed.vaje_naloge(root, naloge=40, test=10)
+			db_seed.logs(root, logs=10)
+			db_seed.povezave(root, elementi=10, povezave=5)
 
 	def transaction(self, note: str | None = None):
 		return ZoDbTransaction(self.db, note=note)
@@ -33,6 +39,7 @@ class ZoDB(DbService):
 				if user.username == username:
 					return user
 		return None
+
 
 class ZoDbRoot(DbRoot):
 	def __init__(self, root):

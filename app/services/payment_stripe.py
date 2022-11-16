@@ -6,7 +6,6 @@ from stripe.api_resources.invoice import Invoice
 from stripe.api_resources.transfer import Transfer
 from stripe.api_resources.webhook_endpoint import WebhookEndpoint
 
-from app import env
 from core.services.payment_service import PaymentService
 
 

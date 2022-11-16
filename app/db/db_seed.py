@@ -1,10 +1,8 @@
 from datetime import timedelta
 from random import choice, randint, uniform
-from typing import Union
 
-from faker import Faker
-from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
-
+from app.db import db_entities
+from app.db.db_entities import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Clan, Ekipa, Oddelek, Klub
@@ -13,17 +11,10 @@ from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo, TipSpo
 from core.domain.srecanja_dogodki import Dogodek, TipDogodka
 from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 
-fake: Union[
-	address.Provider,
-	company.Provider,
-	date_time.Provider,
-	internet.Provider,
-	person.Provider,
-	phone_number.Provider,
-	ssn.Provider,
-	lorem.Provider,
-	Faker
-] = Faker("sl_SI")
+
+def entities(root, **kwargs):
+	clan = db_entities.clan
+	root.save(clan)
 
 
 def arhitektura_kluba(root, **kwargs):
@@ -39,17 +30,10 @@ def arhitektura_kluba(root, **kwargs):
 		root.save(Clan(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
-			geslo=fake.numerify("##################"),
+			geslo=db_entities.geslo,
 			rojen=fake.date_this_century(before_today=True),
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
 			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
-	root.save(Clan(
-		ime='Uroš',
-		priimek='Jarc',
-		geslo='$2b$12$JvPWCEnvDDC2YxXB/l/0S.NTQuaXdEDp5wLLG923QpX2s2os0jPMq',
-		rojen=fake.date_this_century(before_today=True),
-		vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
-		izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))]))
 
 	for _ in range(kwargs['ekipe']):
 		root.save(Ekipa(

@@ -1,15 +1,15 @@
 import unittest
 from datetime import timedelta
 
-from app import app
+from app import APP
 from core.services.auth_service import AuthService
 
 
 class test_auth(unittest.TestCase):
 
 	def setUp(self) -> None:
-		app.init(seed=False)
-		self.service: AuthService = app.services.auth()
+		APP.init(seed=False)
+		self.service: AuthService = APP.services.auth()
 		self.data = {'username': 'urosjarc'}
 
 	def test_encode_decode_pass(self):
@@ -29,7 +29,7 @@ class test_auth(unittest.TestCase):
 		self.assertEqual(data_new, None)
 
 	def test_hash_verify_pass(self):
-		password = 'urosjarc'
+		password = 'geslo'
 		hash = self.service.hash(password)
 		print(hash)
 		self.assertTrue(self.service.verify(password, hash))

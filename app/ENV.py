@@ -4,7 +4,7 @@ import sys
 from dotenv import load_dotenv
 
 this = sys.modules[__name__]
-
+inited: bool = False
 MAIL_PASSWORD: None | str = ''
 STRIPE_API_KEY: None | str = ''
 IS_REAL_EMAIL_BEARER: None | str = ''
@@ -18,6 +18,7 @@ TOKEN_EXPIRE: int = 20
 
 
 def init():
+	this.inited = True
 	load_dotenv()
 	for (k, v) in list(this.__dict__.items()):
 		key = str(k)
