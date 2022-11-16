@@ -14,7 +14,6 @@ from api.routes import db, forms, auth
 from app import APP
 from core import cutils
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 this = sys.modules[__name__]
@@ -48,7 +47,7 @@ def init():
 	APP.init(seed=True)
 
 	# TIMING RESPONSES
-	add_timing_middleware(fapi, record=log.info, prefix="services_tests", exclude="untimed")
+	add_timing_middleware(fapi, record=log.info)
 
 	# CORS
 	fapi.add_middleware(CORSMiddleware, **const.cors)

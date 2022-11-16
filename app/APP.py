@@ -10,6 +10,7 @@ from app.services.email_neoserv import NeoServ
 from app.services.jwt_auth import JwtAuth
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio
+from core import cutils
 from core.services.auth_service import AuthService
 from core.services.db_service import DbService
 from core.services.email_service import EmailService
@@ -21,9 +22,9 @@ log = logging.getLogger(__name__)
 
 logging.basicConfig(
 	level=logging.INFO,
-	format="%(levelname)s | %(message)s",
+	format="%(name)+20s ┃ %(levelname)s ┃ %(message)s",
 	handlers=[
-		logging.FileHandler("log_file.log"),
+		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
 		logging.StreamHandler()
 	]
 )
