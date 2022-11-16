@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from autologging import traced
+
 version = '0.1.0'
 klub = 'Programerski klub Ljubljana'
 email = 'info@programerski-klub.si'
@@ -30,6 +32,7 @@ cors = {
 
 
 @dataclass
+@traced
 class Form:
 	subject: str
 	msg: str

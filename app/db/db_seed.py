@@ -1,6 +1,8 @@
 from datetime import timedelta
 from random import choice, randint, uniform
 
+from autologging import traced
+
 from app.db import db_entities
 from app.db.db_entities import fake
 from core.domain._entity import Log
@@ -12,11 +14,13 @@ from core.domain.srecanja_dogodki import Dogodek, TipDogodka
 from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 
 
+@traced
 def entities(root, **kwargs):
 	clan = db_entities.clan
 	root.save(clan)
 
 
+@traced
 def arhitektura_kluba(root, **kwargs):
 	for _ in range(kwargs['kontakti']):
 		root.save(Kontakt(
@@ -53,6 +57,7 @@ def arhitektura_kluba(root, **kwargs):
 			oddelki=root.oddelek))
 
 
+@traced
 def bancni_racun(root, **kwargs):
 	for _ in range(kwargs['transakcije']):
 		znesek = round(uniform(0, 1000), 3)
@@ -72,6 +77,7 @@ def bancni_racun(root, **kwargs):
 			transakcije=root.transakcija.random(k=50)))
 
 
+@traced
 def oznanila_sporocanja(root, **kwargs):
 	for _ in range(kwargs['objave']):
 		root.save(Objava(
@@ -86,6 +92,7 @@ def oznanila_sporocanja(root, **kwargs):
 			vsebina=fake.sentence(50)))
 
 
+@traced
 def srecanja_dogodki_tekme(root, **kwargs):
 	for _ in range(kwargs['dogodek']):
 		zacetek = fake.date_time_this_year(after_now=True)
@@ -98,6 +105,7 @@ def srecanja_dogodki_tekme(root, **kwargs):
 			konec=zacetek + timedelta(minutes=randint(30, 300))))
 
 
+@traced
 def vaje_naloge(root, **kwargs):
 	for _ in range(kwargs['naloge']):
 		root.save(Naloga(
@@ -116,6 +124,7 @@ def vaje_naloge(root, **kwargs):
 			naloge=root.naloga.random(k=randint(5, 30))))
 
 
+@traced
 def logs(root, **kwargs):
 	for name, table in root.__dict__.items():
 		for entity in table:
@@ -128,6 +137,7 @@ def logs(root, **kwargs):
 				entity._dnevnik.append(log)
 
 
+@traced
 def povezave(root, **kwargs):
 	tables = list(root.__dict__.values())
 	for i in range(len(tables)):

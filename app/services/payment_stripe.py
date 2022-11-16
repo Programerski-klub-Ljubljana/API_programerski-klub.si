@@ -6,6 +6,7 @@ from stripe.api_resources.invoice import Invoice
 from stripe.api_resources.transfer import Transfer
 from stripe.api_resources.webhook_endpoint import WebhookEndpoint
 
+from app import ENV
 from core.services.payment_service import PaymentService
 
 
@@ -16,7 +17,7 @@ class Stripe(PaymentService):
 
 
 def init():
-	stripe.api_key = env.STRIPE_API_KEY
+	stripe.api_key = ENV.STRIPE_API_KEY
 
 
 def webhook_create(

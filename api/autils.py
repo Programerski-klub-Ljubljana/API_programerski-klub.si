@@ -1,13 +1,16 @@
+from autologging import traced
 from fastapi import APIRouter
 
 from api import const
 
 
+@traced
 def router(_name_) -> APIRouter:
 	name = _name_.split('.')[-1]
 	return APIRouter(prefix=f'/{name}', tags=[name])
 
 
+@traced
 def openapi(data):
 	translator = {}
 	for path in data["paths"].values():

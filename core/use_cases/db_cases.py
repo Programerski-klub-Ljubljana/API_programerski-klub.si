@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from autologging import traced
+
 from core import cutils
 from core.services.db_service import DbService
 
@@ -10,6 +12,7 @@ class DbUseCase:
 	dbService: DbService
 
 
+@traced
 class Db_path(DbUseCase):
 	def invoke(self, table: str, path: str = None, page: int = 0, per_page: int = 10, max_depth: int = 3, max_width: int = 10) -> Any:
 		with self.dbService.transaction() as root:

@@ -1,3 +1,4 @@
+from autologging import traced
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ class TokenResponse(BaseModel):
 	token_type: str
 
 
+@traced
 @router.post("/login", response_model=TokenResponse)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	login = APP.useCases.auth_login()
@@ -30,16 +32,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	)
 
 
+@traced
 @router.get("/info")
 async def info():
 	return 'current_user'
 
 
+@traced
 @router.get("/items")
 async def items():
 	return [{"item_id": "Foo", "owner": 'current_user.username'}]
 
 
+@traced
 @router.get("/status")
 async def status():
 	return {"status": "ok"}

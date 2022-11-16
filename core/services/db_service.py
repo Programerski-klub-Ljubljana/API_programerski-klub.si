@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from autologging import traced
+
 from core.domain._entity import elist, Entity, Log
 from core.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
 from core.domain.bancni_racun import Transakcija, Bancni_racun
@@ -14,6 +16,7 @@ class DbError(Exception):
 	info: str
 
 
+@traced
 class DbRoot(ABC):
 	log: elist[Log]
 	klub: elist[Klub]
@@ -34,6 +37,7 @@ class DbRoot(ABC):
 		pass
 
 
+@traced
 class Transaction(ABC):
 	@abstractmethod
 	def __enter__(self) -> DbRoot:
@@ -44,6 +48,7 @@ class Transaction(ABC):
 		pass
 
 
+@traced
 class DbService(ABC):
 
 	@abstractmethod

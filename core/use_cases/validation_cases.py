@@ -1,8 +1,14 @@
+import logging
 from dataclasses import dataclass
+
+from autologging import traced
 
 from core.domain.arhitektura_kluba import Kontakt, Clan
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
+
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -17,6 +23,7 @@ class ClanUseCase:
 	smsService: SmsService
 
 
+@traced
 class Validate_kontakt(ClanUseCase):
 	def invoke(self, kontakt: Kontakt) -> list[Validation]:
 		validations = []
@@ -28,6 +35,7 @@ class Validate_kontakt(ClanUseCase):
 		return validations
 
 
+@traced
 class Validate_clan(ClanUseCase):
 
 	def invoke(self, clan: Clan) -> list[Validation]:

@@ -29,6 +29,7 @@ dependency-injector
 
 # TESTING
 coverage
+autologging
 
 # SERVICES
 stripe

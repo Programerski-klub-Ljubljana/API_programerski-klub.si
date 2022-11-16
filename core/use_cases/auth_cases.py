@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import timedelta
 
+from autologging import traced
+
 from app import ENV
 from core.services.auth_service import AuthService, Token
 from core.services.db_service import DbService
@@ -12,6 +14,7 @@ class UserUseCase:
 	dbService: DbService
 
 
+@traced
 class Auth_login(UserUseCase):
 	def invoke(self, username, password) -> Token | None:
 		clan = self.dbService.get_clan(username)

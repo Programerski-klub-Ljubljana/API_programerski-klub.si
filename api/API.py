@@ -2,6 +2,7 @@
 import logging
 import sys
 
+from autologging import traced
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi_utils.timing import add_timing_middleware
@@ -21,6 +22,7 @@ inited: bool = False
 fapi = FastAPI(**const.fastapi)
 
 
+@traced
 @fapi.exception_handler(Exception)
 async def exception_handler(request: Request, exc: Exception):
 	return JSONResponse(
@@ -29,6 +31,7 @@ async def exception_handler(request: Request, exc: Exception):
 	)
 
 
+@traced
 def custom_openapi():
 	if fapi.openapi_schema:
 		return fapi.openapi_schema
@@ -38,10 +41,10 @@ def custom_openapi():
 	return fapi.openapi_schema
 
 
+@traced
 def init():
-	log.info("API init")
 	if this.inited:
-		print('API already inited!')
+		log.warning('API already inited!')
 		return
 
 	APP.init(seed=True)

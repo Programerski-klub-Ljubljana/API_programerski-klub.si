@@ -1,5 +1,6 @@
 from datetime import date
 
+from autologging import traced
 from fastapi import Form
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -14,6 +15,7 @@ router = autils.router(__name__)
 templates = Jinja2Templates(directory=cutils.root_path("templates"))
 
 
+@traced
 @router.post("/vpis", response_class=HTMLResponse)
 async def vpis(
 		request: Request,
@@ -93,11 +95,13 @@ async def vpis(
 	return templates.TemplateResponse("forms_success.html", kwargs)
 
 
+@traced
 @router.post("/izpis")
 def izpis():
 	return {}
 
 
+@traced
 @router.post('/kontakt')
 def kontakt():
 	return {'kontakt': True}

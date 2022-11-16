@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from autologging import traced
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
 
@@ -17,17 +18,6 @@ from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
 from core.services.sms_service import SmsService
 from core.use_cases import validation_cases, db_cases, auth_cases
-
-log = logging.getLogger(__name__)
-
-logging.basicConfig(
-	level=logging.INFO,
-	format="%(name)+20s ┃ %(levelname)s ┃ %(message)s",
-	handlers=[
-		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
-		logging.StreamHandler()
-	]
-)
 
 
 class Services(DeclarativeContainer):
@@ -55,19 +45,29 @@ class UseCases(DeclarativeContainer):
 	db_path = Factory(db_cases.Db_path, *__deps)
 
 
+log = logging.getLogger(__name__)
+
 this = sys.modules[__name__]
 inited: bool = False
 db: DbService
 services: Services
 useCases: UseCases
 
+logging.basicConfig(
+	level=logging.INFO,
+	format="%(name)+20s ┃ %(levelname)s ┃ %(message)s",
+	handlers=[
+		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
+		logging.StreamHandler()
+	]
+)
 
+
+@traced
 def init(seed: bool = False):
 	if this.inited:
-		print('APP already inited!!!')
+		log.info('APP already inited!!!')
 		return
-
-	log.info("loguru info log")
 
 	ENV.init()
 

@@ -5,6 +5,7 @@ import requests
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
+from app import ENV
 from core.services.email_service import EmailService
 
 
@@ -14,7 +15,7 @@ class NeoServ(EmailService):
 		response = requests.get(
 			"https://isitarealemail.com/api/email/validate",
 			params={'email': email},
-			headers={'Authorization': f"Bearer {env.IS_REAL_EMAIL_BEARER}"})
+			headers={'Authorization': f"Bearer {ENV.IS_REAL_EMAIL_BEARER}"})
 
 		status = response.json()['status']
 		return status == 'valid'

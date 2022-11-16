@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import ZODB
 from transaction import TransactionManager
 
-from app.db import db_seed, db_entities
+from app.db import db_seed
 from core.domain._entity import Elist
 from core.domain.arhitektura_kluba import Clan
 from core.services.db_service import DbService, Transaction, DbRoot
