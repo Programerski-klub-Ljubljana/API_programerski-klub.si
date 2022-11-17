@@ -5,28 +5,28 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
-from app import ENV
 from core.services.auth_service import AuthService, Token
 
 
 @traced
 class JwtAuth(AuthService):
-	def __init__(self):
+	def __init__(self, secret: str):
 		if hasattr(self, 'pwd_context'):
 			raise Exception("Double init!")
 		self.algo = "HS256"
+		self.secret = secret
 		self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 	def encode(self, data: dict, expiration: timedelta) -> Token:
 		to_encode = data.copy()  # Because you don't want to change dict instance
 		expire = datetime.utcnow() + expiration
 		to_encode.update({"exp": expire})
-		encoded_jwt = jwt.encode(to_encode, ENV.SECRET_KEY, algorithm=self.algo)
+		encoded_jwt = jwt.encode(to_encode, self.secret, algorithm=self.algo)
 		return Token(type='bearer', data=encoded_jwt)
 
 	def decode(self, token: str):
 		try:
-			return jwt.decode(token, ENV.SECRET_KEY, algorithms=[self.algo])
+			return jwt.decode(token, self.secret, algorithms=[self.algo])
 		except (JWTError, ValidationError):
 			return None
 

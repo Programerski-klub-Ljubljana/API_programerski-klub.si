@@ -22,7 +22,7 @@ from core.use_cases import validation_cases, db_cases, auth_cases
 
 
 class Services(DeclarativeContainer):
-	auth: Provider[AuthService] = Singleton(JwtAuth)
+	auth: Provider[AuthService] = Singleton(JwtAuth, secret=ENV.SECRET_KEY)
 	db: Provider[DbService] = Singleton(ZoDB, storage=ENV.DB_PATH)
 	email: Provider[EmailService] = Singleton(NeoServ)
 	payment: Provider[PaymentService] = Singleton(Stripe)

@@ -1,4 +1,3 @@
-import time
 import unittest
 
 from app import APP
@@ -13,7 +12,6 @@ class test_auth(unittest.TestCase):
 		# USE CASE
 		self.auth_service: AuthService = APP.services.auth()
 		self.auth_login = APP.useCases.auth_login()
-
 
 	def test_login_pass(self):
 		token = self.auth_login.invoke('urosjarc', 'geslo')

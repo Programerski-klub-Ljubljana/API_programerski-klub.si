@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime
+from random import randint
 
 from persistent.list import PersistentList
 
@@ -45,13 +46,17 @@ class test_db(unittest.TestCase):
 			self.assertGreaterEqual(len(k._povezave), 0)
 
 	def test_transaction_change(self):
-		ime = 'ime'
-		with APP.db.transaction() as root:
-			self.assertNotEqual(root.clan[0].ime, ime)
-			root.clan[0].ime = ime
+		new_ime = '12345'
 
 		with APP.db.transaction() as root:
-			self.assertEqual(root.clan[0].ime, ime)
+			index = randint(0, len(root.clan) - 1)
+			self.assertNotEqual(root.clan[index].ime, new_ime)
+			old_ime = root.clan[index].ime
+			root.clan[index].ime = new_ime
+
+		with APP.db.transaction() as root:
+			self.assertEqual(root.clan[index].ime, new_ime)
+			root.clan[index].ime = old_ime
 
 	def test_transaction_save_append(self):
 
@@ -74,28 +79,27 @@ class test_db(unittest.TestCase):
 			# INSERT NEW CONTACTS
 			root.save(clan1, clan2)
 
-	# FIND CONTACTS
-	# clan_find1 = None
-	# clan_find2 = None
+		# FIND CONTACTS
+		clan_find1 = None
+		clan_find2 = None
+		with APP.db.transaction() as root:
+			for clan in root.clan:
+				if clan == clan1:
+					clan_find1 = clan
+				if clan == clan2:
+					clan_find2 = clan
 
-	# with APP.db.transaction() as root:
-	# 	for clan in root.clan:
-	# 		if clan == clan1:
-	# 			clan_find1 = clan
-	# 		if clan == clan2:
-	# 			clan_find2 = clan
-	#
-	# 	TEST IF FOUND EQUAL TO INSERTED
-	# self.assertEqual(clan_find1, clan1)
-	# self.assertEqual(clan_find2, clan2)
-	#
-	# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-	# self.assertIsInstance(clan_find1.vpisi, PersistentList)
-	# self.assertIsInstance(clan_find2.vpisi, PersistentList)
-	#
-	# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-	# self.assertIsInstance(clan1.vpisi, PersistentList)
-	# self.assertIsInstance(clan2.vpisi, PersistentList)
+			# TEST IF FOUND EQUAL TO INSERTED
+			self.assertEqual(clan_find1, clan1)
+			self.assertEqual(clan_find2, clan2)
+
+			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+			self.assertIsInstance(clan_find1.vpisi, PersistentList)
+			self.assertIsInstance(clan_find2.vpisi, PersistentList)
+
+			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+			self.assertIsInstance(clan1.vpisi, PersistentList)
+			self.assertIsInstance(clan2.vpisi, PersistentList)
 
 	def test_transaction_random_0(self):
 		with APP.db.transaction() as root:
