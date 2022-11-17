@@ -18,7 +18,7 @@ class TokenResponse(BaseModel):
 
 @traced
 @router.post("/login", response_model=TokenResponse)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	login = APP.useCases.auth_login()
 	token = login.invoke(username=form_data.username, password=form_data.password)
 
@@ -34,17 +34,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @traced
 @router.get("/info")
-async def info():
-	return 'current_user'
+def info(token: str = Depends(oauth2_scheme)):
+	auth_info = APP.useCases.auth_info()
+	return auth_info.invoke(token)
+
+
 
 
 @traced
 @router.get("/items")
-async def items():
+def items():
 	return [{"item_id": "Foo", "owner": 'current_user.username'}]
 
 
 @traced
 @router.get("/status")
-async def status():
+def status():
 	return {"status": "ok"}

@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
 @dataclass
@@ -9,14 +9,20 @@ class Token:
 	type: str
 
 
+@dataclass
+class TokenData:
+	username: str
+	exp: datetime = None
+
+
 class AuthService(ABC):
 
 	@abstractmethod
-	def encode(self, data: dict, expiration: timedelta) -> Token:
+	def encode(self, data: TokenData, expiration: timedelta) -> Token:
 		pass
 
 	@abstractmethod
-	def decode(self, token: str):
+	def decode(self, token: str) -> TokenData:
 		pass
 
 	@abstractmethod

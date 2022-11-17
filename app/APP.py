@@ -40,6 +40,7 @@ class UseCases(DeclarativeContainer):
 	# AUTH
 	__deps = [dc.auth, dc.db]
 	auth_login = Factory(auth_cases.Auth_login, *__deps)
+	auth_info = Factory(auth_cases.Auth_info, *__deps)
 
 	# DB
 	__deps = [dc.db]
