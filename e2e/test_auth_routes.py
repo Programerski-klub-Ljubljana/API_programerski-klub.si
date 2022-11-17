@@ -26,7 +26,8 @@ class test_auth_login(unittest.TestCase):
 		self.assertEqual(body['detail'], 'Incorrect username or password')
 
 	def test_01_login_success(self):
-		self.login()
+		token = self.login()
+		self.assertGreater(len(token), 0)
 
 	def test_02_info_success(self):
 		token = self.login()
@@ -35,6 +36,12 @@ class test_auth_login(unittest.TestCase):
 		body = res.json()
 		self.assertEqual(body['ime'], 'Uroš')
 		self.assertEqual(body['priimek'], 'Jarc')
+
+	def test_02_info_fail(self):
+		res = self.client.get('/auth/info', headers={'Authorization': f"Bearer xxx"})
+		body = res.json()
+		self.assertGreaterEqual(res.status_code, 400)
+		self.assertEqual(body['detail'], 'Missing token')
 
 
 if __name__ == '__main__':

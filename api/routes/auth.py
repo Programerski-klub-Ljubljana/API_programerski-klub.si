@@ -36,18 +36,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.get("/info")
 def info(token: str = Depends(oauth2_scheme)):
 	auth_info = APP.useCases.auth_info()
-	return auth_info.invoke(token)
+	info = auth_info.invoke(token)
 
+	if info is not None:
+		return info
 
-
-
-@traced
-@router.get("/items")
-def items():
-	return [{"item_id": "Foo", "owner": 'current_user.username'}]
-
-
-@traced
-@router.get("/status")
-def status():
-	return {"status": "ok"}
+	raise HTTPException(
+		status_code=HTTP_401_UNAUTHORIZED,
+		detail="Missing token",
+		headers={"WWW-Authenticate": "Bearer"},
+	)

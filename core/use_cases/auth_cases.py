@@ -30,5 +30,9 @@ class Auth_login(AuthUserCase):
 class Auth_info(AuthUserCase):
 	def invoke(self, token) -> dict:
 		token_data = self.authService.decode(token)
+		if token_data is None:
+			return
 		with self.dbService.transaction() as root:
-			return cutils.object_json(root.get_clan(token_data.username))
+			clan = root.get_clan(token_data.username)
+			if clan is not None:
+				return cutils.object_json(clan)
