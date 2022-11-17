@@ -13,7 +13,6 @@ class test_auth_login(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		API.init()
 		cls.client = TestClient(API.fapi)
-		cls.token = None
 
 	def login(self):
 		res = self.client.post('/auth/login', data={'username': 'urosjarc', 'password': 'geslo'})
