@@ -18,11 +18,10 @@ class test_db(unittest.TestCase):
 		# TEST IF EMPTY
 		count = 0
 		with APP.db.transaction() as root:
-			print(type(root))
 			for k, v in root.__dict__.items():
 				if isinstance(v, Elist):
 					count += 1
-					assert len(v) == 0 and isinstance(v, Elist)
+					assert isinstance(v, Elist)
 		assert count > 0
 
 		APP.db.seed()
@@ -75,28 +74,28 @@ class test_db(unittest.TestCase):
 			# INSERT NEW CONTACTS
 			root.save(clan1, clan2)
 
-		# FIND CONTACTS
-		# clan_find1 = None
-		# clan_find2 = None
+	# FIND CONTACTS
+	# clan_find1 = None
+	# clan_find2 = None
 
-		# with APP.db.transaction() as root:
-		# 	for clan in root.clan:
-		# 		if clan == clan1:
-		# 			clan_find1 = clan
-		# 		if clan == clan2:
-		# 			clan_find2 = clan
-		#
-		# 	TEST IF FOUND EQUAL TO INSERTED
-			# self.assertEqual(clan_find1, clan1)
-			# self.assertEqual(clan_find2, clan2)
-			#
-			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-			# self.assertIsInstance(clan_find1.vpisi, PersistentList)
-			# self.assertIsInstance(clan_find2.vpisi, PersistentList)
-			#
-			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
-			# self.assertIsInstance(clan1.vpisi, PersistentList)
-			# self.assertIsInstance(clan2.vpisi, PersistentList)
+	# with APP.db.transaction() as root:
+	# 	for clan in root.clan:
+	# 		if clan == clan1:
+	# 			clan_find1 = clan
+	# 		if clan == clan2:
+	# 			clan_find2 = clan
+	#
+	# 	TEST IF FOUND EQUAL TO INSERTED
+	# self.assertEqual(clan_find1, clan1)
+	# self.assertEqual(clan_find2, clan2)
+	#
+	# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+	# self.assertIsInstance(clan_find1.vpisi, PersistentList)
+	# self.assertIsInstance(clan_find2.vpisi, PersistentList)
+	#
+	# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
+	# self.assertIsInstance(clan1.vpisi, PersistentList)
+	# self.assertIsInstance(clan2.vpisi, PersistentList)
 
 	def test_transaction_random_0(self):
 		with APP.db.transaction() as root:

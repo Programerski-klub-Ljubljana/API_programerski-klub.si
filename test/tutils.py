@@ -1,10 +1,4 @@
-import sys
-
 from persistent.list import PersistentList
-from starlette.testclient import TestClient
-
-this = sys.modules[__name__]
-client: TestClient | None = None
 
 
 class BigNode:

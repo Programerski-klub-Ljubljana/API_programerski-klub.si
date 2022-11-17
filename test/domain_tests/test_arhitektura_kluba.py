@@ -26,7 +26,7 @@ class test_arhitektura_kluba(unittest.TestCase):
 		self.assertTrue(clan2.mladoletnik)
 
 	def test_clan_vpisan(self):
-		clan = db_entities.init_clan()
+		clan = db_entities.init_clan(vpisi=[], izpisi=[])
 		self.assertFalse(clan.vpisan)
 		clan.vpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(clan.vpisan)

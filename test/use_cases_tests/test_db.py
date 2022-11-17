@@ -1,16 +1,16 @@
 import unittest
 
-from app import app
+from app import APP
 
 
 class test_validate(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		app.init(seed=True)
+		APP.init(seed=True)
 
 		# USE CASE
-		cls.db_path = app.useCases.db_path()
+		cls.db_path = APP.useCases.db_path()
 
 	def test_db_path_0(self):
 		result = self.db_path.invoke(table='clan', path=None, per_page=5)

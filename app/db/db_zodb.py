@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import ZODB
 from ZODB.DB import ContextManager
+from autologging import traced
 
 from app.db import db_seed
 from core.domain._entity import Elist
@@ -9,6 +10,7 @@ from core.domain.arhitektura_kluba import Clan
 from core.services.db_service import DbService, DbRoot
 
 
+# TODO: Activate me on production! @traced
 class ZoDbRoot(DbRoot):
 	def __init__(self, root):
 		super().__init__()
@@ -21,7 +23,14 @@ class ZoDbRoot(DbRoot):
 		for entity in entities:
 			getattr(self, entity.__class__.__name__.lower()).append(entity)
 
+	def get_clan(self, username) -> Clan | None:
+		for user in self.clan:
+			if user.username == username:
+				return user
+		return None
 
+
+@traced
 @dataclass
 class ZoDbTransaction(ContextManager):
 	def __init__(self, db: ZODB.DB, note: str):
@@ -32,9 +41,11 @@ class ZoDbTransaction(ContextManager):
 		return ZoDbRoot(root)
 
 
+@traced
 class ZoDB(DbService):
 	def __init__(self, storage: str):
 		self.storage = storage
+		self.seeded = False
 		self.db = None
 
 	def open(self):
@@ -43,6 +54,9 @@ class ZoDB(DbService):
 		self.db = ZODB.DB(storage=self.storage)
 
 	def seed(self):
+		if self.seeded:
+			return
+
 		with self.db.transaction(note="seed.migrate") as connection:
 			root = ZoDbRoot(connection.root)
 
@@ -55,12 +69,7 @@ class ZoDB(DbService):
 			db_seed.logs(root, logs=10)
 			db_seed.povezave(root, elementi=10, povezave=5)
 
+		self.seeded = True
+
 	def transaction(self, note: str | None = None) -> ZoDbTransaction:
 		return ZoDbTransaction(self.db, note)
-
-	def get_clan(self, username) -> Clan | None:
-		with self.transaction() as root:
-			for user in root.clan:
-				if user.username == username:
-					return user
-		return None

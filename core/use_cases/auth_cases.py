@@ -17,9 +17,9 @@ class UserUseCase:
 @traced
 class Auth_login(UserUseCase):
 	def invoke(self, username, password) -> Token | None:
-		clan = self.dbService.get_clan(username)
+		with self.dbService.transaction() as root:
+			clan = root.get_clan(username)
+			if clan is not None and self.authService.verify(password=password, hashed_password=clan.geslo):
+				return self.authService.encode({'username': clan.username}, expiration=timedelta(hours=ENV.TOKEN_EXPIRE))
 
-		if clan is not None and self.authService.verify(password, clan.geslo):
-			return self.authService.encode({'username': clan.username}, expiration=timedelta(hours=ENV.TOKEN_EXPIRE))
-
-		return None
+			return None

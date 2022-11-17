@@ -2,6 +2,7 @@ import sys
 from typing import List, Any, Dict
 
 import requests
+from autologging import traced
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
@@ -9,6 +10,7 @@ from app import ENV
 from core.services.email_service import EmailService
 
 
+@traced
 class NeoServ(EmailService):
 
 	def obstaja(self, email):

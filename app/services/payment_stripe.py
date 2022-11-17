@@ -1,6 +1,7 @@
 from enum import auto, Enum
 
 import stripe
+from autologging import traced
 from stripe.api_resources.customer import Customer
 from stripe.api_resources.invoice import Invoice
 from stripe.api_resources.transfer import Transfer
@@ -10,6 +11,7 @@ from app import ENV
 from core.services.payment_service import PaymentService
 
 
+@traced
 class Stripe(PaymentService):
 
 	def placilo(self):

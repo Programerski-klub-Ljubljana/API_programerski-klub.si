@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock
 
-from app import app
-from core.domain.arhitektura_kluba import Clan, Kontakt
+from app import APP
+from core.domain.arhitektura_kluba import Kontakt
 from core.services.email_service import EmailService
 from core.services.sms_service import SmsService
 from core.use_cases.validation_cases import Validate_clan, Validate_kontakt
@@ -10,21 +10,22 @@ from core.use_cases.validation_cases import Validate_clan, Validate_kontakt
 
 class test_validate(unittest.TestCase):
 
-	def setUp(self) -> None:
-		app.init(True)
+	@classmethod
+	def setUpClass(cls) -> None:
+		APP.init(seed=True)
 
 		# MOCKS
-		self.clan: Clan = Mock(Clan)
-		self.kontakt: Kontakt = Mock(Kontakt)
+		cls.clan = Mock()
+		cls.kontakt: Kontakt = Mock()
 
-		self.email_service: EmailService = Mock(EmailService)
-		self.email_service.obstaja.return_value = True
-		self.sms_service: SmsService = Mock(SmsService)
-		self.sms_service.obstaja.return_value = True
+		cls.email_service = Mock(EmailService)
+		cls.email_service.obstaja.return_value = True
+		cls.sms_service: SmsService = Mock(SmsService)
+		cls.sms_service.obstaja.return_value = True
 
 		# USE CASE
-		self.validate_clan = Validate_clan(emailService=self.email_service, smsService=self.sms_service)
-		self.validate_kontakt = Validate_kontakt(emailService=self.email_service, smsService=self.sms_service)
+		cls.validate_clan = Validate_clan(emailService=cls.email_service, smsService=cls.sms_service)
+		cls.validate_kontakt = Validate_kontakt(emailService=cls.email_service, smsService=cls.sms_service)
 
 	def test_validate_clan(self):
 		validations = self.validate_clan.invoke(self.clan)

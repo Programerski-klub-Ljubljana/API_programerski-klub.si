@@ -2,8 +2,6 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import timedelta
 
-from autologging import traced
-
 
 @dataclass
 class Token:
@@ -11,7 +9,6 @@ class Token:
 	type: str
 
 
-@traced
 class AuthService(ABC):
 
 	@abstractmethod

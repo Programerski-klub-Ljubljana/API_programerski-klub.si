@@ -20,7 +20,7 @@ fake: Union[
 	Faker
 ] = Faker("sl_SI")
 
-geslo = '$2b$12$rpw5grBly0mOi352.Po3XeBr0jX53ZDNJTHc5yhp0vAKNMcZYlh7e'
+geslo = '$2b$12$HpUrAvHs/S5A4tm38LmCdOMSSSKElmgTiGShQ4OXYk2c0QiN2WyRu'
 geslo_raw = 'geslo'
 
 

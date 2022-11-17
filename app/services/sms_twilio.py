@@ -1,8 +1,10 @@
+from autologging import traced
 from twilio.rest import Client
 
 from core.services.sms_service import SmsService
 
 
+@traced
 class Twilio(SmsService):
 
 	def __init__(self, account_sid: str, auth_token: str):

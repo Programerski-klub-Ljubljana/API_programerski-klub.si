@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-
-from autologging import traced
 
 from core.domain._entity import elist, Entity, Log
 from core.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
@@ -11,12 +8,6 @@ from core.domain.srecanja_dogodki import Dogodek
 from core.domain.vaje_naloge import Test, Naloga
 
 
-@dataclass
-class DbError(Exception):
-	info: str
-
-
-@traced
 class DbRoot(ABC):
 	log: elist[Log]
 	klub: elist[Klub]
@@ -36,8 +27,11 @@ class DbRoot(ABC):
 	def save(self, *entities: list[Entity]):
 		pass
 
+	@abstractmethod
+	def get_clan(self, username) -> Clan | None:
+		pass
 
-@traced
+
 class Transaction(ABC):
 	@abstractmethod
 	def __enter__(self) -> DbRoot:
@@ -48,7 +42,6 @@ class Transaction(ABC):
 		pass
 
 
-@traced
 class DbService(ABC):
 
 	@abstractmethod
@@ -61,8 +54,4 @@ class DbService(ABC):
 
 	@abstractmethod
 	def seed(self):
-		pass
-
-	@abstractmethod
-	def get_clan(self, username) -> Clan | None:
 		pass
