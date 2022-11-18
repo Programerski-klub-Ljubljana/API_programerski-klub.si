@@ -35,7 +35,6 @@ class UseCases(DeclarativeContainer):
 	# CLAN
 	__deps = [dc.email, dc.sms]
 	validate_kontakt = Factory(validation_cases.Validate_kontakt, *__deps)
-	validate_clan = Factory(validation_cases.Validate_clan, *__deps)
 
 	# AUTH
 	__deps = [dc.auth, dc.db]

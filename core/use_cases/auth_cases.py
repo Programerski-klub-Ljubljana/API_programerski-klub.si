@@ -5,6 +5,7 @@ from autologging import traced
 
 from app import ENV
 from core import cutils
+from core.domain.arhitektura_kluba import Clan
 from core.services.auth_service import AuthService, Token, TokenData
 from core.services.db_service import DbService
 
@@ -25,6 +26,10 @@ class Auth_login(AuthUserCase):
 
 			return None
 
+@traced
+class Auth_signin(AuthUserCase):
+	def invoke(self, clan: Clan):
+		pass
 
 @traced
 class Auth_info(AuthUserCase):

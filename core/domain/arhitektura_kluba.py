@@ -20,6 +20,7 @@ class Dovoljenja(EntityEnum):
 
 
 class TipKontakta(EntityEnum):
+	CLAN = auto()
 	SKRBNIK = auto()
 	OSTALO = auto()
 
