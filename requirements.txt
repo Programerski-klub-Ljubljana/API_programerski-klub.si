@@ -34,3 +34,4 @@ autologging
 # SERVICES
 stripe
 twilio
+email-validator

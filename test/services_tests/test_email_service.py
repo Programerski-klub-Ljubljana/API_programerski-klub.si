@@ -18,7 +18,7 @@ class test_email(unittest.TestCase):
 
 	def test_obstaja_fail(self):
 		self.assertFalse(
-			self.service.obstaja('krneki')
+			self.service.obstaja('test@asdfasdf.si')
 		)
 
 

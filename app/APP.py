@@ -8,7 +8,7 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 
 from app import ENV, CONST
 from app.db.db_zodb import ZoDB
-from app.services.email_neoserv import SmtpEmail
+from app.services.email_smtp import SmtpEmail
 from app.services.jwt_auth import JwtAuth
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio

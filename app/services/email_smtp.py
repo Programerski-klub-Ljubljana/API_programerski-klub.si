@@ -1,9 +1,8 @@
 import logging
-import smtplib
 from typing import List, Any, Dict
 
-import dns
 from autologging import traced
+from email_validator import EmailNotValidError, validate_email
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
 from pydantic import BaseModel, EmailStr
 
@@ -31,33 +30,11 @@ class SmtpEmail(EmailService):
 
 	def obstaja(self, email: str):
 		try:
-			# Get domain for DNS lookup
-			splitAddress = email.split('@')
-			domain = splitAddress[-1]
-
-			# MX record lookup
-			records = dns.resolver.resolve(domain, 'MX')
-			mxRecord = records[0].exchange
-			mxRecord = str(mxRecord)
-
-			# SMTP lib setup (use debug level for full output)
-			server = smtplib.SMTP()
-			server.set_debuglevel(0)
-
-			server.connect(mxRecord)
-			server.helo(server.local_hostname)
-			server.mail(self.conn.MAIL_FROM)
-			code, message = server.rcpt(email)
-			server.quit()
-
-			return code == 250
-
-		except dns.resolver.NXDOMAIN as err:
-			log.error(err)
-			return False
-
-		except Exception as err:
-			log.error(err)
+			validation = validate_email(email=email, check_deliverability=True, timeout=1)
+			log.info(validation.__dict__)
+			return True
+		except EmailNotValidError as e:
+			log.warning(e)
 			return False
 
 	async def send(self, recipients: List[str], subject: str, vsebina: str):
