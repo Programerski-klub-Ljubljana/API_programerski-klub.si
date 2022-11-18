@@ -1,16 +1,16 @@
-from dataclasses import dataclass
-
-from autologging import traced
-
 version = '0.1.0'
 klub = 'Programerski klub Ljubljana'
-email = 'info@programerski-klub.si'
-web = 'http://programerski-klub.si'
+domain = 'programerski-klub.si'
+email = f'info@{domain}'
+web = f'http://{domain}'
 web_api = f'{web}/api'
 github = 'https://github.com/programerski-klub-ljubljana'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
-fastapi = {
+default_phone_code = '+386'
+token_life = 24
+
+openapi = {
 	'version': version,
 	'title': f"API - {klub}",
 	'contact': {'email': email, 'web': web, 'github': github},
@@ -29,18 +29,3 @@ cors = {
 	'allow_methods': ["*"],
 	'allow_headers': ["*"],
 }
-
-
-@dataclass
-@traced
-class Form:
-	subject: str
-	msg: str
-
-	def __post_init__(self):
-		self.subject = f'{klub} | {self.subject}'
-
-
-@dataclass
-class forms:
-	vpis = Form('Potrdilo ob vpisu', 'Preveri če si dobil potrditveni email.')

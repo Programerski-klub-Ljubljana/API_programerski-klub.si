@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from autologging import traced
 
-from app import ENV
+from app import ENV, CONST
 from core import cutils
 from core.domain.arhitektura_kluba import Clan
 from core.services.auth_service import AuthService, Token, TokenData
@@ -22,7 +22,7 @@ class Auth_login(AuthUserCase):
 		with self.dbService.transaction() as root:
 			clan = root.get_clan(username)
 			if clan is not None and self.authService.verify(password=password, hashed_password=clan.geslo):
-				return self.authService.encode(TokenData(clan.username), expiration=timedelta(hours=ENV.TOKEN_EXPIRE))
+				return self.authService.encode(TokenData(clan.username), expiration=timedelta(hours=CONST.token_life))
 
 			return None
 

@@ -10,16 +10,16 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from api import const, autils
+from api import autils
 from api.routes import db, forms, auth
-from app import APP
+from app import APP, CONST
 from core import cutils
 
 log = logging.getLogger(__name__)
 
 this = sys.modules[__name__]
 inited: bool = False
-fapi = FastAPI(**const.fastapi)
+fapi = FastAPI(**CONST.openapi)
 
 
 @traced
@@ -53,7 +53,7 @@ def init():
 	add_timing_middleware(fapi, record=log.info)
 
 	# CORS
-	fapi.add_middleware(CORSMiddleware, **const.cors)
+	fapi.add_middleware(CORSMiddleware, **CONST.cors)
 
 	# ROUTES REGISTER
 	fapi.include_router(db.router)

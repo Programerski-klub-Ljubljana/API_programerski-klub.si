@@ -6,9 +6,9 @@ from autologging import traced
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
 
-from app import ENV
+from app import ENV, CONST
 from app.db.db_zodb import ZoDB
-from app.services.email_neoserv import NeoServ
+from app.services.email_neoserv import SmtpEmail
 from app.services.jwt_auth import JwtAuth
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio
@@ -24,7 +24,12 @@ from core.use_cases import validation_cases, db_cases, auth_cases
 class Services(DeclarativeContainer):
 	auth: Provider[AuthService] = Singleton(JwtAuth, secret=ENV.SECRET_KEY)
 	db: Provider[DbService] = Singleton(ZoDB, storage=ENV.DB_PATH)
-	email: Provider[EmailService] = Singleton(NeoServ)
+	email: Provider[EmailService] = Singleton(
+		SmtpEmail,
+		name=CONST.klub, email=CONST.email,
+		server=CONST.domain, port=ENV.MAIL_PORT,
+		username=ENV.MAIL_USERNAME, password=ENV.MAIL_PASSWORD
+	)
 	payment: Provider[PaymentService] = Singleton(Stripe)
 	sms: Provider[SmsService] = Singleton(Twilio, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 

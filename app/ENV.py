@@ -5,16 +5,18 @@ from dotenv import load_dotenv
 
 this = sys.modules[__name__]
 inited: bool = False
-MAIL_PASSWORD: None | str = ''
-STRIPE_API_KEY: None | str = ''
-IS_REAL_EMAIL_BEARER: None | str = ''
-TWILIO_ACCOUNT_SID: None | str = ''
-TWILIO_AUTH_TOKEN: None | str = ''
+
 DB_PATH: None | str = None
 SECRET_KEY: None | str = ''
-PHONE_CODE: str = '+386'
-TOKEN_URL: str = '/user/login'
-TOKEN_EXPIRE: int = 20
+
+MAIL_USERNAME: None | str = ''
+MAIL_PASSWORD: None | str = ''
+MAIL_PORT: None | int = 0
+
+TWILIO_ACCOUNT_SID: None | str = ''
+TWILIO_AUTH_TOKEN: None | str = ''
+
+STRIPE_API_KEY: None | str = ''
 
 
 def init():

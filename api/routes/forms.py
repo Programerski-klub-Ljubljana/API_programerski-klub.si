@@ -6,8 +6,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from api import const, autils
-from app import APP
+from api import autils
+from app import APP, CONST
 from core import cutils
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.use_cases.validation_cases import Validate_kontakt

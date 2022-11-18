@@ -25,10 +25,12 @@ class ClanUseCase:
 @traced
 class Validate_kontakt(ClanUseCase):
 	def invoke(self, kontakt: Kontakt) -> list[Validation]:
-		validations = []
-		for fun, data in [
-			*((self.smsService.obstaja, tel) for tel in kontakt.telefon),
-			*((self.emailService.obstaja, email) for email in kontakt.email)]:
-			validations.append(Validation(data, fun(data)))
 
-		return validations
+		validacija = [(self.smsService.obstaja, tel) for tel in kontakt.telefon]
+		validacija += [(self.emailService.obstaja, email) for email in kontakt.email]
+
+		results = []
+		for fun, data in validacija:
+			results.append(Validation(data, fun(data)))
+
+		return results
