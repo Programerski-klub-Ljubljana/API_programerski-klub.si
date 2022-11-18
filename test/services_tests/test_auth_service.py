@@ -8,10 +8,11 @@ from core.services.auth_service import AuthService, TokenData
 
 class test_auth(unittest.TestCase):
 
-	def setUp(self) -> None:
+	@classmethod
+	def setUpClass(cls) -> None:
 		APP.init(seed=False)
-		self.service: AuthService = APP.services.auth()
-		self.data = TokenData(username='urosjarc')
+		cls.service: AuthService = APP.services.auth()
+		cls.data = TokenData(username='urosjarc')
 
 	def test_encode_decode_pass(self):
 		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=1))

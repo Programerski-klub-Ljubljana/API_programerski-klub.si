@@ -9,7 +9,7 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 from app import ENV, CONST
 from app.db.db_zodb import ZoDB
 from app.services.email_smtp import SmtpEmail
-from app.services.jwt_auth import JwtAuth
+from app.services.auth_jwt import JwtAuth
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio
 from core import cutils
@@ -25,11 +25,9 @@ class Services(DeclarativeContainer):
 	auth: Provider[AuthService] = Singleton(JwtAuth, secret=ENV.SECRET_KEY)
 	db: Provider[DbService] = Singleton(ZoDB, storage=ENV.DB_PATH)
 	email: Provider[EmailService] = Singleton(
-		SmtpEmail,
-		name=CONST.klub, email=CONST.email,
+		SmtpEmail, name=CONST.klub, email=CONST.email,
 		server=CONST.domain, port=ENV.MAIL_PORT,
-		username=ENV.MAIL_USERNAME, password=ENV.MAIL_PASSWORD
-	)
+		username=ENV.MAIL_USERNAME, password=ENV.MAIL_PASSWORD)
 	payment: Provider[PaymentService] = Singleton(Stripe)
 	sms: Provider[SmsService] = Singleton(Twilio, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 

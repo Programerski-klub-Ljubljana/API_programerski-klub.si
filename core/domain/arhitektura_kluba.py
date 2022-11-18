@@ -43,10 +43,9 @@ class Clan(Entity):
 	priimek: str
 	rojen: date
 	geslo: str
-	dovoljenja: elist[Dovoljenja] = Elist()
 
-	kontakt: elist[Kontakt] = Elist()
-	skrbniki: elist[Kontakt] = Elist()
+	dovoljenja: elist[Dovoljenja] = Elist()
+	kontakti: elist[Kontakt] = Elist()
 
 	# DATUMI
 	vpisi: elist[datetime] = Elist()
@@ -82,6 +81,7 @@ class Clan(Entity):
 	@property
 	def username(self) -> str:
 		return unidecode(f'{self.ime}{self.priimek}'.replace(' ', '').lower())
+
 
 @dataclass
 class Ekipa(Entity):

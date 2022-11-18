@@ -8,7 +8,7 @@ from api import API
 this = sys.modules[__name__]
 
 
-class test_auth_login(unittest.TestCase):
+class test_auth(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		API.init()

@@ -7,5 +7,5 @@ class EmailService(ABC):
 		pass
 
 	@abstractmethod
-	def send(self, recipients: str, subject: str, vsebina: str):
+	def send(self, recipients: list[str], subject: str, vsebina: str):
 		pass
