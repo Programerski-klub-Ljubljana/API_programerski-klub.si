@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from app import APP
 from core.domain.arhitektura_kluba import Kontakt
 from core.services.email_service import EmailService
-from core.services.sms_service import SmsService
+from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Validate_kontakt
 
 
@@ -21,7 +21,7 @@ class test_validate(unittest.TestCase):
 
 		cls.email_service = Mock(EmailService)
 		cls.email_service.obstaja().return_value = True
-		cls.sms_service: SmsService = Mock(SmsService)
+		cls.sms_service: PhoneService = Mock(PhoneService)
 		cls.sms_service.obstaja().return_value = True
 
 		# USE CASE

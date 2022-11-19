@@ -7,7 +7,7 @@ class test_sms(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
-		cls.service = APP.services.sms()
+		cls.service = APP.services.phone()
 
 	def test_obstaja_0(self):
 		phone = '+386051240885'
@@ -29,7 +29,7 @@ class test_sms(unittest.TestCase):
 
 	def test_obstaja_3(self):
 		phone = '+386/051/240/885'
-		self.assertFalse(
+		self.assertTrue(
 			self.service.obstaja(phone)
 		)
 
@@ -41,7 +41,7 @@ class test_sms(unittest.TestCase):
 
 	def test_obstaja_5(self):
 		phone = '051240885'
-		self.assertFalse(
+		self.assertTrue(
 			self.service.obstaja(phone)
 		)
 

@@ -27,7 +27,7 @@ class Auth_login(AuthUserCase):
 			return None
 
 @traced
-class Auth_signin(AuthUserCase):
+class Auth_vpis(AuthUserCase):
 	def invoke(self, clan: Clan):
 		pass
 

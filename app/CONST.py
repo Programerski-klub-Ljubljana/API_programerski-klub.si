@@ -7,7 +7,7 @@ web_api = f'{web}/api'
 github = 'https://github.com/programerski-klub-ljubljana'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
-default_phone_code = '+386'
+phone_country_code = "SI"
 token_life = 24
 
 openapi = {
@@ -29,3 +29,5 @@ cors = {
 	'allow_methods': ["*"],
 	'allow_headers': ["*"],
 }
+
+subject = lambda info: f'{klub} | {info}'

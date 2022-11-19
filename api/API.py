@@ -42,7 +42,7 @@ def custom_openapi():
 
 
 @traced
-def init():
+def init(timing=False):
 	if this.inited:
 		log.warning('API already inited!')
 		return
@@ -50,7 +50,8 @@ def init():
 	APP.init(seed=True)
 
 	# TIMING RESPONSES
-	add_timing_middleware(fapi, record=log.info)
+	if timing:
+		add_timing_middleware(fapi, record=log.info)
 
 	# CORS
 	fapi.add_middleware(CORSMiddleware, **CONST.cors)

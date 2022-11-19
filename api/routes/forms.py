@@ -7,12 +7,13 @@ from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
 from api import autils
-from app import APP
+from app import APP, CONST
 from core import cutils
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.services.email_service import EmailService
+from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Validate_kontakt
-from templates import temps
+from templates.__temps import Templates
 
 router = autils.router(__name__)
 templates = Jinja2Templates(directory=cutils.root_path("templates"))
@@ -22,21 +23,25 @@ templates = Jinja2Templates(directory=cutils.root_path("templates"))
 @router.post("/vpis", response_class=HTMLResponse)
 async def vpis(
 		request: Request,
-		ime: str = Form(),
-		priimek: str = Form(),
-		dan_rojstva: int = Form(),
-		mesec_rojstva: int = Form(),
-		leto_rojstva: int = Form(),
-		email: str = Form(),
-		telefon: str = Form(),
+		ime: str = Form(), priimek: str = Form(),
+		dan_rojstva: int = Form(), mesec_rojstva: int = Form(), leto_rojstva: int = Form(),
+		email: str = Form(), telefon: str = Form(),
+		ime_skrbnika: str = Form(None), priimek_skrbnika: str = Form(None),
+		email_skrbnika: str = Form(None), telefon_skrbnika: str = Form(None)):
+	#
+	# INIT TEMPLTATES
+	temps = Templates(templates, request, **locals())
 
-		ime_skrbnika: str = Form(None),
-		priimek_skrbnika: str = Form(None),
-		email_skrbnika: str = Form(None),
-		telefon_skrbnika: str = Form(None)):
+	# INIT SERVICES AND CASES
+	phone_service: PhoneService = APP.services.phone()
 	email_service: EmailService = APP.services.email()
 	val_kontakt: Validate_kontakt = APP.useCases.validate_kontakt()
 
+	# FORMAT PHONE
+	telefon = phone_service.parse(phone=telefon)
+	telefon_skrbnika = phone_service.parse(phone=telefon_skrbnika)
+
+	# USTVARI ELEMENTE
 	clan_kontakt = Kontakt(
 		ime=ime, priimek=priimek, tip=TipKontakta.CLAN,
 		email=[email], telefon=[telefon])
@@ -49,6 +54,7 @@ async def vpis(
 		vpisi=[datetime.utcnow()]
 	)
 
+	# VALIDACIJA ELEMENTOV
 	validacije = val_kontakt.invoke(kontakt=clan_kontakt)
 	if clan.mladoletnik:
 		skrbnik_kontakt = Kontakt(
@@ -58,22 +64,32 @@ async def vpis(
 		clan.kontakti.append(skrbnik_kontakt)
 		validacije += val_kontakt.invoke(kontakt=skrbnik_kontakt)
 
+	# SEPARACIJA OPRAVLJENE/ERRORED VALIDACIJE
 	pass_vals = list(filter(lambda x: x.ok, validacije))
 	fail_vals = list(filter(lambda x: not x.ok, validacije))
 
+	# CE NOBENA VALIDACIJA NI BILA USPEŠNO
 	if len(pass_vals) == 0:
-		return templates.TemplateResponse("forms_prekrsek.html", {"request": request})
+		return temps.warn_prekrsek
+
+	# CE JE VSAJ ENA VALIDACIJA FAIL
 	elif len(fail_vals) > 0:
 		napake = [val.data for val in fail_vals]
-		return templates.TemplateResponse("forms_napaka.html", {"request": request, 'napake': napake, **locals()})
+		return temps.warn_napaka
 
+	# VSE VALIDACIJE SO BILE OPRAVLJENE USPEŠNO
 	await email_service.send(
 		recipients=[email] + ([email_skrbnika] if clan.mladoletnik else []),
-		subject=temps.vpis.subject,
-		vsebina=templates.get_template('forms_vpis.html').render(locals()))
+		subject=CONST.subject("Vpis v klub"),
+		vsebina=temps.email_vpis)
 
-	kwargs = {"request": request, **locals(), "sporocilo": temps.vpis.msg}
-	return templates.TemplateResponse("forms_success.html", kwargs)
+	return temps.ok_sprejeto
+
+
+@traced
+@router.get("/vpis/{uporabnik")
+def vpis_uporabnik(uporabnik: str):
+	return {}
 
 
 @traced
