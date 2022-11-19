@@ -27,6 +27,7 @@ class SmtpEmail(EmailService):
 			MAIL_STARTTLS=False, MAIL_SSL_TLS=True,
 			USE_CREDENTIALS=True, VALIDATE_CERTS=True,
 			TEMPLATE_FOLDER=str(cutils.root_path('templates')))
+		print(self.conn.__dict__)
 
 	def obstaja(self, email: str):
 		try:

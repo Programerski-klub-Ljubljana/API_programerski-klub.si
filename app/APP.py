@@ -8,8 +8,8 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 
 from app import ENV, CONST
 from app.db.db_zodb import ZoDB
-from app.services.email_smtp import SmtpEmail
 from app.services.auth_jwt import JwtAuth
+from app.services.email_smtp import SmtpEmail
 from app.services.payment_stripe import Stripe
 from app.services.sms_twilio import Twilio
 from core import cutils
@@ -27,7 +27,7 @@ class Services(DeclarativeContainer):
 	email: Provider[EmailService] = Singleton(
 		SmtpEmail, name=CONST.klub, email=CONST.email,
 		server=CONST.domain, port=ENV.MAIL_PORT,
-		username=ENV.MAIL_USERNAME, password=ENV.MAIL_PASSWORD)
+		username=CONST.email, password=ENV.MAIL_PASSWORD)
 	payment: Provider[PaymentService] = Singleton(Stripe)
 	sms: Provider[SmsService] = Singleton(Twilio, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 
@@ -72,8 +72,6 @@ def init(seed: bool = False):
 	if this.inited:
 		log.info('APP already inited!!!')
 		return
-
-	ENV.init()
 
 	this.services = Services()
 	this.useCases = UseCases(dc=services)

@@ -12,7 +12,7 @@ from core import cutils
 from core.domain.arhitektura_kluba import Clan, Kontakt, TipKontakta
 from core.services.email_service import EmailService
 from core.use_cases.validation_cases import Validate_kontakt
-from templates import temp
+from templates import temps
 
 router = autils.router(__name__)
 templates = Jinja2Templates(directory=cutils.root_path("templates"))
@@ -69,10 +69,10 @@ async def vpis(
 
 	await email_service.send(
 		recipients=[email] + ([email_skrbnika] if clan.mladoletnik else []),
-		subject=forms.vpis.subject,
+		subject=temps.vpis.subject,
 		vsebina=templates.get_template('forms_vpis.html').render(locals()))
 
-	kwargs = {"request": request, **locals(), "sporocilo": forms.vpis.msg}
+	kwargs = {"request": request, **locals(), "sporocilo": temps.vpis.msg}
 	return templates.TemplateResponse("forms_success.html", kwargs)
 
 

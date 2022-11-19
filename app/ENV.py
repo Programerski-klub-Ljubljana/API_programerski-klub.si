@@ -1,33 +1,16 @@
 import os
-import sys
 
 from dotenv import load_dotenv
 
-this = sys.modules[__name__]
-inited: bool = False
+load_dotenv()
 
-DB_PATH: None | str = None
-SECRET_KEY: None | str = ''
+DB_PATH = os.environ.get('DB_PATH', None)
+SECRET_KEY = os.environ['SECRET_KEY']
 
-MAIL_USERNAME: None | str = ''
-MAIL_PASSWORD: None | str = ''
-MAIL_PORT: None | int = 0
+MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
+MAIL_PORT = int(os.environ['MAIL_PORT'])
 
-TWILIO_ACCOUNT_SID: None | str = ''
-TWILIO_AUTH_TOKEN: None | str = ''
+TWILIO_ACCOUNT_SID = os.environ['TWILIO_ACCOUNT_SID']
+TWILIO_AUTH_TOKEN = os.environ['TWILIO_AUTH_TOKEN']
 
-STRIPE_API_KEY: None | str = ''
-
-
-def init():
-	this.inited = True
-	load_dotenv()
-	for (k, v) in list(this.__dict__.items()):
-		key = str(k)
-		if not key.startswith('__') and key.isupper():
-			val = os.environ[k]
-			if val.isnumeric():
-				val = float(val)
-			elif len(val) == 0:
-				val = None
-			setattr(this, k, val)
+STRIPE_API_KEY = os.environ['STRIPE_API_KEY']
