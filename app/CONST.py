@@ -1,3 +1,5 @@
+from core import cutils
+
 version = '0.1.0'
 klub = 'Programerski klub Ljubljana'
 domain = 'programerski-klub.si'
@@ -30,4 +32,10 @@ cors = {
 	'allow_headers': ["*"],
 }
 
-subject = lambda info: f'{klub} | {info}'
+
+class subject:
+	vpis = f'{klub} | Potrdilo ob vpisu'
+	vpis_skrbnik = f'{klub} | Obvestilo skrbnika o vpisu'
+
+
+templates = cutils.root_path('templates')

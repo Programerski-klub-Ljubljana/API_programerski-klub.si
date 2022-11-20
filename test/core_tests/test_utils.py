@@ -16,7 +16,7 @@ class test_validate(unittest.TestCase):
 
 	def test_age(self):
 		today = datetime.utcnow()
-		self.assertEqual(12.5055, round(cutils.age(today.year - 12, today.month - 6, today.day - 1), 4))
+		self.assertEqual(12.503, round(cutils.age(today.year - 12, today.month - 6, today.day - 1), 3))
 
 	def test_is_iterable(self):
 		for ele in Fixtures.iterables:

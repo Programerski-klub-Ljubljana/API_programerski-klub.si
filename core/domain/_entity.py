@@ -11,6 +11,12 @@ from core.domain._enums import LogLevel, LogTheme
 
 
 class Elist(PersistentList):
+	def __contains__(self, item):
+		for ele in self:
+			if ele == item:
+				return True
+		return False
+
 	def append(self, item: object):
 		if cutils.is_object(item):
 			for k, v in item.__dict__.items():
@@ -34,7 +40,7 @@ class Elist(PersistentList):
 
 
 T = TypeVar('T')
-elist = dict[int, T] | Elist
+elist = list[T] | Elist
 
 
 class Entity(Persistent):
@@ -56,9 +62,10 @@ class Entity(Persistent):
 		for k, v in attr.items():
 			setattr(child, k, v)
 
-	def povezi(self, entity):
-		self._povezave.append(entity)
-		entity._povezave.append(self)
+	def povezi(self, *entity):
+		for e in entity:
+			self._povezave.append(e)
+			e._povezave.append(self)
 
 
 @dataclass

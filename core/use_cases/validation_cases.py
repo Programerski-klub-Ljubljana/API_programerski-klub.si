@@ -3,37 +3,27 @@ from dataclasses import dataclass
 
 from autologging import traced
 
-from core.domain.arhitektura_kluba import Kontakt
+from core.domain.arhitektura_kluba import Kontakt, TipKontaktPodatka, TipValidacije
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
+from core.use_cases._usecase import UseCase
 
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class Validation:
-	title: str
-	data: str
-	ok: bool
-
-	def __str__(self):
-		test = "OK" if self.ok else "ERR"
-		return f'[{test}] {self.data}: {self.title}'
-
-@dataclass
-class ClanUseCase:
-	emailService: EmailService
-	smsService: PhoneService
-
-
 @traced
-class Validate_kontakt(ClanUseCase):
-	def invoke(self, kontakt: Kontakt) -> list[Validation]:
-		validacija = [(self.smsService.obstaja, tel, f'{kontakt.ime} {kontakt.priimek} (telefon)') for tel in kontakt.telefon]
-		validacija += [(self.emailService.obstaja, email, f'{kontakt.ime} {kontakt.priimek} (email)') for email in kontakt.email]
+@dataclass
+class Validate_kontakt(UseCase):
+	email: EmailService
+	phone: PhoneService
 
-		results = []
-		for fun, data, title in validacija:
-			results.append(Validation(ok=fun(data), data=data, title=title))
+	def invoke(self, *kontakti: Kontakt):
+		mapping = {
+			TipKontaktPodatka.EMAIL: self.email.obstaja,
+			TipKontaktPodatka.PHONE: self.phone.obstaja
+		}
 
-		return results
+		for kontakt in kontakti:
+			val_fun = mapping[kontakt.data_tip]
+			if kontakt.validiran == TipValidacije.NI_VALIDIRAN:
+				kontakt.validiran = val_fun(kontakt.data)

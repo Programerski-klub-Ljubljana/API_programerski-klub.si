@@ -7,7 +7,7 @@ from app.db import db_entities
 from app.db.db_entities import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Clan, Ekipa, Oddelek, Klub
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipKontaktPodatka
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo, TipSporocila
 from core.domain.srecanja_dogodki import Dogodek, TipDogodka
@@ -23,15 +23,17 @@ def entities(root, **kwargs):
 @traced
 def arhitektura_kluba(root, **kwargs):
 	for _ in range(kwargs['kontakti']):
+		data_tip = TipKontaktPodatka.random()
 		root.save(Kontakt(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			tip=TipKontakta.random(),
-			email=[fake.email() for _ in range(randint(0, 4))],
-			telefon=[fake.phone_number() for _ in range(randint(0, 4))]))
+			data_tip=data_tip,
+			data=str(fake.email() if data_tip == TipKontaktPodatka.EMAIL else fake.phone_number())
+		))
 
 	for _ in range(kwargs['clani']):
-		root.save(Clan(
+		root.save(Oseba(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			geslo=db_entities.geslo,

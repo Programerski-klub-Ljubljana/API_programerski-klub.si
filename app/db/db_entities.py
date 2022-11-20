@@ -5,7 +5,7 @@ from typing import Union
 from faker import Faker
 from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
 
-from core.domain.arhitektura_kluba import Clan
+from core.domain.arhitektura_kluba import Oseba
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije
 
 fake: Union[
@@ -30,7 +30,7 @@ def init_clan(
 		rojstro_delta_days: int = 20 * 365,
 		vpisi: list[datetime] = None,
 		izpisi: list[datetime] = None):
-	return Clan(
+	return Oseba(
 		ime=ime,
 		priimek=priimek,
 		geslo=geslo,

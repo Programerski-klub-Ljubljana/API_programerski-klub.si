@@ -12,7 +12,7 @@ from core.services.payment_service import PaymentService
 
 
 @traced
-class Stripe(PaymentService):
+class PaymentStripe(PaymentService):
 
 	def placilo(self):
 		print('placilo')

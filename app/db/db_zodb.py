@@ -6,7 +6,7 @@ from autologging import traced
 
 from app.db import db_seed
 from core.domain._entity import Elist
-from core.domain.arhitektura_kluba import Clan
+from core.domain.arhitektura_kluba import Oseba
 from core.services.db_service import DbService, DbRoot
 
 
@@ -19,15 +19,18 @@ class ZoDbRoot(DbRoot):
 			setattr(root, k, value)
 			setattr(self, k, value)
 
-	def save(self, *entities):
+	def save(self, *entities, unique=False):
 		for entity in entities:
-			getattr(self, entity.__class__.__name__.lower()).append(entity)
+			table = getattr(self, entity.__class__.__name__.lower())
+			if unique and entity not in table: # TODO: Does this works???
+				table.append(entity)
 
-	def get_clan(self, username) -> Clan | None:
-		for user in self.clan:
-			if user.username == username:
-				return user
-		return None
+	def clan_find_all(self, username: str) -> list[Oseba]:
+		clani = []
+		for clan in self.clan:
+			if clan.has_username(username):
+				clani.append(clan)
+		return clani
 
 
 @traced
@@ -42,7 +45,7 @@ class ZoDbTransaction(ContextManager):
 
 
 @traced
-class ZoDB(DbService):
+class DbZo(DbService):
 	def __init__(self, storage: str):
 		self.storage = storage
 		self.seeded = False

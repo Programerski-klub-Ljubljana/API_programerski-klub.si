@@ -25,12 +25,12 @@ class test_validate(unittest.TestCase):
 		cls.sms_service.obstaja().return_value = True
 
 		# USE CASE
-		cls.validate_kontakt = Validate_kontakt(emailService=cls.email_service, smsService=cls.sms_service)
+		cls.validate_kontakt = Validate_kontakt(email=cls.email_service, phone=cls.sms_service)
 
 	def test_validate_kontakt(self):
 		validations = self.validate_kontakt.invoke(self.kontakt)
 		oks = [val.ok for val in validations]
-		datas = [val.data for val in validations]
+		datas = [val.podatek for val in validations]
 		self.assertListEqual(self.kontakt.telefon + self.kontakt.email, datas)  # Should check only telephone and email.
 		self.assertListEqual([self.sms_service.obstaja(), self.email_service.obstaja()], oks)
 

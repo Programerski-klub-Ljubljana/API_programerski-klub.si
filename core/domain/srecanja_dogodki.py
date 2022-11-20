@@ -4,7 +4,7 @@ from enum import auto
 
 from core.domain._entity import elist, Elist, Entity
 from core.domain._enums import EntityEnum
-from core.domain.arhitektura_kluba import Clan
+from core.domain.arhitektura_kluba import Oseba
 
 
 class TipDogodka(EntityEnum):
@@ -22,7 +22,7 @@ class Dogodek(Entity):
 	tip: TipDogodka
 	zacetek: datetime
 	konec: datetime
-	clani: elist[Clan] = Elist()
+	clani: elist[Oseba] = Elist()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from core.domain._entity import elist, Entity, Log
-from core.domain.arhitektura_kluba import Clan, Ekipa, Oddelek, Klub, Kontakt
+from core.domain.arhitektura_kluba import Oseba, Ekipa, Oddelek, Klub, Kontakt
 from core.domain.bancni_racun import Transakcija, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, Sporocilo
 from core.domain.srecanja_dogodki import Dogodek
@@ -12,7 +12,7 @@ class DbRoot(ABC):
 	log: elist[Log]
 	klub: elist[Klub]
 	kontakt: elist[Kontakt]
-	clan: elist[Clan]
+	clan: elist[Oseba]
 	ekipa: elist[Ekipa]
 	oddelek: elist[Oddelek]
 	transakcija: elist[Transakcija]
@@ -24,11 +24,14 @@ class DbRoot(ABC):
 	naloga: elist[Naloga]
 
 	@abstractmethod
-	def save(self, *entities: list[Entity]):
+	def save(self, *entities, unique=False):
 		pass
 
 	@abstractmethod
-	def get_clan(self, username) -> Clan | None:
+	def clan_find_all(self, username) -> list[Oseba]:
+		pass
+
+	def clan_search_and_merge(self, clan: Oseba) -> Oseba | None:
 		pass
 
 

@@ -18,16 +18,19 @@ class EmailSchema(BaseModel):
 
 
 @traced
-class SmtpEmail(EmailService):
-	def __init__(self, name: str, email: str, server: str, port: str, username: str, password: str):
-		self.conn = ConnectionConfig(
+class EmailSmtp(EmailService):
+	def record(self) -> list[dict[str, any]]:
+		return self.inst.record_messages()
+
+	def __init__(self, name: str, email: str, server: str, port: str, username: str, password: str, suppress_send: bool = False):
+		self.inst = FastMail(ConnectionConfig(
+			SUPPRESS_SEND=int(suppress_send),
 			MAIL_FROM_NAME=name, MAIL_FROM=email,
 			MAIL_SERVER=server, MAIL_PORT=port,
 			MAIL_PASSWORD=password, MAIL_USERNAME=username,
 			MAIL_STARTTLS=False, MAIL_SSL_TLS=True,
 			USE_CREDENTIALS=True, VALIDATE_CERTS=True,
-			TEMPLATE_FOLDER=str(cutils.root_path('templates')))
-		print(self.conn.__dict__)
+			TEMPLATE_FOLDER=str(cutils.root_path('templates'))))
 
 	def obstaja(self, email: str):
 		try:
@@ -45,4 +48,4 @@ class SmtpEmail(EmailService):
 			subject=subject,
 			subtype=MessageType.html)
 
-		await FastMail(self.conn).send_message(message)
+		await self.inst.send_message(message)

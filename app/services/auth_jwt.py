@@ -3,13 +3,12 @@ from datetime import datetime, timedelta
 from autologging import traced
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from pydantic import ValidationError
 
 from core.services.auth_service import AuthService, Token, TokenData
 
 
 @traced
-class JwtAuth(AuthService):
+class AuthJwt(AuthService):
 	def __init__(self, secret: str):
 		if hasattr(self, 'pwd_context'):
 			raise Exception("Double init!")
@@ -22,10 +21,10 @@ class JwtAuth(AuthService):
 		encoded_jwt = jwt.encode(data.__dict__, self.secret, algorithm=self.algo)
 		return Token(type='bearer', data=encoded_jwt)
 
-	def decode(self, token: str) -> TokenData:
+	def decode(self, token: str) -> TokenData | None:
 		try:
 			return TokenData(**jwt.decode(token, self.secret, algorithms=[self.algo]))
-		except (JWTError, ValidationError):
+		except JWTError:
 			return None
 
 	def verify(self, password, hashed_password) -> bool:

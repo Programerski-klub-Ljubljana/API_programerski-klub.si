@@ -7,48 +7,49 @@ from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider
 
 from app import ENV, CONST
-from app.db.db_zodb import ZoDB
-from app.services.auth_jwt import JwtAuth
-from app.services.email_smtp import SmtpEmail
-from app.services.payment_stripe import Stripe
-from app.services.phone_twilio import Twilio
+from app.db.db_zodb import DbZo
+from app.services.auth_jwt import AuthJwt
+from app.services.email_smtp import EmailSmtp
+from app.services.payment_stripe import PaymentStripe
+from app.services.phone_twilio import PhoneTwillio
+from app.services.template_jinja import TemplateJinja
 from core import cutils
-from core.services.auth_service import AuthService
 from core.services.db_service import DbService
-from core.services.email_service import EmailService
-from core.services.payment_service import PaymentService
-from core.services.phone_service import PhoneService
-from core.use_cases import validation_cases, db_cases, auth_cases
+from core.use_cases.auth_cases import Auth_login, Auth_info
+from core.use_cases.db_cases import Db_path
+from core.use_cases.forms_vpis import Forms_vpis
+from core.use_cases.validation_cases import Validate_kontakt
 
 
 class Services(DeclarativeContainer):
-	auth: Provider[AuthService] = Singleton(JwtAuth, secret=ENV.SECRET_KEY)
-	db: Provider[DbService] = Singleton(ZoDB, storage=ENV.DB_PATH)
-	payment: Provider[PaymentService] = Singleton(Stripe)
-	phone: Provider[PhoneService] = Singleton(
-		Twilio, default_country_code=CONST.phone_country_code,
+	auth: Provider[AuthJwt] = Singleton(AuthJwt, secret=ENV.SECRET_KEY)
+	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH)
+	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
+	phone: Provider[PhoneTwillio] = Singleton(
+		PhoneTwillio, default_country_code=CONST.phone_country_code,
 		account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
-	email: Provider[EmailService] = Singleton(
-		SmtpEmail, name=CONST.klub, email=CONST.email,
+	email: Provider[EmailSmtp] = Singleton(
+		EmailSmtp, name=CONST.klub, email=CONST.email,
 		server=CONST.domain, port=ENV.MAIL_PORT,
-		username=CONST.email, password=ENV.MAIL_PASSWORD)
+		username=CONST.email, password=ENV.MAIL_PASSWORD,
+		suppress_send=ENV.MAIL_SUPPRESS_SEND
+	)
+	template: Provider[TemplateJinja] = Singleton(TemplateJinja, searchpath=CONST.templates)
 
 
 class UseCases(DeclarativeContainer):
-	dc = DependenciesContainer()
+	d = DependenciesContainer()
 
 	# CLAN
-	__deps = [dc.email, dc.phone]
-	validate_kontakt = Factory(validation_cases.Validate_kontakt, *__deps)
+	validate_kontakt: Provider[Validate_kontakt] = Factory(Validate_kontakt, email=d.email, phone=d.phone)
 
 	# AUTH
-	__deps = [dc.auth, dc.db]
-	auth_login = Factory(auth_cases.Auth_login, *__deps)
-	auth_info = Factory(auth_cases.Auth_info, *__deps)
+	auth_login: Provider[Auth_login] = Factory(Auth_login, db=d.db, auth=d.auth)
+	auth_info: Provider[Auth_info] = Factory(Auth_info, db=d.db, auth=d.auth)
 
 	# DB
-	__deps = [dc.db]
-	db_path = Factory(db_cases.Db_path, *__deps)
+	db_path: Provider[Db_path] = Factory(Db_path, db=d.db)
+	forms_vpis: Provider = Factory(Forms_vpis, db=d.db, email=d.email, phone=d.phone, validate_kontakt=validate_kontakt, template=d.template)
 
 
 log = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ def init(seed: bool = False):
 		return
 
 	this.services = Services()
-	this.useCases = UseCases(dc=services)
+	this.useCases = UseCases(d=services)
 	this.db = this.services.db()
 
 	this.db.open()
