@@ -13,5 +13,5 @@ class PhoneService(ABC):
 		pass
 
 	@abstractmethod
-	def parse(self, phone: str) -> str:
+	def format(self, phone: str) -> str:
 		pass

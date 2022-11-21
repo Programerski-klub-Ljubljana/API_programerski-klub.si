@@ -27,7 +27,7 @@ class ZoDbRoot(DbRoot):
 
 	def clan_find_all(self, username: str) -> list[Oseba]:
 		clani = []
-		for clan in self.clan:
+		for clan in self.oseba:
 			if clan.has_username(username):
 				clani.append(clan)
 		return clani

@@ -27,7 +27,7 @@ class PhoneTwillio(PhoneService):
 			log.warning(err)
 		return False
 
-	def parse(self, phone: str) -> str:
+	def format(self, phone: str) -> str:
 		try:
 			x = phonenumbers.parse(phone, self.default_country_code)
 			return phonenumbers.format_number(x, phonenumbers.PhoneNumberFormat.E164)

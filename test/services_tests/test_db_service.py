@@ -38,7 +38,7 @@ class test_db(unittest.TestCase):
 
 	def test_entity_properties(self):
 		with APP.db.transaction() as root:
-			k = root.clan[0]
+			k = root.oseba[0]
 			self.assertEqual(k._razred, 'CLAN')
 			self.assertLessEqual(k._ustvarjen, datetime.utcnow())
 			self.assertLessEqual(k._posodobljen, datetime.utcnow())
@@ -49,14 +49,14 @@ class test_db(unittest.TestCase):
 		new_ime = '12345'
 
 		with APP.db.transaction() as root:
-			index = randint(0, len(root.clan) - 1)
-			self.assertNotEqual(root.clan[index].ime, new_ime)
-			old_ime = root.clan[index].ime
-			root.clan[index].ime = new_ime
+			index = randint(0, len(root.oseba) - 1)
+			self.assertNotEqual(root.oseba[index].ime, new_ime)
+			old_ime = root.oseba[index].ime
+			root.oseba[index].ime = new_ime
 
 		with APP.db.transaction() as root:
-			self.assertEqual(root.clan[index].ime, new_ime)
-			root.clan[index].ime = old_ime
+			self.assertEqual(root.oseba[index].ime, new_ime)
+			root.oseba[index].ime = old_ime
 
 	def test_transaction_save_append(self):
 
@@ -73,8 +73,8 @@ class test_db(unittest.TestCase):
 			self.assertNotIsInstance(clan2.vpisi, PersistentList)
 
 			# TEST IF KONTACTS NOT EXISTS IN DB
-			assert clan1 not in root.clan
-			assert clan2 not in root.clan
+			assert clan1 not in root.oseba
+			assert clan2 not in root.oseba
 
 			# INSERT NEW CONTACTS
 			root.save(clan1, clan2)
@@ -83,7 +83,7 @@ class test_db(unittest.TestCase):
 		clan_find1 = None
 		clan_find2 = None
 		with APP.db.transaction() as root:
-			for clan in root.clan:
+			for clan in root.oseba:
 				if clan == clan1:
 					clan_find1 = clan
 				if clan == clan2:
@@ -103,19 +103,19 @@ class test_db(unittest.TestCase):
 
 	def test_transaction_random_0(self):
 		with APP.db.transaction() as root:
-			clan1 = root.clan.random()
-			clan2 = root.clan.random()
+			clan1 = root.oseba.random()
+			clan2 = root.oseba.random()
 			self.assertNotEqual(clan1, clan2)
-			self.assertIn(clan1, root.clan)
-			self.assertIn(clan2, root.clan)
-			self.assertNotEqual(root.clan.index(clan1), root.clan.index(clan2))
+			self.assertIn(clan1, root.oseba)
+			self.assertIn(clan2, root.oseba)
+			self.assertNotEqual(root.oseba.index(clan1), root.oseba.index(clan2))
 
 	def test_transaction_random_1(self):
 		with APP.db.transaction() as root:
-			clani = root.clan.random(k=3)
+			clani = root.oseba.random(k=3)
 			self.assertTrue(clani[0] != clani[1] != clani[2])
 			for k in clani:
-				self.assertIn(k, root.clan)
+				self.assertIn(k, root.oseba)
 
 	def test_povezi(self):
 		log = Log(nivo=LogLevel.ERROR, tema=LogTheme.PROBLEM, sporocilo="Sporocilo0")
@@ -128,8 +128,8 @@ class test_db(unittest.TestCase):
 
 	def test_path(self):
 		with APP.db.transaction() as root:
-			kontakti = root.clan.path(page=0, max_width=10)
-			self.assertEqual(kontakti, root.clan[:10])
+			kontakti = root.oseba.path(page=0, max_width=10)
+			self.assertEqual(kontakti, root.oseba[:10])
 			self.assertEqual(len(kontakti), 10)
 			self.assertIsNotNone(kontakti[0]._povezave[0]._povezave[0]._povezave[0])
 

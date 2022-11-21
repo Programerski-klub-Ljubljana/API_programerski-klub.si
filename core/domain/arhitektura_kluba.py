@@ -35,6 +35,9 @@ class Kontakt:
 	tip: TipKontakta
 	validacija: TipValidacije = TipValidacije.NI_VALIDIRAN
 
+	def __eq__(self, kontakt):
+		return self.data == kontakt.data
+
 
 @dataclass
 class Oseba(Entity):
@@ -50,8 +53,25 @@ class Oseba(Entity):
 	def __post_init__(self):
 		Entity.save(self)
 
-	def __eq__(self, clan):
-		return self.ime == clan.ime and self.priimek == clan.priimek and self.rojen == clan.rojen
+	def __eq__(self, oseba):
+		# EQUACIJA MORA BITI MEHKA DA SE PREJ DETEKTIRAJO MOZNI DUPLIKATI
+		if not (self.ime == oseba.ime and self.priimek == oseba.priimek):
+			return False
+
+		# CE SE PRIIMEK IN IME UJEMA IN DA DATUMA NISTA PRAZNA POTEM DATUM ROJSTVA ODLOCA ALI STA ISTA
+		if self.rojen is not None and oseba.rojen is not None:
+			return self.rojen == oseba.rojen
+
+		# CE NIMA ROJSTVO DATUMA POGLEJ PO KONTAKTIH (NOBEN PODATKEN V BAZI NE BO OBSTAJAL DA NE BO VALIDIRAN)
+		# PREJ BOM ZAVRNIL MUDELA PRI VPISU
+		for kontakt in self.kontakti:
+			if kontakt in oseba.kontakti:
+				return True
+		for kontakt in oseba.kontakti:
+			if kontakt in self.kontakti:
+				return True
+
+		return False
 
 	def has_username(self, username: str) -> bool:
 		for kontakt in self.kontakti:
@@ -60,13 +80,13 @@ class Oseba(Entity):
 
 	def dodaj_kontakte(self, *kontakti: Kontakt):
 		for kontakt in kontakti:
-			obstaja = True
-			for old_kontakt in self.kontakti:
-				if old_kontakt.data == kontakt.data:
-					obstaja = False
-					break
-			if not obstaja:
+			if kontakt not in self.kontakti:
 				self.kontakti.append(kontakt)
+
+	def dodaj_tip_osebe(self, *statusi: TipOsebe):
+		for status in statusi:
+			if status not in self.tip_osebe:
+				self.tip_osebe.append(status)
 
 	def __str__(self):
 		rojstvo_id = self.rojen.strftime("%d%m%Y")

@@ -30,4 +30,6 @@ class Db_check_consistency(UseCase):
 	def invoke(self) -> Any:  # TODO: ensure that only valid originals are in db!!!
 		# Todo: check for duplicates in tables
 		# Todo: check for consistency for joining elements
+		# TODO: clean kontacts that are unvalidated for more than 2 days.
+		# TODO: ce je vpisan mora biti tudi clan
 		pass

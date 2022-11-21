@@ -20,6 +20,7 @@ async def vpis(
 		email: str = Form(), telefon: str = Form(),
 		ime_skrbnika: str | None = Form(None), priimek_skrbnika: str | None = Form(None),
 		email_skrbnika: str | None = Form(None), telefon_skrbnika: str | None = Form(None)):
+	# TODO: Validiraj skrbnika v primeru ce kdo dela post requeste mimo web/a
 	kwargs = copy.copy(locals())
 	clan_vpis: Forms_vpis = APP.useCases.forms_vpis()
 	template: TemplateService = APP.services.template()

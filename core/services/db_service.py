@@ -12,7 +12,7 @@ class DbRoot(ABC):
 	log: elist[Log]
 	klub: elist[Klub]
 	kontakt: elist[Kontakt]
-	clan: elist[Oseba]
+	oseba: elist[Oseba]
 	ekipa: elist[Ekipa]
 	oddelek: elist[Oddelek]
 	transakcija: elist[Transakcija]
