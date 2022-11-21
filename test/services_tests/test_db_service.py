@@ -39,7 +39,7 @@ class test_db(unittest.TestCase):
 	def test_entity_properties(self):
 		with APP.db.transaction() as root:
 			k = root.oseba[0]
-			self.assertEqual(k._razred, 'CLAN')
+			self.assertEqual(k._razred, 'OSEBA')
 			self.assertLessEqual(k._ustvarjen, datetime.utcnow())
 			self.assertLessEqual(k._posodobljen, datetime.utcnow())
 			self.assertGreaterEqual(len(k._dnevnik), 0)
@@ -62,8 +62,8 @@ class test_db(unittest.TestCase):
 
 		with APP.db.transaction() as root:
 			# CREATE KONTACTS
-			clan1 = db_entities.init_clan(ime='ime1')
-			clan2 = db_entities.init_clan(ime='ime2')
+			clan1 = db_entities.init_oseba(ime='ime1')
+			clan2 = db_entities.init_oseba(ime='ime2')
 
 			# ARE THEY EQUAL?
 			self.assertNotEqual(clan2, clan1)

@@ -1,6 +1,7 @@
 import unittest
 
 from app import APP
+from core.domain.arhitektura_kluba import Oseba
 from core.services.auth_service import Token
 from core.use_cases.auth_cases import Auth_info
 
@@ -16,7 +17,7 @@ class test_auth_login(unittest.TestCase):
 		cls.auth_info: Auth_info = APP.useCases.auth_info()
 
 	def login(self):
-		return self.auth_login.invoke('urosjarc', 'geslo')
+		return self.auth_login.invoke('jar.fmf@gmail.com', 'geslo')
 
 	def test_00_login_pass(self):
 		token = self.login()
@@ -29,8 +30,7 @@ class test_auth_login(unittest.TestCase):
 	def test_02_info_pass(self):
 		token = self.login()
 		info = self.auth_info.invoke(token.data)
-		self.assertTrue('ime' in info)
-		self.assertTrue('priimek' in info)
+		self.assertIsInstance(info, Oseba)
 
 
 if __name__ == '__main__':

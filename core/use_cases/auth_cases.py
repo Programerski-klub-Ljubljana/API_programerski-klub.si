@@ -19,8 +19,9 @@ class Auth_login(UseCase):
 	def invoke(self, username, password) -> Token | None:
 		with self.db.transaction() as root:
 			oseba = root.oseba_find(username)
-			if oseba is not None and self.auth.verify(password=password, hashed_password=oseba.geslo):
-				return self.auth.encode(TokenData(oseba.username), expiration=timedelta(hours=CONST.auth_token_life))
+			if oseba is not None and oseba.has_username(username):
+				if self.auth.verify(password=password, hashed_password=oseba.geslo):
+					return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_token_life))
 			return None
 
 

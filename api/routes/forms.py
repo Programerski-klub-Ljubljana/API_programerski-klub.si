@@ -22,9 +22,9 @@ async def vpis(
 		email_skrbnika: str | None = Form(None), telefon_skrbnika: str | None = Form(None)):
 	# TODO: Validiraj skrbnika v primeru ce kdo dela post requeste mimo web/a
 	kwargs = copy.copy(locals())
-	clan_vpis: Forms_vpis = APP.useCases.forms_vpis()
+	forms_vpis: Forms_vpis = APP.useCases.forms_vpis()
 	template: TemplateService = APP.services.template()
-	validations = await clan_vpis.invoke(**kwargs)
+	validations = await forms_vpis.invoke(**kwargs)
 
 	err_vals = list(filter(lambda x: not x.ok, validations))
 	ok_vals = list(filter(lambda x: x.ok, validations))

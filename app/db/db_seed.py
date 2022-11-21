@@ -7,7 +7,7 @@ from app.db import db_entities
 from app.db.db_entities import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipKontaktPodatka
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipValidacije, TipOsebe
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo, TipSporocila
 from core.domain.srecanja_dogodki import Dogodek, TipDogodka
@@ -16,30 +16,28 @@ from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 
 @traced
 def entities(root, **kwargs):
-	clan = db_entities.init_clan(ime='Uroš', priimek='Jarc', rojstro_delta_days=30 * 365)
+	clan = db_entities.init_oseba(ime='Uroš', priimek='Jarc', rojstro_delta_days=30 * 365)
 	root.save(clan)
 
 
 @traced
 def arhitektura_kluba(root, **kwargs):
-	for _ in range(kwargs['kontakti']):
-		data_tip = TipKontaktPodatka.random()
-		root.save(Kontakt(
-			ime=fake.first_name(),
-			priimek=fake.last_name(),
-			tip=TipKontakta.random(),
-			data_tip=data_tip,
-			data=str(fake.email() if data_tip == TipKontaktPodatka.EMAIL else fake.phone_number())
-		))
-
 	for _ in range(kwargs['clani']):
+		kontakti = []
+		for i in range(randint(2, kwargs['kontakti'])):
+			tip = TipKontakta.random()
+			data = str(fake.email) if tip == TipKontakta.EMAIL else fake.phone_number()
+			kontakt = Kontakt(data=data, tip=tip, validacija=TipValidacije.random())
+			kontakti.append(kontakt)
 		root.save(Oseba(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
 			geslo=db_entities.geslo,
+			tip_osebe=TipOsebe.random(),
+			kontakti=kontakti,
 			rojen=fake.date_this_century(before_today=True),
 			vpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))],
-			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))], ))
+			izpisi=[fake.date_time_this_decade(before_now=True) for _ in range(randint(0, 5))]))
 
 	for _ in range(kwargs['ekipe']):
 		root.save(Ekipa(
@@ -50,7 +48,7 @@ def arhitektura_kluba(root, **kwargs):
 		root.save(Oddelek(
 			ime=fake.catch_phrase(),
 			opis=fake.sentence(9),
-			ekipe=root.ekipa.random(k=randint(1, 10))))
+			ekipe=root.ekipa.random(k=randint(1, 5))))
 
 	for _ in range(kwargs['klubi']):
 		root.save(Klub(

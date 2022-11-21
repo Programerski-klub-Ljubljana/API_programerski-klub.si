@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import Mock
 
 from app import APP
-from core.domain.arhitektura_kluba import Kontakt
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, TipValidacije
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Validate_kontakt
@@ -15,24 +15,22 @@ class test_validate(unittest.TestCase):
 		APP.init(seed=True)
 
 		# MOCKS
-		cls.kontakt: Kontakt = Mock()
-		cls.kontakt.email = ['jar.fmf@gmail.com']
-		cls.kontakt.telefon = ['051240885']
-
+		cls.kontakt: Kontakt = Mock(Kontakt)
+		cls.kontakt.data = 'jar.fmf@gmail.com'
+		cls.kontakt.tip = TipKontakta.EMAIL
+		cls.kontakt.validacija = TipValidacije.NI_VALIDIRAN
 		cls.email_service = Mock(EmailService)
-		cls.email_service.obstaja().return_value = True
+		cls.email_service.obstaja.return_value = TipValidacije.VALIDIRAN
 		cls.sms_service: PhoneService = Mock(PhoneService)
-		cls.sms_service.obstaja().return_value = True
+		cls.sms_service.obstaja.return_value = TipValidacije.VALIDIRAN
 
 		# USE CASE
 		cls.validate_kontakt = Validate_kontakt(email=cls.email_service, phone=cls.sms_service)
 
 	def test_validate_kontakt(self):
-		validations = self.validate_kontakt.invoke(self.kontakt)
-		oks = [val.ok for val in validations]
-		datas = [val.podatek for val in validations]
-		self.assertListEqual(self.kontakt.telefon + self.kontakt.email, datas)  # Should check only telephone and email.
-		self.assertListEqual([self.sms_service.obstaja(), self.email_service.obstaja()], oks)
+		validated_kontakti: list[Kontakt] = self.validate_kontakt.invoke(self.kontakt)
+		self.assertEqual(len(validated_kontakti), 1)
+		self.assertEqual(validated_kontakti[0].validacija, TipValidacije.VALIDIRAN)
 
 
 if __name__ == '__main__':

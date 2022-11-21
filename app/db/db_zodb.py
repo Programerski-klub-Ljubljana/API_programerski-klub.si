@@ -24,6 +24,7 @@ class ZoDbRoot(DbRoot):
 			table = getattr(self, entity.__class__.__name__.lower())
 			if unique and entity not in table: # TODO: Does this works???
 				table.append(entity)
+			else: table.append(entity)
 
 	def oseba_find(self, username: str) -> Oseba:
 		for oseba in self.oseba:
@@ -62,7 +63,7 @@ class DbZo(DbService):
 			root = ZoDbRoot(connection.root)
 
 			db_seed.entities(root)
-			db_seed.arhitektura_kluba(root, kontakti=60, clani=30, ekipe=10, oddeleki=4, klubi=3)
+			db_seed.arhitektura_kluba(root, kontakti=10, clani=30, ekipe=10, oddeleki=4, klubi=3)
 			db_seed.bancni_racun(root, transakcije=180, bancni_racun=3)
 			db_seed.oznanila_sporocanja(root, objave=50, sporocila=90)
 			db_seed.srecanja_dogodki_tekme(root, dogodek=20)

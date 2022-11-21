@@ -26,7 +26,7 @@ class Services(DeclarativeContainer):
 	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH)
 	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
 	phone: Provider[PhoneTwillio] = Singleton(
-		PhoneTwillio, default_country_code=CONST.phone_country_code,
+		PhoneTwillio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
 		account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
 		EmailSmtp, name=CONST.klub, email=CONST.email,
@@ -40,7 +40,7 @@ class Services(DeclarativeContainer):
 class UseCases(DeclarativeContainer):
 	d = DependenciesContainer()
 
-	# CLAN
+	# OSEBA
 	validate_kontakt: Provider[Validate_kontakt] = Factory(Validate_kontakt, email=d.email, phone=d.phone)
 
 	# AUTH

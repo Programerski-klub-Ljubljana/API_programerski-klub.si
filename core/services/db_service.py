@@ -11,7 +11,6 @@ from core.domain.vaje_naloge import Test, Naloga
 class DbRoot(ABC):
 	log: elist[Log]
 	klub: elist[Klub]
-	kontakt: elist[Kontakt]
 	oseba: elist[Oseba]
 	ekipa: elist[Ekipa]
 	oddelek: elist[Oddelek]
