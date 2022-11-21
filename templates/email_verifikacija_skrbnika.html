@@ -1,0 +1,9 @@
+{% include "_HEAD.html" %}
+
+<h1>{{ime}} {{priimek}}</h1>
+
+<p>Potrdi obstoj email kontakta</p>
+
+<a href="{{auth_verify_url}}/{{email_token}}">{{email}}</a>
+
+{% include "_FOOT.html" %}

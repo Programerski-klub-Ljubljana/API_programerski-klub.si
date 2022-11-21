@@ -28,10 +28,7 @@ class DbRoot(ABC):
 		pass
 
 	@abstractmethod
-	def clan_find_all(self, username) -> list[Oseba]:
-		pass
-
-	def clan_search_and_merge(self, clan: Oseba) -> Oseba | None:
+	def oseba_find(self, username) -> Oseba:
 		pass
 
 

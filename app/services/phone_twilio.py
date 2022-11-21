@@ -12,8 +12,9 @@ log = logging.getLogger(__name__)
 
 @traced
 class PhoneTwillio(PhoneService):
-	def __init__(self, account_sid: str, auth_token: str, default_country_code: str):
+	def __init__(self, account_sid: str, auth_token: str, default_country_code: str, from_number: str):
 		self.default_country_code = default_country_code
+		self.from_number = from_number
 		self.client = Client(account_sid, auth_token)
 
 	def obstaja(self, phone: str) -> bool:
@@ -34,3 +35,9 @@ class PhoneTwillio(PhoneService):
 		except NumberParseException as err:
 			log.warning(err)
 			return phone
+
+	def sms(self, phone: str, text: str):
+		self.client.messages.create(
+			to=phone,
+			from_=self.from_number,
+			body=text)

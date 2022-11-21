@@ -15,7 +15,7 @@ from app.services.phone_twilio import PhoneTwillio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
-from core.use_cases.auth_cases import Auth_login, Auth_info
+from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token
 from core.use_cases.db_cases import Db_path
 from core.use_cases.forms_vpis import Forms_vpis
 from core.use_cases.validation_cases import Validate_kontakt
@@ -46,10 +46,13 @@ class UseCases(DeclarativeContainer):
 	# AUTH
 	auth_login: Provider[Auth_login] = Factory(Auth_login, db=d.db, auth=d.auth)
 	auth_info: Provider[Auth_info] = Factory(Auth_info, db=d.db, auth=d.auth)
+	auth_verification_token: Provider[Auth_verification_token] = Factory(Auth_verification_token, db=d.db, auth=d.auth)
 
 	# DB
 	db_path: Provider[Db_path] = Factory(Db_path, db=d.db)
-	forms_vpis: Provider = Factory(Forms_vpis, db=d.db, email=d.email, phone=d.phone, validate_kontakt=validate_kontakt, template=d.template)
+	forms_vpis: Provider = Factory(
+		Forms_vpis, db=d.db, email=d.email, phone=d.phone, validate_kontakt=validate_kontakt, template=d.template,
+		auth_verification_token=auth_verification_token)
 
 
 log = logging.getLogger(__name__)

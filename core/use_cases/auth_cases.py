@@ -4,7 +4,7 @@ from datetime import timedelta
 from autologging import traced
 
 from app import CONST
-from core import cutils
+from core.domain.arhitektura_kluba import Oseba
 from core.services.auth_service import AuthService, Token, TokenData
 from core.services.db_service import DbService
 from core.use_cases._usecase import UseCase
@@ -18,10 +18,9 @@ class Auth_login(UseCase):
 
 	def invoke(self, username, password) -> Token | None:
 		with self.db.transaction() as root:
-			for clan in root.clan_find_all(username):
-				if self.auth.verify(password=password, hashed_password=clan.geslo):
-					return self.auth.encode(TokenData(clan.username), expiration=timedelta(hours=CONST.token_life))
-
+			oseba = root.oseba_find(username)
+			if oseba is not None and self.auth.verify(password=password, hashed_password=oseba.geslo):
+				return self.auth.encode(TokenData(oseba.username), expiration=timedelta(hours=CONST.auth_token_life))
 			return None
 
 
@@ -31,11 +30,21 @@ class Auth_info(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, token) -> dict | None:
+	def invoke(self, token) -> Oseba | None:
 		token_data = self.auth.decode(token)
 		if token_data is None:
 			return None
 		with self.db.transaction() as root:
-			clan = root.clan_find_all(token_data.username)
-			if clan is not None:
-				return cutils.object_json(clan)
+			oseba = root.oseba_find(token_data.username)
+			if oseba is not None:
+				return oseba
+
+
+@traced
+@dataclass
+class Auth_verification_token(UseCase):
+	db: DbService
+	auth: AuthService
+
+	def invoke(self, username: str) -> Token:
+		return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.verification_token_life))

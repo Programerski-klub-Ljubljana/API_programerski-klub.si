@@ -12,6 +12,7 @@ from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.template_service import TemplateService
 from core.use_cases._usecase import UseCase
+from core.use_cases.auth_cases import Auth_verification_token
 from core.use_cases.validation_cases import Validate_kontakt
 
 log = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ class Forms_vpis(UseCase):
 	phone: PhoneService
 	template: TemplateService
 	validate_kontakt: Validate_kontakt
+	auth_verification_token: Auth_verification_token
 
 	async def invoke(
 			self,
@@ -154,21 +156,34 @@ class Forms_vpis(UseCase):
 		# CE NI BILO NAPAK...
 		if len(vpis.razlogi_prekinitve) == 0:
 			# PRIPRAVI TEMPLATE
-			temp = self.template.init(ime=ime, priimek=priimek, email_clana=email, email_skrbnika=email_skrbnika)
+			temp = self.template.init(
+				ime=ime, priimek=priimek,
+				ime_skrbnika=ime_skrbnika, priimek_skrbnika=priimek_skrbnika,
+
+				email=email, telefon=telefon,
+				email_skrbnika=email_skrbnika, telefon_skrbnika=telefon_skrbnika,
+
+				auth_verify_url=CONST.auth_verify_url,
+				sms_token=self.auth_verification_token.invoke(telefon),
+				email_token=self.auth_verification_token.invoke(email),
+				sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika),
+				email_token_skrbnik=self.auth_verification_token.invoke(email_skrbnika),
+			)
 
 			# SHRANI CLANA IN SKRBNIKA
 			# TODO: POSLJI EMAIL SAMO VALIDIRANIM IN NEPOTRJENIM KONTAKTOM!!!
 			with self.db.transaction(note=f'Shrani {clan}') as root:
 				root.save(clan)
-				# TODO: Poslji potrditvene sms-e
+				self.phone.sms(phone=telefon, text=temp.sms_verifikaija_clana)
 				await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
 					recipients=[email],
 					subject=CONST.subject.vpis,
-					vsebina=temp.email_vpis)
+					vsebina=temp.email_verifikacija_clana)
 
 				if clan.mladoletnik:
 					clan.povezi(skrbnik)
 					root.save(skrbnik)
+					self.phone.sms(phone=telefon_skrbnika, text=temp.sms_verifikaija_skrbnika)
 					await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
 						recipients=[email_skrbnika],
 						subject=CONST.subject.vpis_skrbnik,

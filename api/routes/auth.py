@@ -46,3 +46,9 @@ def info(token: str = Depends(oauth2_scheme)):
 		detail="Missing token",
 		headers={"WWW-Authenticate": "Bearer"},
 	)
+
+
+@traced
+@router.get("/verify/{verification_token}")
+def verify(verification_token):
+	print(verification_token)

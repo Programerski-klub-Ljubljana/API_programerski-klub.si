@@ -15,3 +15,6 @@ class PhoneService(ABC):
 	@abstractmethod
 	def format(self, phone: str) -> str:
 		pass
+
+	def sms(self, phone: str, text: str) -> str:
+		pass

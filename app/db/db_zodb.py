@@ -25,12 +25,10 @@ class ZoDbRoot(DbRoot):
 			if unique and entity not in table: # TODO: Does this works???
 				table.append(entity)
 
-	def clan_find_all(self, username: str) -> list[Oseba]:
-		clani = []
-		for clan in self.oseba:
-			if clan.has_username(username):
-				clani.append(clan)
-		return clani
+	def oseba_find(self, username: str) -> Oseba:
+		for oseba in self.oseba:
+			if oseba.has_username(username):
+				return oseba
 
 
 @traced
