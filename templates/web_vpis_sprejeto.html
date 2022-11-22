@@ -1,0 +1,19 @@
+{% include "_HEAD.html" %}
+<h1>{{ime}} {{priimek}}</h1>
+
+<h3>Vpis v klub uspešno opravljen</h3>
+
+Na kontaktne podake smo poslali avtorizacijska sporočila,
+s katerimi prosim potrdi verodostojnost kontaktnih podatkov....
+
+<code>
+    <table>
+        {% for kontakt in kontakti %}
+        <tr>
+            <td><h3>{{kontakt}}</h3></td>
+        </tr>
+        {% endfor %}
+    </table>
+</code>
+
+{% include "_FOOT.html" %}

@@ -1,10 +1,11 @@
 import jinja2
 from autologging import traced
 
-from core.services.template_service import TemplateService, TemplateA
+from app import CONST
+from core.services.template_service import TemplateService, TemplateRenderer
 
 
-class Template(TemplateA):
+class TemplateRendererJinja(TemplateRenderer):
 	def __init__(self, env, **kwargs):
 		self.env = env
 		self.kwargs = kwargs
@@ -21,6 +22,13 @@ class Template(TemplateA):
 class TemplateJinja(TemplateService):
 	def __init__(self, searchpath: str):
 		self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchpath))
+		self.kwargs = {}
+		self.__init()
+
+	def __init(self):
+		for ele, val in CONST.__dict__.items():
+			if isinstance(val, str | float | int):
+				self.kwargs[f'CONST_{ele}'] = val
 
 	def init(self, **kwargs):
-		return Template(self.env, **kwargs)
+		return TemplateRendererJinja(self.env, **{**kwargs, **self.kwargs})

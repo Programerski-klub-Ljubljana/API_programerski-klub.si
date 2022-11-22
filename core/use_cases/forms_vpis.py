@@ -43,19 +43,36 @@ class StatusVpisa:
 	razlogi_duplikacije_skrbnika: list[RazlogDuplikacije] = None
 	razlogi_duplikacije_clana: list[RazlogDuplikacije] = None
 	razlogi_prekinitve: list[TipProblema] = None
-	napacni_podatki_skrbnika: list[Kontakt] = None
-	napacni_podatki_clana: list[Kontakt] = None
+	validirani_podatki_skrbnika: list[Kontakt] = None
+	validirani_podatki_clana: list[Kontakt] = None
 
 	def __post_init__(self):
 		self.razlogi_duplikacije_clana = []
 		self.razlogi_duplikacije_skrbnika = []
 		self.razlogi_prekinitve = []
-		self.napacni_podatki_skrbnika = []
-		self.napacni_podatki_clana = []
+		self.validirani_podatki_clana = []
+		self.validirani_podatki_skrbnika = []
+
+	def _napacni_podatki(self, kontakti):
+		lam_ni_validiran = lambda kontakt: kontakt.validacija == TipValidacije.NI_VALIDIRAN
+		return list(filter(lam_ni_validiran, kontakti))
+
+	@property
+	def napacni_podatki_skrbnika(self):
+		return self._napacni_podatki(self.validirani_podatki_skrbnika)
+
+	@property
+	def napacni_podatki_clana(self):
+		return self._napacni_podatki(self.validirani_podatki_clana)
 
 	def stevilo_napacnih_podatkov(self):
 		return len(self.napacni_podatki_skrbnika + self.napacni_podatki_clana)
 
+	@property
+	def validirani_podatki(self):
+		return self.validirani_podatki_skrbnika + self.validirani_podatki_clana
+
+	@property
 	def stevilo_problemov(self):
 		return len(self.razlogi_prekinitve)
 
@@ -88,6 +105,9 @@ class Forms_vpis(UseCase):
 			email: str, telefon: str,
 			ime_skrbnika: str = None, priimek_skrbnika: str = None,
 			email_skrbnika: str = None, telefon_skrbnika: str = None) -> StatusVpisa:
+		kwargs = locals()
+		del kwargs['self']
+
 		# FORMAT PHONE
 		telefon = self.phone.format(phone=telefon)
 		clan = Oseba(
@@ -149,16 +169,12 @@ class Forms_vpis(UseCase):
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
-		validirani_kontaki_clana = self.validate_kontakt.invoke(*clan.kontakti)
-		validirani_kontaki_skrbnika = [] if not clan.mladoletnik else self.validate_kontakt.invoke(*skrbnik.kontakti)
+		vpis.validirani_kontaki_clana = self.validate_kontakt.invoke(*clan.kontakti)
+		if clan.mladoletnik:
+			vpis.validirani_podatki_skrbnika = self.validate_kontakt.invoke(*skrbnik.kontakti)
 
-		ST_VALIDACIJ = len(validirani_kontaki_skrbnika + validirani_kontaki_clana)
-
-		lam_ni_validiran = lambda kontakt: kontakt.validacija == TipValidacije.NI_VALIDIRAN
-		vpis.napacni_podatki_clana += list(filter(lam_ni_validiran, validirani_kontaki_clana))
-		vpis.napacni_podatki_skrbnika += list(filter(lam_ni_validiran, validirani_kontaki_skrbnika))
+		ST_VALIDACIJ = len(vpis.validirani_podatki)
 		ST_NAPAK = vpis.stevilo_napacnih_podatkov()
-
 		if ST_NAPAK > 0:
 			vpis.razlogi_prekinitve.append(TipProblema.NAPAKE)
 			if ST_NAPAK == ST_VALIDACIJ:
@@ -168,16 +184,7 @@ class Forms_vpis(UseCase):
 		if len(vpis.razlogi_prekinitve) == 0:
 			# PRIPRAVI TEMPLATE
 			temp = self.template.init(
-				ime=ime, priimek=priimek,
-				ime_skrbnika=ime_skrbnika, priimek_skrbnika=priimek_skrbnika,
-
-				klub=CONST.klub,
-				auth_confirm_url=CONST.auth_confirm_url,
-				auth_report_url=CONST.auth_report_url,
-
-				email=email, telefon=telefon,
-				email_skrbnika=email_skrbnika, telefon_skrbnika=telefon_skrbnika,
-
+				**kwargs,
 				sms_token=self.auth_verification_token.invoke(telefon).data,
 				email_token=self.auth_verification_token.invoke(email).data,
 				sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika).data,
@@ -187,16 +194,16 @@ class Forms_vpis(UseCase):
 			# TODO: POSLJI EMAIL SAMO VALIDIRANIM IN NEPOTRJENIM KONTAKTOM!!!
 			with self.db.transaction(note=f'Shrani {clan}') as root:
 				root.save(clan)
-				self.phone.sms(phone=telefon, text=temp.sms_verifikacija_clana)
+				self.phone.sms(phone=telefon, text=temp.sms_verifikacija_clan)
 				await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
 					recipients=[email],
 					subject=CONST.subject.vpis,
-					vsebina=temp.email_verifikacija_clana)
+					vsebina=temp.email_verifikacija_clan)
 
 				if clan.mladoletnik:
 					clan.povezi(skrbnik)
 					root.save(skrbnik)
-					self.phone.sms(phone=telefon_skrbnika, text=temp.sms_verifikaija_skrbnika)
+					self.phone.sms(phone=telefon_skrbnika, text=temp.sms_verifikaija_skrbnik)
 					await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
 						recipients=[email_skrbnika],
 						subject=CONST.subject.vpis_skrbnik,

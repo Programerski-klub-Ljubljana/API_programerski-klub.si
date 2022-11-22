@@ -1,11 +1,10 @@
 from abc import abstractmethod, ABC
-from dataclasses import dataclass
 
 from autologging import traced
 
 
 @traced
-class TemplateA(ABC):
+class TemplateRenderer(ABC):
 	@abstractmethod
 	def __call__(self, key, value):
 		pass
@@ -18,5 +17,5 @@ class TemplateA(ABC):
 @traced
 class TemplateService(ABC):
 	@abstractmethod
-	def init(self, **kwargs) -> TemplateA:
+	def init(self, **kwargs) -> TemplateRenderer:
 		pass

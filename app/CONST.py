@@ -9,8 +9,8 @@ web_api = f'{web}/api'
 github = 'https://github.com/programerski-klub-ljubljana'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
-auth_token_life = 24
-verification_token_life = 1
+auth_token_life = 24  # 24ur
+verification_token_life = 48  # 2 dni
 auth_confirm_url = f'{web_api}/auth/confirm'
 auth_report_url = f'{web_api}/auth/report'
 
