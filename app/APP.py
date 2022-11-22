@@ -27,7 +27,7 @@ class Services(DeclarativeContainer):
 	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
 	phone: Provider[PhoneTwillio] = Singleton(
 		PhoneTwillio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
-		account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
+		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
 		EmailSmtp, name=CONST.klub, email=CONST.email,
 		server=CONST.domain, port=ENV.MAIL_PORT,

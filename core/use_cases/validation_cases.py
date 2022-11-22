@@ -29,6 +29,7 @@ class Validate_kontakt(UseCase):
 		for kontakt in kontakti:
 			val_fun = mapping[kontakt.tip]
 			if kontakt.validacija == TipValidacije.NI_VALIDIRAN:
-				kontakt.validacija = val_fun(kontakt.data)
+				if val_fun(kontakt.data):
+					kontakt.validacija = TipValidacije.VALIDIRAN
 				val_kontakti.append(kontakt)
 		return val_kontakti

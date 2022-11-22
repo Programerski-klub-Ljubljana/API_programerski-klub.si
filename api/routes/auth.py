@@ -49,6 +49,11 @@ def info(token: str = Depends(oauth2_scheme)):
 
 
 @traced
-@router.get("/verify/{verification_token}")
+@router.get("/confirm/{verification_token}")
+def verify(verification_token):
+	print(verification_token)
+
+@traced
+@router.get("/report/{verification_token}")
 def verify(verification_token):
 	print(verification_token)

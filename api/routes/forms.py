@@ -7,7 +7,7 @@ from starlette.responses import HTMLResponse
 from api import autils
 from app import APP
 from core.services.template_service import TemplateService
-from core.use_cases.forms_vpis import Forms_vpis
+from core.use_cases.forms_vpis import Forms_vpis, TipProblema
 
 router = autils.router(__name__)
 
@@ -22,32 +22,23 @@ async def vpis(
 		email_skrbnika: str | None = Form(None), telefon_skrbnika: str | None = Form(None)):
 	# TODO: Validiraj skrbnika v primeru ce kdo dela post requeste mimo web/a
 	kwargs = copy.copy(locals())
+
 	forms_vpis: Forms_vpis = APP.useCases.forms_vpis()
 	template: TemplateService = APP.services.template()
-	validations = await forms_vpis.invoke(**kwargs)
-
-	err_vals = list(filter(lambda x: not x.ok, validations))
-	ok_vals = list(filter(lambda x: x.ok, validations))
+	vpis = await forms_vpis.invoke(**kwargs)
+	print(vpis)
 
 	temp = template.init(**kwargs)
-
-	# TEST ZA NAPAKE
-	if len(err_vals) > 0:
-		if len(ok_vals) == 0:
-			return HTMLResponse(content=temp.warn_prekrsek, status_code=400)
-
-		# CE JE VSAJ ENA VALIDACIJA FAIL
-		temp.napake = [val.podatek for val in err_vals]
+	if TipProblema.HACKER in vpis.razlogi_prekinitve:
+		return HTMLResponse(content=temp.warn_prekrsek, status_code=400)
+	elif TipProblema.NAPAKE in vpis.razlogi_prekinitve:
+		temp.napake = [k.data for k in vpis.napacni_podatki_skrbnika + vpis.napacni_podatki_clana]
 		return HTMLResponse(content=temp.warn_napaka, status_code=400)
+	elif TipProblema.CHUCK_NORIS in vpis.razlogi_prekinitve:
+		return HTMLResponse(content=temp.warn_chuck_noris)
 
 	# POSILJANJE POTRDITVENEGA EMAILA
 	return HTMLResponse(content=temp.ok_sprejeto, status_code=200)
-
-
-@traced
-@router.get("/vpis/{uporabnik")
-def vpis_uporabnik(uporabnik: str):
-	return {}
 
 
 @traced

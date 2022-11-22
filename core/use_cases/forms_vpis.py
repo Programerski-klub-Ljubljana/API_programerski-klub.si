@@ -37,7 +37,7 @@ class TipProblema(str, Enum):
 
 
 @dataclass
-class Vpis:
+class StatusVpisa:
 	clan: Oseba | None
 	skrbnik: Oseba = None
 	razlogi_duplikacije_skrbnika: list[RazlogDuplikacije] = None
@@ -59,6 +59,17 @@ class Vpis:
 	def stevilo_problemov(self):
 		return len(self.razlogi_prekinitve)
 
+	def __str__(self):
+		return f"""
+			Clan   : {self.clan}
+			Skrbnik: {self.skrbnik}
+			Razlogi duplikacije skrbnika: {self.razlogi_duplikacije_skrbnika}
+			Razlogi duplikacije clana   : {self.razlogi_duplikacije_clana}
+			Razlogi prekinitve          : {self.razlogi_prekinitve}
+			Napake skrbnika: {", ".join(k.data for k in self.napacni_podatki_skrbnika)}
+			Napake clana   : {", ".join(k.data for k in self.napacni_podatki_clana)}
+		""".removeprefix('\t\t')
+
 
 @traced
 @dataclass
@@ -76,7 +87,7 @@ class Forms_vpis(UseCase):
 			dan_rojstva: int, mesec_rojstva: int, leto_rojstva: int,
 			email: str, telefon: str,
 			ime_skrbnika: str = None, priimek_skrbnika: str = None,
-			email_skrbnika: str = None, telefon_skrbnika: str = None) -> Vpis:
+			email_skrbnika: str = None, telefon_skrbnika: str = None) -> StatusVpisa:
 		# FORMAT PHONE
 		telefon = self.phone.format(phone=telefon)
 		clan = Oseba(
@@ -86,7 +97,7 @@ class Forms_vpis(UseCase):
 				Kontakt(data=telefon, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
 
 		# ZACNI VPISNI POSTOPEK
-		vpis = Vpis(clan=clan)
+		vpis = StatusVpisa(clan=clan)
 
 		skrbnik = None
 		if clan.mladoletnik:
@@ -143,7 +154,7 @@ class Forms_vpis(UseCase):
 
 		ST_VALIDACIJ = len(validirani_kontaki_skrbnika + validirani_kontaki_clana)
 
-		lam_ni_validiran = lambda kontakt: not kontakt.validacija == TipValidacije.NI_VALIDIRAN
+		lam_ni_validiran = lambda kontakt: kontakt.validacija == TipValidacije.NI_VALIDIRAN
 		vpis.napacni_podatki_clana += list(filter(lam_ni_validiran, validirani_kontaki_clana))
 		vpis.napacni_podatki_skrbnika += list(filter(lam_ni_validiran, validirani_kontaki_skrbnika))
 		ST_NAPAK = vpis.stevilo_napacnih_podatkov()
@@ -160,21 +171,23 @@ class Forms_vpis(UseCase):
 				ime=ime, priimek=priimek,
 				ime_skrbnika=ime_skrbnika, priimek_skrbnika=priimek_skrbnika,
 
+				klub=CONST.klub,
+				auth_confirm_url=CONST.auth_confirm_url,
+				auth_report_url=CONST.auth_report_url,
+
 				email=email, telefon=telefon,
 				email_skrbnika=email_skrbnika, telefon_skrbnika=telefon_skrbnika,
 
-				auth_verify_url=CONST.auth_verify_url,
-				sms_token=self.auth_verification_token.invoke(telefon),
-				email_token=self.auth_verification_token.invoke(email),
-				sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika),
-				email_token_skrbnik=self.auth_verification_token.invoke(email_skrbnika),
-			)
+				sms_token=self.auth_verification_token.invoke(telefon).data,
+				email_token=self.auth_verification_token.invoke(email).data,
+				sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika).data,
+				email_token_skrbnik=self.auth_verification_token.invoke(email_skrbnika).data)
 
 			# SHRANI CLANA IN SKRBNIKA
 			# TODO: POSLJI EMAIL SAMO VALIDIRANIM IN NEPOTRJENIM KONTAKTOM!!!
 			with self.db.transaction(note=f'Shrani {clan}') as root:
 				root.save(clan)
-				self.phone.sms(phone=telefon, text=temp.sms_verifikaija_clana)
+				self.phone.sms(phone=telefon, text=temp.sms_verifikacija_clana)
 				await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
 					recipients=[email],
 					subject=CONST.subject.vpis,

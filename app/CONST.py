@@ -11,7 +11,8 @@ logo = "https://avatars.githubusercontent.com/u/105967036"
 
 auth_token_life = 24
 verification_token_life = 1
-auth_verify_url = f'{web_api}/auth/verify'
+auth_confirm_url = f'{web_api}/auth/confirm'
+auth_report_url = f'{web_api}/auth/report'
 
 phone_country_code = "SI"
 

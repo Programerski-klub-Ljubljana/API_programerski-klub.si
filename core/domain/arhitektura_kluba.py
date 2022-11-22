@@ -30,7 +30,7 @@ class TipOsebe(EntityEnum):
 
 
 @dataclass
-class Kontakt:
+class Kontakt(Entity):
 	data: str
 	tip: TipKontakta
 	validacija: TipValidacije = TipValidacije.NI_VALIDIRAN
@@ -89,7 +89,7 @@ class Oseba(Entity):
 				self.tip_osebe.append(status)
 
 	def __str__(self):
-		rojstvo_id = self.rojen.strftime("%d%m%Y")
+		rojstvo_id = '' if self.rojen is None else self.rojen.strftime("%d%m%Y")
 		return unidecode(f'{self.ime}{self.priimek}_{rojstvo_id}'.replace(' ', '').lower())
 
 	def nov_vpis(self):
