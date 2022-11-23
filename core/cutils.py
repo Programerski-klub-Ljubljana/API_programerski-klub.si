@@ -1,9 +1,23 @@
 import inspect
 from datetime import date
 from pathlib import Path
-from typing import Mapping
+from typing import Mapping, Union
 
 from dateutil.relativedelta import *
+from faker import Faker
+from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
+
+fake: Union[
+	address.Provider,
+	company.Provider,
+	date_time.Provider,
+	internet.Provider,
+	person.Provider,
+	phone_number.Provider,
+	ssn.Provider,
+	lorem.Provider,
+	Faker
+] = Faker("sl_SI")
 
 
 def root_path(*paths) -> Path:

@@ -1,24 +1,9 @@
 from datetime import datetime, timedelta
 from random import randint
-from typing import Union
 
-from faker import Faker
-from faker.providers import address, company, date_time, internet, person, phone_number, ssn, lorem
-
+from core.cutils import fake
 from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, TipValidacije
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije
-
-fake: Union[
-	address.Provider,
-	company.Provider,
-	date_time.Provider,
-	internet.Provider,
-	person.Provider,
-	phone_number.Provider,
-	ssn.Provider,
-	lorem.Provider,
-	Faker
-] = Faker("sl_SI")
 
 geslo = '$2b$12$HpUrAvHs/S5A4tm38LmCdOMSSSKElmgTiGShQ4OXYk2c0QiN2WyRu'
 geslo_raw = 'geslo'

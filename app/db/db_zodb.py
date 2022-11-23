@@ -22,9 +22,10 @@ class ZoDbRoot(DbRoot):
 	def save(self, *entities, unique=False):
 		for entity in entities:
 			table = getattr(self, entity.__class__.__name__.lower())
-			if unique and entity not in table: # TODO: Does this works???
+			if unique and entity not in table:  # TODO: Does this works???
 				table.append(entity)
-			else: table.append(entity)
+			else:
+				table.append(entity)
 
 	def oseba_find(self, username: str) -> Oseba:
 		for oseba in self.oseba:

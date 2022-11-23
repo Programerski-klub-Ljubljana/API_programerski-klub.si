@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 this = sys.modules[__name__]
 inited: bool = False
-fapi = FastAPI(**CONST.openapi)
+fapi = FastAPI(**CONST.api_openapi)
 
 
 @traced
@@ -54,7 +54,7 @@ def init(timing=False):
 		add_timing_middleware(fapi, record=log.info)
 
 	# CORS
-	fapi.add_middleware(CORSMiddleware, **CONST.cors)
+	fapi.add_middleware(CORSMiddleware, **CONST.api_cors)
 
 	# ROUTES REGISTER
 	fapi.include_router(db.router)

@@ -77,6 +77,7 @@ class Oseba(Entity):
 		for kontakt in self.kontakti:
 			if kontakt.data == username:
 				return True
+		return False
 
 	def dodaj_kontakte(self, *kontakti: Kontakt):
 		for kontakt in kontakti:

@@ -30,5 +30,5 @@ class TemplateJinja(TemplateService):
 			if isinstance(val, str | float | int):
 				self.kwargs[f'CONST_{ele}'] = val
 
-	def init(self, **kwargs):
+	def init(self, **kwargs) -> TemplateRendererJinja:
 		return TemplateRendererJinja(self.env, **{**kwargs, **self.kwargs})

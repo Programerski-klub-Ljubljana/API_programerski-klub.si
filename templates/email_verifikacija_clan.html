@@ -1,9 +1,10 @@
 {% include "_HEAD.html" %}
 
-<h1>{{ime_skrbnika}} {{priimek_skrbnika}}</h1>
+<h1>VERIFIKACIJA OSEBE</h1>
+<h2>{{ime}} {{priimek}}</h2>
+<h3>Klikni ustrezni gumb da....</h3>
 
-<p>Potrdi obstoj email kontakta</p>
-
-<a href="{{auth_verify_url}}/{{email_token_skrbnik}}">{{email_skrbnik}}</a>
+<a href="{{CONST_auth_confirm_url}}/{{email_token}}">Potrdiš svojo identiteto</a>
+<a href="{{CONST_auth_report_url}}/{{email_token}}">Prijaviš zlorabo email naslova</a>
 
 {% include "_FOOT.html" %}

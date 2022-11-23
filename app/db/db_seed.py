@@ -4,7 +4,7 @@ from random import choice, randint, uniform
 from autologging import traced
 
 from app.db import db_entities
-from app.db.db_entities import fake
+from core.cutils import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipValidacije, TipOsebe

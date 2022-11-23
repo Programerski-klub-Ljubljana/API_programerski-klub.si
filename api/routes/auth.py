@@ -5,10 +5,10 @@ from pydantic import BaseModel
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from api import autils
-from app import APP
+from app import APP, CONST
 
 router = autils.router(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=CONST.auth_token_url)
 
 
 class TokenResponse(BaseModel):
@@ -52,6 +52,7 @@ def info(token: str = Depends(oauth2_scheme)):
 @router.get("/confirm/{verification_token}")
 def verify(verification_token):
 	print(verification_token)
+
 
 @traced
 @router.get("/report/{verification_token}")

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from core.domain._entity import elist, Entity, Log
-from core.domain.arhitektura_kluba import Oseba, Ekipa, Oddelek, Klub, Kontakt
+from core.domain._entity import elist, Log
+from core.domain.arhitektura_kluba import Oseba, Ekipa, Oddelek, Klub
 from core.domain.bancni_racun import Transakcija, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, Sporocilo
 from core.domain.srecanja_dogodki import Dogodek

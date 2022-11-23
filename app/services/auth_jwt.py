@@ -30,5 +30,5 @@ class AuthJwt(AuthService):
 	def verify(self, password, hashed_password) -> bool:
 		return self.pwd_context.verify(secret=password, hash=hashed_password)
 
-	def hash(self, password):
+	def hash(self, password) -> str:
 		return self.pwd_context.hash(password)

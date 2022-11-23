@@ -9,14 +9,15 @@ web_api = f'{web}/api'
 github = 'https://github.com/programerski-klub-ljubljana'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
+auth_token_url = '/auth/login'
 auth_token_life = 24  # 24ur
-verification_token_life = 48  # 2 dni
+auth_verification_token_life = 48  # 2 dni
 auth_confirm_url = f'{web_api}/auth/confirm'
 auth_report_url = f'{web_api}/auth/report'
 
 phone_country_code = "SI"
 
-openapi = {
+api_openapi = {
 	'version': version,
 	'title': f"API - {klub}",
 	'contact': {'email': email, 'web': web, 'github': github},
@@ -29,16 +30,17 @@ openapi = {
 		{'url': web_api, 'description': 'Production'}]
 }
 
-cors = {
+api_cors = {
 	'allow_credentials': True,
 	'allow_origins': ['http://localhost:5173', web_api],
 	'allow_methods': ["*"],
 	'allow_headers': ["*"],
 }
 
-templates = cutils.root_path('templates')
+api_templates = cutils.root_path('templates')
 
 
-class subject:
+class email_subject:
 	vpis = f'{klub} | Potrdilo ob vpisu'
 	vpis_skrbnik = f'{klub} | Obvestilo skrbnika o vpisu'
+	verifikacija = f'{klub} | Verifikacija osebe'

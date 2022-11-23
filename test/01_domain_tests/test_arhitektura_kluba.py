@@ -42,7 +42,7 @@ class test_arhitektura_kluba(unittest.TestCase):
 	def test_username(self):
 		clan = db_entities.init_oseba(ime='kožušček', priimek='šđžćč-ŠĐŽČĆ')
 		self.assertTrue(clan.has_username('jar.fmf@gmail.com'))
-		self.assertEqual(clan.has_username('jarc.fmf@gmail.com'))
+		self.assertFalse(clan.has_username('jarc.fmf@gmail.com'))
 
 
 if __name__ == '__main__':

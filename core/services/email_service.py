@@ -9,7 +9,3 @@ class EmailService(ABC):
 	@abstractmethod
 	def send(self, recipients: list[str], subject: str, vsebina: str):
 		pass
-
-	@abstractmethod
-	def record(self):
-		pass

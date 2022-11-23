@@ -11,12 +11,13 @@ class test_validate(unittest.TestCase):
 
 	def test_root_path(self):
 		result = cutils.root_path('api')
-		test = Path(__file__).absolute().parent.parent.parent.parent.joinpath('api/api')
+		test = Path(__file__).absolute().parent.parent.parent.joinpath('api')
 		self.assertEqual(result, test)
 
 	def test_age(self):
 		today = datetime.utcnow()
 		self.assertEqual(12.503, round(cutils.age(today.year - 12, today.month - 6, today.day - 1), 3))
+		self.assertEqual(-11.496, round(cutils.age(today.year + 12, today.month - 6, today.day - 1), 3))
 
 	def test_is_iterable(self):
 		for ele in Fixtures.iterables:

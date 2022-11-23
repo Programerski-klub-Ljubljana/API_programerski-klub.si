@@ -50,7 +50,7 @@ class test_forms(unittest.TestCase):
 			self.assertTrue(res.ok)
 			self.assertEqual(len(history), 1)
 			self.assertEqual(history[0]['To'], self.testing_email)
-			self.assertEqual(CONST.subject.vpis, history[0]['Subject'])
+			self.assertEqual(CONST.email_subject.vpis, history[0]['Subject'])
 
 	# def test_vpis_mladoletnik(self):
 	# 	with self.email.record() as history:

@@ -48,4 +48,4 @@ class Auth_verification_token(UseCase):
 	auth: AuthService
 
 	def invoke(self, username: str) -> Token:
-		return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.verification_token_life))
+		return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_verification_token_life))

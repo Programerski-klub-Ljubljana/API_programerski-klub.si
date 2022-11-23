@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 @traced
-class PhoneTwillio(PhoneService):
+class PhoneTwilio(PhoneService):
 	def __init__(self, service_sid: str, account_sid: str, auth_token: str, default_country_code: str, from_number: str):
 		self.default_country_code = default_country_code
 		self.from_number = from_number

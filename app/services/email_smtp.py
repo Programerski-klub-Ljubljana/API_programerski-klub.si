@@ -19,9 +19,6 @@ class EmailSchema(BaseModel):
 
 @traced
 class EmailSmtp(EmailService):
-	def record(self) -> list[dict[str, any]]:
-		return self.inst.record_messages()
-
 	def __init__(self, name: str, email: str, server: str, port: str, username: str, password: str, suppress_send: bool = False):
 		self.inst = FastMail(ConnectionConfig(
 			SUPPRESS_SEND=int(suppress_send),

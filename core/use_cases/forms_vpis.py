@@ -88,7 +88,6 @@ class StatusVpisa:
 		""".removeprefix('\t\t')
 
 
-@traced
 @dataclass
 class Forms_vpis(UseCase):
 	db: DbService
@@ -182,31 +181,36 @@ class Forms_vpis(UseCase):
 
 		# CE NI BILO NAPAK...
 		if len(vpis.razlogi_prekinitve) == 0:
-			# PRIPRAVI TEMPLATE
-			temp = self.template.init(
-				**kwargs,
-				sms_token=self.auth_verification_token.invoke(telefon).data,
-				email_token=self.auth_verification_token.invoke(email).data,
-				sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika).data,
-				email_token_skrbnik=self.auth_verification_token.invoke(email_skrbnika).data)
 
 			# SHRANI CLANA IN SKRBNIKA
-			# TODO: POSLJI EMAIL SAMO VALIDIRANIM IN NEPOTRJENIM KONTAKTOM!!!
 			with self.db.transaction(note=f'Shrani {clan}') as root:
 				root.save(clan)
-				self.phone.sms(phone=telefon, text=temp.sms_verifikacija_clan)
-				await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
-					recipients=[email],
-					subject=CONST.subject.vpis,
-					vsebina=temp.email_verifikacija_clan)
+
+				# PRIPRAVI TEMPLATE
+				temp = self.template.init(
+					**kwargs,
+					sms_token=self.auth_verification_token.invoke(telefon).data,
+					email_token=self.auth_verification_token.invoke(email).data,
+					sms_token_skrbnik=self.auth_verification_token.invoke(telefon_skrbnika).data,
+					email_token_skrbnik=self.auth_verification_token.invoke(email_skrbnika).data)
+
+				# POJDI PO KONTAKTIH IN POSLJI NEPOTRJENIM KONTAKTOM VALIDACIJSKE SPOROCILA
+				for kontakt in clan.kontakti:
+					if kontakt.validacija == TipValidacije.VALIDIRAN:
+						if kontakt.tip == TipKontakta.EMAIL:
+							await self.email.send(recipients=[email], subject=CONST.email_subject.vpis, vsebina=temp.email_verifikacija_clan)
+						elif kontakt.tip == TipKontakta.PHONE:
+							self.phone.sms(phone=telefon, text=temp.sms_verifikacija_clan)
 
 				if clan.mladoletnik:
 					clan.povezi(skrbnik)
 					root.save(skrbnik)
-					self.phone.sms(phone=telefon_skrbnika, text=temp.sms_verifikaija_skrbnik)
-					await self.email.send(  # POSILJANJE POTRDITVENEGA EMAILA
-						recipients=[email_skrbnika],
-						subject=CONST.subject.vpis_skrbnik,
-						vsebina=temp.email_vpis_skrbnik)
+					for kontakt in skrbnik.kontakti:
+						if kontakt.validacija == TipValidacije.VALIDIRAN:
+							if kontakt.tip == TipKontakta.EMAIL:
+								await self.email.send(
+									recipients=[email_skrbnika], subject=CONST.email_subject.vpis_skrbnik, vsebina=temp.email_vpis_skrbnik)
+							elif kontakt.tip == TipKontakta.PHONE:
+								self.phone.sms(phone=telefon_skrbnika, text=temp.sms_verifikaija_skrbnik)
 
 		return vpis

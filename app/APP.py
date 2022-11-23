@@ -1,5 +1,6 @@
 import logging
 import sys
+from unittest.mock import MagicMock
 
 import autologging
 from autologging import traced
@@ -11,10 +12,15 @@ from app.db.db_zodb import DbZo
 from app.services.auth_jwt import AuthJwt
 from app.services.email_smtp import EmailSmtp
 from app.services.payment_stripe import PaymentStripe
-from app.services.phone_twilio import PhoneTwillio
+from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
+from core.services.auth_service import AuthService
 from core.services.db_service import DbService
+from core.services.email_service import EmailService
+from core.services.payment_service import PaymentService
+from core.services.phone_service import PhoneService
+from core.services.template_service import TemplateService
 from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token
 from core.use_cases.db_cases import Db_path
 from core.use_cases.forms_vpis import Forms_vpis
@@ -25,8 +31,8 @@ class Services(DeclarativeContainer):
 	auth: Provider[AuthJwt] = Singleton(AuthJwt, secret=ENV.SECRET_KEY)
 	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH)
 	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
-	phone: Provider[PhoneTwillio] = Singleton(
-		PhoneTwillio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
+	phone: Provider[PhoneTwilio] = Singleton(
+		PhoneTwilio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
 		EmailSmtp, name=CONST.klub, email=CONST.email,
@@ -34,7 +40,16 @@ class Services(DeclarativeContainer):
 		username=CONST.email, password=ENV.MAIL_PASSWORD,
 		suppress_send=ENV.MAIL_SUPPRESS_SEND
 	)
-	template: Provider[TemplateJinja] = Singleton(TemplateJinja, searchpath=CONST.templates)
+	template: Provider[TemplateJinja] = Singleton(TemplateJinja, searchpath=CONST.api_templates)
+
+
+class TestServices(DeclarativeContainer):
+	auth: Provider[AuthJwt] = Factory(MagicMock(set_spec=True, spec=AuthService))
+	db: Provider[DbZo] = Factory(MagicMock(set_spec=True, spec=DbService))
+	payment: Provider[PaymentStripe] = Factory(MagicMock(set_spec=True, spec=PaymentService))
+	phone: Provider[PhoneTwilio] = Factory(MagicMock(set_spec=True, spec=PhoneService))
+	email: Provider[EmailSmtp] = Factory(MagicMock(set_spec=True, spec=EmailService))
+	template: Provider[TemplateJinja] = Factory(MagicMock(set_spec=True, spec=TemplateService))
 
 
 class UseCases(DeclarativeContainer):
@@ -69,8 +84,7 @@ logging.basicConfig(
 	handlers=[
 		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
 		logging.StreamHandler()
-	]
-)
+	])
 
 
 @traced
