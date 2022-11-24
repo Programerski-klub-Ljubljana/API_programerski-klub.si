@@ -34,5 +34,5 @@ autologging
 # SERVICES
 stripe
 twilio
-email-validator
+git+https://gitea.ksol.io/karolyi/py3-validate-email@v1.0.9
 phonenumbers

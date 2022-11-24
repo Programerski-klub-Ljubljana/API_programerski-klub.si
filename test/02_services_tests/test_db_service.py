@@ -25,7 +25,7 @@ class test_db(unittest.TestCase):
 
 		APP.db.seed()
 
-	def test_transaction(self):
+	def test_transaction_root_properties(self):
 		count = 0
 		with APP.db.transaction() as root:
 			for k, v in root.__dict__.items():
@@ -34,7 +34,7 @@ class test_db(unittest.TestCase):
 				self.assertIsInstance(v, Elist)
 		self.assertGreater(count, 0)
 
-	def test_transaction_change(self):
+	def test_transaction_root_change(self):
 		new_ime = '12345'
 
 		with APP.db.transaction() as root:
@@ -47,7 +47,7 @@ class test_db(unittest.TestCase):
 			self.assertEqual(root.oseba[index].ime, new_ime)
 			root.oseba[index].ime = old_ime
 
-	def test_transaction_save_append(self):
+	def test_transaction_root_save(self):
 
 		with APP.db.transaction() as root:
 			# CREATE KONTACTS
@@ -91,7 +91,12 @@ class test_db(unittest.TestCase):
 			self.assertIsInstance(clan2.vpisi, PersistentList)
 
 	def test_transaction_oseba_find(self):
-		pass
+		with APP.db.transaction() as root:
+			oseba = root.oseba[10]
+			data = oseba.kontakti[-1].data
+			self.assertGreater(len(data), 3)
+			self.assertEqual(oseba, root.oseba_find(data))
+
 
 if __name__ == '__main__':
 	unittest.main()
