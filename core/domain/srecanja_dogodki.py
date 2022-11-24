@@ -22,7 +22,7 @@ class Dogodek(Entity):
 	tip: TipDogodka
 	zacetek: datetime
 	konec: datetime
-	clani: elist[Oseba] = Elist()
+	clani: elist[Oseba] = Elist.field()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

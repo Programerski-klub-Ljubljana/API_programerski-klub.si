@@ -31,7 +31,7 @@ class Naloga(Entity):
 class Test(Entity):
 	ime: str
 	opis: str
-	naloge: elist[Naloga] = Elist()
+	naloge: elist[Naloga] = Elist.field()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

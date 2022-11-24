@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from random import choices, choice
 from typing import TypeVar
@@ -38,6 +38,10 @@ class Elist(PersistentList):
 		end = max_width * (page + 1)
 		return result[start:end] if cutils.is_iterable(result) else result
 
+	@staticmethod
+	def field(*values: any):
+		return field(default_factory=lambda: Elist(values))
+
 
 T = TypeVar('T')
 elist = list[T] | Elist
@@ -47,8 +51,8 @@ class Entity(Persistent):
 	_razred: str = 'Entity'
 	_ustvarjen: datetime = datetime.utcnow()
 	_posodobljen: datetime = datetime.utcnow()
-	_dnevnik: elist = Elist()
-	_povezave: elist = Elist()
+	_dnevnik: elist = Elist.field()
+	_povezave: elist = Elist.field()
 
 	@staticmethod
 	def save(child: any):

@@ -1,4 +1,6 @@
 import unittest
+from dataclasses import Field
+from typing import Callable
 
 from core.domain._entity import Elist
 
@@ -65,6 +67,16 @@ class test_Elist(unittest.TestCase):
 		result = entity.path(path='0/a', page=0, max_width=50)
 		self.assertEqual(len(result), 50)
 
+	def test_field(self):
+		f = Elist.field()
+		self.assertIsInstance(f, Field)
+		self.assertIsInstance(f.default_factory, Callable)
+		e = f.default_factory()
+		self.assertIsInstance(e, Elist)
+		self.assertEqual(len(e), 0)
+
+		f = Elist.field(1,2,3)
+		self.assertEqual(f.default_factory(), Elist([1,2,3]))
 
 if __name__ == '__main__':
 	unittest.main()

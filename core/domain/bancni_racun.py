@@ -35,7 +35,7 @@ class Transakcija(Entity):
 class Bancni_racun(Entity):
 	ime: str
 	stevilka: str
-	transakcije: elist[Transakcija] = Elist()
+	transakcije: elist[Transakcija] = Elist.field()
 
 	def __post_init__(self):
 		self.entity: Entity = Entity(self)

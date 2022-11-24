@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, date
 from enum import auto
 
@@ -44,11 +44,11 @@ class Oseba(Entity):
 	ime: str
 	priimek: str
 	rojen: date | None
-	tip_osebe: elist[TipOsebe]
+	tip_osebe: elist[TipOsebe] = Elist.field()
 	geslo: str = None
-	vpisi: elist[datetime] = Elist()
-	izpisi: elist[datetime] = Elist()
-	kontakti: elist[Kontakt] = Elist()
+	vpisi: elist[datetime] = Elist.field()
+	izpisi: elist[datetime] = Elist.field()
+	kontakti: elist[Kontakt] = Elist.field()
 
 	def __post_init__(self):
 		Entity.save(self)
@@ -64,18 +64,21 @@ class Oseba(Entity):
 
 		# CE NIMA ROJSTVO DATUMA POGLEJ PO KONTAKTIH (NOBEN PODATKEN V BAZI NE BO OBSTAJAL DA NE BO VALIDIRAN)
 		# PREJ BOM ZAVRNIL MUDELA PRI VPISU
-		for kontakt in self.kontakti:
-			if kontakt in oseba.kontakti:
-				return True
-		for kontakt in oseba.kontakti:
-			if kontakt in self.kontakti:
-				return True
+		# OBVEZNO MORA IMETI KONTAKT POTRJEN DRUGACE LAHKO PRIDE DO ZLORAB
+		for k1 in self.kontakti:
+			for k2 in oseba.kontakti:
+				if (
+						k1 == k2 and
+						k1.validacija == TipValidacije.POTRJEN and
+						k2.validacija == TipValidacije.POTRJEN and
+						k1.tip == k2.tip):
+					return True
 
 		return False
 
 	def has_username(self, username: str) -> bool:
 		for kontakt in self.kontakti:
-			if kontakt.data == username:
+			if kontakt.data == username and kontakt.validacija == TipValidacije.POTRJEN:
 				return True
 		return False
 
@@ -90,12 +93,17 @@ class Oseba(Entity):
 				self.tip_osebe.append(status)
 
 	def __str__(self):
-		rojstvo_id = '' if self.rojen is None else self.rojen.strftime("%d%m%Y")
-		return unidecode(f'{self.ime}{self.priimek}_{rojstvo_id}'.replace(' ', '').lower())
+		id = ''
+		if self.rojen is not None:
+			id = self.rojen.strftime("%d%m%Y")
+		else:
+			for k in self.kontakti:
+				if k.validacija == TipValidacije.POTRJEN:
+					id = k.data.replace('+', '')
+		return unidecode(f'{self.ime}{self.priimek}_{id}'.replace(' ', '').lower())
 
 	def nov_vpis(self):
-		if not self.vpisan:
-			self.vpisi.append(datetime.utcnow())
+		self.vpisi.append(datetime.utcnow())
 
 	@property
 	def starost(self) -> float:
@@ -135,7 +143,7 @@ class Ekipa(Entity):
 class Oddelek(Entity):
 	ime: str
 	opis: str
-	ekipe: elist[Ekipa] = Elist()
+	ekipe: elist[Ekipa] = Elist.field()
 
 	def __post_init__(self):
 		Entity.save(self)
@@ -145,7 +153,7 @@ class Oddelek(Entity):
 class Klub(Entity):
 	ime: str
 	clanarina: float
-	oddelki: elist[Oddelek] = Elist()
+	oddelki: elist[Oddelek] = Elist.field()
 
 	def __post_init__(self):
 		Entity.save(self)
