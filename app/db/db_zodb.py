@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import ZODB
 from ZODB.DB import ContextManager
 from autologging import traced
@@ -7,7 +5,7 @@ from autologging import traced
 from app.db import db_seed
 from core.domain._entity import Elist
 from core.domain.arhitektura_kluba import Oseba
-from core.services.db_service import DbService, DbRoot
+from core.services.db_service import DbService, DbRoot, Transaction
 
 
 # TODO: Activate me on production! @traced
@@ -34,10 +32,13 @@ class ZoDbRoot(DbRoot):
 
 
 @traced
-@dataclass
-class ZoDbTransaction(ContextManager):
+class ZoDbTransaction(ContextManager, Transaction):
+
 	def __init__(self, db: ZODB.DB, note: str):
 		super(ZoDbTransaction, self).__init__(db=db, note=note)
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		super(ZoDbTransaction, self).__exit__(t=exc_type, v=exc_value, tb=exc_traceback)
 
 	def __enter__(self) -> ZoDbRoot:
 		root = super(ZoDbTransaction, self).__enter__().root

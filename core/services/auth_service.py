@@ -9,10 +9,17 @@ class Token:
 	type: str
 
 
-@dataclass
 class TokenData:
-	username: str
-	exp: datetime = None
+	def __init__(self, username: str | None):
+		self.u = username
+		self.exp: datetime | None = None
+
+	@staticmethod
+	def from_token(**kwargs):
+		t = TokenData(username=None)
+		for k, v in kwargs.items():
+			setattr(t, k, v)
+		return t
 
 
 class AuthService(ABC):

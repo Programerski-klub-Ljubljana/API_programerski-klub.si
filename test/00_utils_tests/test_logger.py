@@ -11,8 +11,8 @@ class test_logger(unittest.TestCase):
 		with self.assertLogs(__name__, level='INFO') as cm:
 			self.log.info('first message')
 			self.log.error('second message')
-			self.assertEqual(cm.output, ['INFO:test_logger:first message',
-			                             'ERROR:test_logger:second message'])
+			self.assertEqual(cm.output[0].split(':')[::2], ['INFO', 'first message'])
+			self.assertEqual(cm.output[1].split(':')[::2], ['ERROR', 'second message'])
 
 
 if __name__ == '__main__':

@@ -27,18 +27,12 @@ class Transakcija(Entity):
 	znesek: float
 	placano: float = 0
 
-	def __post_init__(self):
-		self.entity: Entity = Entity(self)
-
 
 @dataclass
 class Bancni_racun(Entity):
 	ime: str
 	stevilka: str
 	transakcije: elist[Transakcija] = Elist.field()
-
-	def __post_init__(self):
-		self.entity: Entity = Entity(self)
 
 	@property
 	def stanje(self) -> float:

@@ -44,6 +44,15 @@ class test_auth(unittest.TestCase):
 		token = self.service.hash(password)
 		self.assertFalse(self.service.verify(password[:-1] + 'a', token))
 
+class test_token_data(unittest.TestCase):
+
+	def test_from_token(self):
+		td = TokenData(username='username')
+		td.exp = '123'
+		td2 = TokenData.from_token(**{'u': 'username', 'exp': '123'})
+		self.assertDictEqual(td.__dict__, td2.__dict__)
+
+
 
 if __name__ == '__main__':
 	unittest.main()

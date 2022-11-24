@@ -1,13 +1,11 @@
 import unittest
-from datetime import datetime
 from random import randint
 
 from persistent.list import PersistentList
 
 from app import APP
 from app.db import db_entities
-from core.domain._entity import Elist, Log
-from core.domain._enums import LogTheme, LogLevel
+from core.domain._entity import Elist
 
 
 class test_db(unittest.TestCase):
@@ -35,15 +33,6 @@ class test_db(unittest.TestCase):
 				self.assertGreater(len(v), 0, k)
 				self.assertIsInstance(v, Elist)
 		self.assertGreater(count, 0)
-
-	def test_entity_properties(self):
-		with APP.db.transaction() as root:
-			k = root.oseba[0]
-			self.assertEqual(k._razred, 'OSEBA')
-			self.assertLessEqual(k._ustvarjen, datetime.utcnow())
-			self.assertLessEqual(k._posodobljen, datetime.utcnow())
-			self.assertGreaterEqual(len(k._dnevnik), 0)
-			self.assertGreaterEqual(len(k._povezave), 0)
 
 	def test_transaction_change(self):
 		new_ime = '12345'
@@ -101,38 +90,8 @@ class test_db(unittest.TestCase):
 			self.assertIsInstance(clan1.vpisi, PersistentList)
 			self.assertIsInstance(clan2.vpisi, PersistentList)
 
-	def test_transaction_random_0(self):
-		with APP.db.transaction() as root:
-			clan1 = root.oseba.random()
-			clan2 = root.oseba.random()
-			self.assertNotEqual(clan1, clan2)
-			self.assertIn(clan1, root.oseba)
-			self.assertIn(clan2, root.oseba)
-			self.assertNotEqual(root.oseba.index(clan1), root.oseba.index(clan2))
-
-	def test_transaction_random_1(self):
-		with APP.db.transaction() as root:
-			clani = root.oseba.random(k=3)
-			self.assertTrue(clani[0] != clani[1] != clani[2])
-			for k in clani:
-				self.assertIn(k, root.oseba)
-
-	def test_povezi(self):
-		log = Log(nivo=LogLevel.ERROR, tema=LogTheme.PROBLEM, sporocilo="Sporocilo0")
-		log1 = Log(nivo=LogLevel.ERROR, tema=LogTheme.PROBLEM, sporocilo="Sporocilo1")
-		self.assertNotIn(log, log1._povezave)
-		self.assertNotIn(log1, log._povezave)
-		log.povezi(log1)
-		self.assertIn(log, log1._povezave)
-		self.assertIn(log1, log._povezave)
-
-	def test_path(self):
-		with APP.db.transaction() as root:
-			kontakti = root.oseba.path(page=0, max_width=10)
-			self.assertEqual(kontakti, root.oseba[:10])
-			self.assertEqual(len(kontakti), 10)
-			self.assertIsNotNone(kontakti[0]._povezave[0]._povezave[0]._povezave[0])
-
+	def test_transaction_oseba_find(self):
+		pass
 
 if __name__ == '__main__':
 	unittest.main()

@@ -23,7 +23,7 @@ class AuthJwt(AuthService):
 
 	def decode(self, token: str) -> TokenData | None:
 		try:
-			return TokenData(**jwt.decode(token, self.secret, algorithms=[self.algo]))
+			return TokenData.from_token(**jwt.decode(token, self.secret, algorithms=[self.algo]))
 		except JWTError:
 			return None
 

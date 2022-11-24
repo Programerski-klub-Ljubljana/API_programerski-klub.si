@@ -1,8 +1,9 @@
 import unittest
-from dataclasses import Field
+from dataclasses import Field, dataclass
+from datetime import datetime
 from typing import Callable
 
-from core.domain._entity import Elist
+from core.domain._entity import Elist, Entity, elist
 
 
 class test_Elist(unittest.TestCase):
@@ -75,8 +76,40 @@ class test_Elist(unittest.TestCase):
 		self.assertIsInstance(e, Elist)
 		self.assertEqual(len(e), 0)
 
-		f = Elist.field(1,2,3)
-		self.assertEqual(f.default_factory(), Elist([1,2,3]))
+		f = Elist.field(1, 2, 3)
+		self.assertEqual(f.default_factory(), Elist([1, 2, 3]))
+
+
+@dataclass
+class FakeEntity(Entity):
+	a: str
+	b: str = 'b'
+	c: elist = Elist.field(1, 2, 3)
+
+
+class test_Entity(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls) -> None:
+		cls.entity: FakeEntity = FakeEntity(a='a')
+
+	def test_properties(self):
+		self.assertTrue(self.entity.a, 'a')
+		self.assertTrue(self.entity.b, 'b')
+		self.assertTrue(self.entity.c, Elist([1, 2, 3]))
+		self.assertEqual(self.entity._razred, 'FAKEENTITY')
+		self.assertLessEqual(self.entity._ustvarjen, datetime.utcnow())
+		self.assertLessEqual(self.entity._posodobljen, datetime.utcnow())
+		self.assertIsInstance(self.entity._dnevnik, Elist)
+		self.assertIsInstance(self.entity._povezave, Elist)
+
+	def test_povezi(self):
+		entity = FakeEntity(a='a')
+		entity1 = FakeEntity(a='b')
+		self.assertEqual(len(entity._povezave), 0)
+		entity.povezi(entity1)
+		self.assertEqual(len(entity._povezave), 1)
+		self.assertEqual(entity._povezave[0], entity1)
+
 
 if __name__ == '__main__':
 	unittest.main()

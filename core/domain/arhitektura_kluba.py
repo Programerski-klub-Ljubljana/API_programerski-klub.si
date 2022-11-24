@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
@@ -49,9 +49,6 @@ class Oseba(Entity):
 	vpisi: elist[datetime] = Elist.field()
 	izpisi: elist[datetime] = Elist.field()
 	kontakti: elist[Kontakt] = Elist.field()
-
-	def __post_init__(self):
-		Entity.save(self)
 
 	def __eq__(self, oseba):
 		# EQUACIJA MORA BITI MEHKA DA SE PREJ DETEKTIRAJO MOZNI DUPLIKATI
@@ -135,9 +132,6 @@ class Ekipa(Entity):
 	ime: str
 	opis: str
 
-	def __post_init__(self):
-		Entity.save(self)
-
 
 @dataclass
 class Oddelek(Entity):
@@ -145,15 +139,9 @@ class Oddelek(Entity):
 	opis: str
 	ekipe: elist[Ekipa] = Elist.field()
 
-	def __post_init__(self):
-		Entity.save(self)
-
 
 @dataclass
 class Klub(Entity):
 	ime: str
 	clanarina: float
 	oddelki: elist[Oddelek] = Elist.field()
-
-	def __post_init__(self):
-		Entity.save(self)

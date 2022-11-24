@@ -48,28 +48,27 @@ elist = list[T] | Elist
 
 
 class Entity(Persistent):
-	_razred: str = 'Entity'
-	_ustvarjen: datetime = datetime.utcnow()
-	_posodobljen: datetime = datetime.utcnow()
-	_dnevnik: elist = Elist.field()
-	_povezave: elist = Elist.field()
+	_razred: str | None
+	_ustvarjen: datetime | None
+	_posodobljen: datetime | None
+	_dnevnik: elist | None
+	_povezave: elist | None
 
-	@staticmethod
-	def save(child: any):
+	def povezi(self, *entity):
+		for e in entity:
+			self._povezave.append(e)
+			e._povezave.append(self)
+
+	def __post_init__(self):
 		attr = {
-			'_razred': child.__class__.__name__.upper(),
+			'_razred': self.__class__.__name__.upper(),
 			'_ustvarjen': datetime.utcnow(),
 			'_posodobljen': datetime.utcnow(),
 			'_dnevnik': Elist(),
 			'_povezave': Elist(),
 		}
 		for k, v in attr.items():
-			setattr(child, k, v)
-
-	def povezi(self, *entity):
-		for e in entity:
-			self._povezave.append(e)
-			e._povezave.append(self)
+			setattr(self, k, v)
 
 
 @dataclass
@@ -77,6 +76,3 @@ class Log(Entity):
 	nivo: LogLevel
 	tema: LogTheme
 	sporocilo: str
-
-	def __post_init__(self):
-		Entity.save(self)
