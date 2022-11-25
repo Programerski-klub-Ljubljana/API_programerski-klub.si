@@ -89,7 +89,7 @@ def object_json(
 		data = {}
 		for key, value in obj.__dict__.items():
 			if not callable(value) and key not in ignore:
-				data[key] = object_json(obj=value, obj_key=obj_key, depth=depth + 1, max_depth=max_depth, ignore=ignore)
+				data[key] = object_json(obj=value, obj_key=obj_key, depth=depth + 1, max_depth=max_depth, max_width=max_width, ignore=ignore)
 		# ======================
 		return data
 	else:

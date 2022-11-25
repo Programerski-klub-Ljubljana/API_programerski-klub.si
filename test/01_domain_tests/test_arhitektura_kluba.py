@@ -88,8 +88,8 @@ class test_oseba(unittest.TestCase):
 			Kontakt(data='2222', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
 		], **kwargs)
 
-		self.assertFalse(o0.has_username('0000'))
-		self.assertTrue(o0.has_username('2222'))
+		self.assertFalse(o0.has_kontakt_data('0000'))
+		self.assertTrue(o0.has_kontakt_data('2222'))
 
 	def test_dodaj_kontakte(self):
 		k0 = Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)

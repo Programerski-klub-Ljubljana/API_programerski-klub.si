@@ -27,7 +27,7 @@ class DbRoot(ABC):
 		pass
 
 	@abstractmethod
-	def oseba_find(self, username) -> Oseba:
+	def oseba_find(self, kontakt_data) -> Oseba | None:
 		pass
 
 

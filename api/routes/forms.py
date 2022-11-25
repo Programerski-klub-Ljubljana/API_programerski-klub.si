@@ -32,11 +32,11 @@ async def vpis(
 	status: StatusVpisa = await forms_vpis.invoke(**kwargs)
 	log.info(status)
 
-	temp = template.init(**{**kwargs, **{'kontakti': [k.data for k in status.validirani_podatki]}})
+	temp = template.init(**{**kwargs, **{'kontakti': [k.token_data for k in status.validirani_podatki]}})
 	if TipProblema.HACKER in status.razlogi_prekinitve:
 		return HTMLResponse(content=temp.warn_prekrsek, status_code=400)
 	elif TipProblema.NAPAKE in status.razlogi_prekinitve:
-		temp.napake = [k.data for k in status.napacni_podatki_skrbnika + status.napacni_podatki_clana]
+		temp.napake = [k.token_data for k in status.napacni_podatki_skrbnika + status.napacni_podatki_clana]
 		return HTMLResponse(content=temp.warn_napaka, status_code=400)
 	elif TipProblema.CHUCK_NORIS in status.razlogi_prekinitve:
 		return HTMLResponse(content=temp.warn_chuck_noris)

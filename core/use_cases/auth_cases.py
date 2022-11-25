@@ -19,7 +19,7 @@ class Auth_login(UseCase):
 	def invoke(self, username, password) -> Token | None:
 		with self.db.transaction() as root:
 			oseba = root.oseba_find(username)
-			if oseba is not None and oseba.has_username(username):
+			if oseba is not None:
 				if self.auth.verify(password=password, hashed_password=oseba.geslo):
 					return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_token_life))
 			return None
@@ -31,12 +31,12 @@ class Auth_info(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, token) -> Oseba | None:
-		token_data = self.auth.decode(token)
+	def invoke(self, token: Token) -> Oseba | None:
+		token_data = self.auth.decode(token.data)
 		if token_data is None:
 			return None
 		with self.db.transaction() as root:
-			oseba = root.oseba_find(token_data.username)
+			oseba = root.oseba_find(token_data.u)
 			if oseba is not None:
 				return oseba
 

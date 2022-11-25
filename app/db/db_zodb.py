@@ -25,9 +25,9 @@ class ZoDbRoot(DbRoot):
 			else:
 				table.append(entity)
 
-	def oseba_find(self, username: str) -> Oseba:
+	def oseba_find(self, kontakt_data: str) -> Oseba | None:
 		for oseba in self.oseba:
-			if oseba.has_username(username):
+			if oseba.has_kontakt_data(kontakt_data):
 				return oseba
 
 

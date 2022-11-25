@@ -83,8 +83,8 @@ class StatusVpisa:
 			Razlogi duplikacije skrbnika: {self.razlogi_duplikacije_skrbnika}
 			Razlogi duplikacije clana   : {self.razlogi_duplikacije_clana}
 			Razlogi prekinitve          : {self.razlogi_prekinitve}
-			Napake skrbnika: {", ".join(k.data for k in self.napacni_podatki_skrbnika)}
-			Napake clana   : {", ".join(k.data for k in self.napacni_podatki_clana)}
+			Napake skrbnika: {", ".join(k.token_data for k in self.napacni_podatki_skrbnika)}
+			Napake clana   : {", ".join(k.token_data for k in self.napacni_podatki_clana)}
 		""".removeprefix('\t\t')
 
 

@@ -73,9 +73,9 @@ class Oseba(Entity):
 
 		return False
 
-	def has_username(self, username: str) -> bool:
+	def has_kontakt_data(self, kontakt_data: str) -> bool:
 		for kontakt in self.kontakti:
-			if kontakt.data == username and kontakt.validacija == TipValidacije.POTRJEN:
+			if kontakt.data == kontakt_data and kontakt.validacija == TipValidacije.POTRJEN:
 				return True
 		return False
 

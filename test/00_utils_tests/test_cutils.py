@@ -75,7 +75,7 @@ class test_validate(unittest.TestCase):
 			'MAX_WIDTH'
 		])
 		self.assertEqual(cutils.object_json(Fixtures.tree_deep, max_width=3, max_depth=3), [
-			{'child': ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT'], 'data': 1},
+			{'child': ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_WIDTH'], 'data': 1},
 			{'child': [], 'data': 2},
 			{'child': [], 'data': 3},
 			'MAX_WIDTH'

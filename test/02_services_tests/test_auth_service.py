@@ -11,17 +11,17 @@ class test_auth(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 		cls.service: AuthService = APP.services.auth()
-		cls.data = TokenData(username='username')
+		cls.token_data = TokenData(username='username')
 
 	def test_encode_decode_pass(self):
-		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=1))
+		jwt = self.service.encode(data=self.token_data, expiration=timedelta(seconds=1))
 		data_new = self.service.decode(jwt.data)
 
-		for k, v in self.data.__dict__.items():
-			self.assertEqual(self.data.__dict__[k], data_new.__dict__[k], k)
+		for k, v in self.token_data.__dict__.items():
+			self.assertEqual(self.token_data.__dict__[k], data_new.__dict__[k], k)
 
 	def test_encode_decode_expirated(self):
-		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=-1))
+		jwt = self.service.encode(data=self.token_data, expiration=timedelta(seconds=-1))
 		data_new = self.service.decode(jwt.data)
 		self.assertEqual(data_new, None)
 

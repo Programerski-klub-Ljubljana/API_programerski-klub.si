@@ -1,5 +1,6 @@
 import unittest
 from random import randint
+from types import NoneType
 
 from persistent.list import PersistentList
 
@@ -19,7 +20,6 @@ class test_db(unittest.TestCase):
 			for i in range(10):
 				oseba = Oseba(ime=f'ime{i}', priimek=f'priimek{i}', rojen=None, kontakti=[
 					Kontakt(data=f'data{i}', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
-
 				root.save(oseba)
 
 	def test_transaction_root_properties(self):
@@ -93,6 +93,10 @@ class test_db(unittest.TestCase):
 			data = oseba.kontakti[-1].data
 			self.assertGreater(len(data), 3)
 			self.assertEqual(oseba, root.oseba_find(data))
+
+	def test_transaction_oseba_find_fail(self):
+		with APP.db.transaction() as root:
+			self.assertIsInstance(root.oseba_find('asdfasdfasdf'), NoneType)
 
 
 if __name__ == '__main__':
