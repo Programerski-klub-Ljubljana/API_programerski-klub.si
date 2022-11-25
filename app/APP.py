@@ -29,7 +29,7 @@ from core.use_cases.validation_cases import Validate_kontakt
 
 class Services(DeclarativeContainer):
 	auth: Provider[AuthJwt] = Singleton(AuthJwt, secret=ENV.SECRET_KEY)
-	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH)
+	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH, default_password=ENV.DB_DEFAULT_PASSWORD)
 	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
 	phone: Provider[PhoneTwilio] = Singleton(
 		PhoneTwilio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
@@ -88,7 +88,7 @@ logging.basicConfig(
 
 
 @traced
-def init(seed: bool = False):
+def init(seed: bool = False, fake_services: bool = False):
 	if this.inited:
 		log.info('APP already inited!!!')
 		return

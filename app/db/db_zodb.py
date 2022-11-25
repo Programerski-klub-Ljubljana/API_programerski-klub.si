@@ -47,10 +47,11 @@ class ZoDbTransaction(ContextManager, Transaction):
 
 @traced
 class DbZo(DbService):
-	def __init__(self, storage: str):
+	def __init__(self, storage: str, default_password: str):
 		self.storage = storage
 		self.seeded = False
 		self.db = None
+		self.default_password = default_password
 
 	def open(self):
 		if self.db is not None:
@@ -64,8 +65,7 @@ class DbZo(DbService):
 		with self.db.transaction(note="seed.migrate") as connection:
 			root = ZoDbRoot(connection.root)
 
-			db_seed.entities(root)
-			db_seed.arhitektura_kluba(root, kontakti=10, clani=30, ekipe=10, oddeleki=4, klubi=3)
+			db_seed.arhitektura_kluba(root, geslo=self.default_password, kontakti=10, clani=30, ekipe=10, oddeleki=4, klubi=3)
 			db_seed.bancni_racun(root, transakcije=180, bancni_racun=3)
 			db_seed.oznanila_sporocanja(root, objave=50, sporocila=90)
 			db_seed.srecanja_dogodki_tekme(root, dogodek=20)
@@ -76,4 +76,6 @@ class DbZo(DbService):
 		self.seeded = True
 
 	def transaction(self, note: str | None = None) -> ZoDbTransaction:
+		if self.db is None:
+			raise Exception("WTF are you doing?")
 		return ZoDbTransaction(self.db, note)

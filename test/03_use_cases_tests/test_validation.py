@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from app import APP
+from app import APP, CONST
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, TipValidacije
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
@@ -12,11 +12,11 @@ class test_validate(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		APP.init(seed=True)
+		APP.init(seed=False)
 
 		# MOCKS
 		cls.kontakt: Kontakt = Mock(Kontakt)
-		cls.kontakt.data = 'jar.fmf@gmail.com'
+		cls.kontakt.data = CONST.alt_email
 		cls.kontakt.tip = TipKontakta.EMAIL
 		cls.kontakt.validacija = TipValidacije.NI_VALIDIRAN
 		cls.email_service = Mock(EmailService)

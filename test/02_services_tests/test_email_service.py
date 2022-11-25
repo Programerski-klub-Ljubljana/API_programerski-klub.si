@@ -1,9 +1,11 @@
 import unittest
+from datetime import datetime
+from unittest import IsolatedAsyncioTestCase
 
-from app import APP
+from app import APP, CONST
 
 
-class test_email(unittest.TestCase):
+class test_email(IsolatedAsyncioTestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
@@ -11,12 +13,13 @@ class test_email(unittest.TestCase):
 		cls.service = APP.services.email()
 
 	def test_obstaja(self):
-		self.assertTrue(self.service.obstaja('jar.fmf@gmail.com'))
+		self.assertTrue(self.service.obstaja(CONST.alt_email))
 
-	def test_send(self):
-		# with todo: you stayed here!
-		self.service.send(['jar.fmf@gmail.com'], 'subject', 'vsebina')
-
+	async def test_send(self):
+		await self.service.send(
+			[CONST.alt_email],
+			f'TESTING: {datetime.now()}',
+			f'<h3><b>__file__</b> = {__file__}<br><b>__name__</b> = {__name__}</h3>')
 
 
 if __name__ == '__main__':

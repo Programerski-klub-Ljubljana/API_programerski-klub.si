@@ -3,7 +3,6 @@ from random import choice, randint, uniform
 
 from autologging import traced
 
-from app.db import db_entities
 from core.cutils import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
@@ -15,12 +14,6 @@ from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 
 
 @traced
-def entities(root, **kwargs):
-	clan = db_entities.init_oseba(ime='Uroš', priimek='Jarc', rojstro_delta_days=30 * 365)
-	root.save(clan)
-
-
-@traced
 def arhitektura_kluba(root, **kwargs):
 	for _ in range(kwargs['clani']):
 		kontakti = []
@@ -29,10 +22,11 @@ def arhitektura_kluba(root, **kwargs):
 			data = str(fake.email) if tip == TipKontakta.EMAIL else fake.phone_number()
 			kontakt = Kontakt(data=data, tip=tip, validacija=TipValidacije.random())
 			kontakti.append(kontakt)
+
 		root.save(Oseba(
 			ime=fake.first_name(),
 			priimek=fake.last_name(),
-			geslo=db_entities.geslo,
+			geslo=kwargs['geslo'],
 			tip_osebe=TipOsebe.random(),
 			kontakti=kontakti,
 			rojen=fake.date_this_century(before_today=True),

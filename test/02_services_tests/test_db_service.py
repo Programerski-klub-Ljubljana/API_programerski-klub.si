@@ -4,8 +4,8 @@ from random import randint
 from persistent.list import PersistentList
 
 from app import APP
-from app.db import db_entities
 from core.domain._entity import Elist
+from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, TipValidacije
 
 
 class test_db(unittest.TestCase):
@@ -14,25 +14,18 @@ class test_db(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 
-		# TEST IF EMPTY
-		count = 0
+		# FILL DATABASE...
 		with APP.db.transaction() as root:
-			for k, v in root.__dict__.items():
-				if isinstance(v, Elist):
-					count += 1
-					assert isinstance(v, Elist)
-		assert count > 0
+			for i in range(10):
+				oseba = Oseba(ime=f'ime{i}', priimek=f'priimek{i}', rojen=None, kontakti=[
+					Kontakt(data=f'data{i}', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
 
-		APP.db.seed()
+				root.save(oseba)
 
 	def test_transaction_root_properties(self):
-		count = 0
 		with APP.db.transaction() as root:
-			for k, v in root.__dict__.items():
-				count += 1
-				self.assertGreater(len(v), 0, k)
-				self.assertIsInstance(v, Elist)
-		self.assertGreater(count, 0)
+			self.assertGreater(len(root.oseba), 0)
+			self.assertIsInstance(root.oseba, Elist)
 
 	def test_transaction_root_change(self):
 		new_ime = '12345'
@@ -51,15 +44,19 @@ class test_db(unittest.TestCase):
 
 		with APP.db.transaction() as root:
 			# CREATE KONTACTS
-			clan1 = db_entities.init_oseba(ime='ime1')
-			clan2 = db_entities.init_oseba(ime='ime2')
+			clan1 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
+				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+			])
+			clan2 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
+				Kontakt(data="0392pep2opo", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+			])
 
 			# ARE THEY EQUAL?
 			self.assertNotEqual(clan2, clan1)
 
 			# TEST IF LIST ARE NOT YET CONVERTED TO PERSISTENT LISTS
-			self.assertNotIsInstance(clan1.vpisi, PersistentList)
-			self.assertNotIsInstance(clan2.vpisi, PersistentList)
+			self.assertIsInstance(clan1.vpisi, PersistentList)
+			self.assertIsInstance(clan2.vpisi, PersistentList)
 
 			# TEST IF KONTACTS NOT EXISTS IN DB
 			assert clan1 not in root.oseba
@@ -92,7 +89,7 @@ class test_db(unittest.TestCase):
 
 	def test_transaction_oseba_find(self):
 		with APP.db.transaction() as root:
-			oseba = root.oseba[10]
+			oseba = root.oseba[5]
 			data = oseba.kontakti[-1].data
 			self.assertGreater(len(data), 3)
 			self.assertEqual(oseba, root.oseba_find(data))

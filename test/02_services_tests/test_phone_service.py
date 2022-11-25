@@ -1,49 +1,29 @@
 import unittest
+from datetime import datetime
 
 from app import APP
+from core.services.phone_service import PhoneService
 
 
 class test_sms(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
-		cls.service = APP.services.phone()
+		cls.service: PhoneService = APP.services.phone()
 
-	def test_obstaja_0(self):
-		phone = '+386051240885'
-		self.assertTrue(
-			self.service.obstaja(phone)
-		)
+	def test_obstaja(self):
+		self.assertTrue(self.service.obstaja('051240885'))
 
-	def test_obstaja_1(self):
-		phone = 'krneki'
-		self.assertFalse(
-			self.service.obstaja(phone)
-		)
+	def test_sms(self):
+		text = f"TESTING: {datetime.utcnow()}"
+		self.assertTrue(self.service.sms('+38651240885', text))
 
-	def test_obstaja_2(self):
-		phone = '+386 051 240 885'
-		self.assertTrue(
-			self.service.obstaja(phone)
-		)
-
-	def test_obstaja_3(self):
-		phone = '+386/051/240/885'
-		self.assertTrue(
-			self.service.obstaja(phone)
-		)
-
-	def test_obstaja_4(self):
-		phone = '+386-051-240-885'
-		self.assertTrue(
-			self.service.obstaja(phone)
-		)
-
-	def test_obstaja_5(self):
-		phone = '051240885'
-		self.assertTrue(
-			self.service.obstaja(phone)
-		)
+	def test_format(self):
+		correct_form = "+38651240885"
+		self.assertEqual(self.service.format('+386051240885'), correct_form)
+		self.assertEqual(self.service.format('051240885'), correct_form)
+		self.assertEqual(self.service.format('krneki'), 'krneki')
+		self.assertEqual(self.service.format('+386/051-240 885'), correct_form)
 
 
 if __name__ == '__main__':

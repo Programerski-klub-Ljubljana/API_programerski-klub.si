@@ -2,7 +2,6 @@ import unittest
 from datetime import timedelta
 
 from app import APP
-from app.db import db_entities
 from core.services.auth_service import AuthService, TokenData
 
 
@@ -12,7 +11,7 @@ class test_auth(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 		cls.service: AuthService = APP.services.auth()
-		cls.data = TokenData(username='urosjarc')
+		cls.data = TokenData(username='username')
 
 	def test_encode_decode_pass(self):
 		jwt = self.service.encode(data=self.data, expiration=timedelta(seconds=1))
@@ -31,8 +30,8 @@ class test_auth(unittest.TestCase):
 		self.assertEqual(data_new, None)
 
 	def test_hash_verify_pass(self):
-		token = self.service.hash(db_entities.geslo)
-		self.assertTrue(self.service.verify(db_entities.geslo, token))
+		token = self.service.hash('geslo')
+		self.assertTrue(self.service.verify('geslo', token))
 
 	def test_hash_verify_fail_0(self):
 		password = '1234567890'
@@ -44,6 +43,7 @@ class test_auth(unittest.TestCase):
 		token = self.service.hash(password)
 		self.assertFalse(self.service.verify(password[:-1] + 'a', token))
 
+
 class test_token_data(unittest.TestCase):
 
 	def test_from_token(self):
@@ -51,7 +51,6 @@ class test_token_data(unittest.TestCase):
 		td.exp = '123'
 		td2 = TokenData.from_token(**{'u': 'username', 'exp': '123'})
 		self.assertDictEqual(td.__dict__, td2.__dict__)
-
 
 
 if __name__ == '__main__':

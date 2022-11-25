@@ -4,6 +4,7 @@ import phonenumbers
 from autologging import traced
 from phonenumbers import NumberParseException
 from twilio.rest import Client
+from twilio.rest.api.v2010.account.message import MessageInstance
 
 from core.services.phone_service import PhoneService
 
@@ -37,5 +38,17 @@ class PhoneTwilio(PhoneService):
 			log.warning(err)
 			return phone
 
-	def sms(self, phone: str, text: str):
-		self.client.messages.create(to=phone, body=text, messaging_service_sid=self.service_sid)
+	def sms(self, phone: str, text: str) -> bool:
+		# TODO: LOG sms status.
+		sms = self.client.messages.create(to=phone, body=text, messaging_service_sid=self.service_sid)
+		s = MessageInstance.Status
+		return sms.status in [
+			s.ACCEPTED,
+			s.QUEUED,
+
+			s.SENDING,
+			s.SENT,
+
+			s.DELIVERED,
+			s.RECEIVED
+		]

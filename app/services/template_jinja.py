@@ -1,5 +1,6 @@
 import jinja2
 from autologging import traced
+from jinja2 import StrictUndefined
 
 from app import CONST
 from core.services.template_service import TemplateService, TemplateRenderer
@@ -21,7 +22,7 @@ class TemplateRendererJinja(TemplateRenderer):
 @traced
 class TemplateJinja(TemplateService):
 	def __init__(self, searchpath: str):
-		self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchpath))
+		self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchpath), undefined=StrictUndefined)
 		self.kwargs = {}
 		self.__init()
 

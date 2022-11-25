@@ -46,11 +46,11 @@ class test_oseba(unittest.TestCase):
 		k1 = Kontakt(data='xxxxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 		kwargs = {'tip_osebe': TipOsebe.CLAN}
 
-		o0 = Oseba(ime='Uros', priimek='Jarc', rojen=date(year=1992, month=5, day=24), kontakti=[k0], **kwargs)
-		o1 = Oseba(ime='Katja', priimek='Jarc', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
-		o2 = Oseba(ime='Uros', priimek='Merc', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
-		o3 = Oseba(ime='Uros', priimek='Jarc', rojen=date(year=1000, month=5, day=24), kontakti=[k1], **kwargs)
-		o4 = Oseba(ime='Uros', priimek='Jarc', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
+		o0 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1992, month=5, day=24), kontakti=[k0], **kwargs)
+		o1 = Oseba(ime='Katja', priimek='Novak', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
+		o2 = Oseba(ime='Janez', priimek='Merc', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
+		o3 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1000, month=5, day=24), kontakti=[k1], **kwargs)
+		o4 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
 
 		self.assertNotEqual(o0, o1)
 		self.assertNotEqual(o0, o2)
@@ -65,7 +65,7 @@ class test_oseba(unittest.TestCase):
 		k4 = Kontakt(data='123', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
 		k5 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
 
-		kwargs = {'ime': 'Uros', 'priimek': 'Jarc', 'tip_osebe': [], 'rojen': None}
+		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[k0], **kwargs)
 		o1 = Oseba(kontakti=[k1], **kwargs)
 		o2 = Oseba(kontakti=[k2], **kwargs)
@@ -80,7 +80,7 @@ class test_oseba(unittest.TestCase):
 		self.assertEqual(o0, o5)
 
 	def test_has_username(self):
-		kwargs = {'ime': 'Uros', 'priimek': 'Jarc', 'tip_osebe': [], 'rojen': None}
+		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[
 			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
 			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
@@ -96,7 +96,7 @@ class test_oseba(unittest.TestCase):
 		k1 = Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 		k2 = Kontakt(data='1111', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 
-		kwargs = {'ime': 'Uros', 'priimek': 'Jarc', 'tip_osebe': [], 'rojen': None}
+		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[
 			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
 			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
@@ -114,7 +114,7 @@ class test_oseba(unittest.TestCase):
 		self.assertEqual(len(o0.kontakti), 4)
 
 	def test_dodaj_tip_osebe(self):
-		kwargs = {'ime': 'Uros', 'priimek': 'Jarc', 'tip_osebe': [], 'rojen': None}
+		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[], **kwargs)
 
 		self.assertEqual(len(o0.tip_osebe), 0)
@@ -128,7 +128,7 @@ class test_oseba(unittest.TestCase):
 		self.assertEqual(len(o0.tip_osebe), 2)
 
 	def test_str(self):
-		kwargs = {'ime': 'Uros', 'priimek': 'Jarc', 'tip_osebe': []}
+		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': []}
 		o0 = Oseba(rojen=date(year=1992, month=5, day=24), kontakti=[], **kwargs)
 
 		o1 = Oseba(rojen=None, kontakti=[
@@ -136,11 +136,11 @@ class test_oseba(unittest.TestCase):
 			Kontakt(data='xxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
 		], **kwargs)
 
-		self.assertEqual(str(o0), "urosjarc_24051992")
-		self.assertEqual(str(o1), "urosjarc_xxx")
+		self.assertEqual(str(o0), "janeznovak_24051992")
+		self.assertEqual(str(o1), "janeznovak_xxx")
 
 	def test_nov_vpis(self):
-		o = Oseba(ime='Uros', priimek='Jarc', tip_osebe=[], rojen=None)
+		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
 		t = datetime.utcnow()
 		self.assertEqual(len(o.vpisi), 0)
 		o.nov_vpis()
@@ -150,17 +150,17 @@ class test_oseba(unittest.TestCase):
 		self.assertGreater(o.vpisi[-1], t)
 
 	def test_starost(self):
-		o = Oseba(ime='Uros', priimek='Jarc', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=12 * 365 + 6 * 31 + 10))
+		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=12 * 365 + 6 * 31 + 10))
 		self.assertEqual(round(o.starost, 2), 12.52)
 
 	def test_mladoletnik(self):
-		o0 = Oseba(ime='Uros', priimek='Jarc', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 + 30))
-		o1 = Oseba(ime='Uros', priimek='Jarc', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 - 30))
+		o0 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 + 30))
+		o1 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 - 30))
 		self.assertFalse(o0.mladoletnik)
 		self.assertTrue(o1.mladoletnik)
 
 	def test_vpisan(self):
-		o2 = Oseba(ime='Uros', priimek='Jarc', rojen=None, tip_osebe=TipOsebe.CLAN)
+		o2 = Oseba(ime='Janez', priimek='Novak', rojen=None, tip_osebe=TipOsebe.CLAN)
 		self.assertFalse(o2.vpisan)
 		o2.vpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(o2.vpisan)

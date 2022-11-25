@@ -7,7 +7,7 @@ class test_validate(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		APP.init(seed=True)
+		APP.init(seed=False)
 
 		# USE CASE
 		cls.db_path = APP.useCases.db_path()

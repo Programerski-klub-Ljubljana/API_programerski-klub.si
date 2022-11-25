@@ -7,7 +7,7 @@ from core.use_cases.forms_vpis import Forms_vpis
 
 class Test_forms_vpis(unittest.TestCase):
 	def setUpClass(cls) -> None:
-		APP.init(seed=True)
+		APP.init(seed=False)
 
 
 

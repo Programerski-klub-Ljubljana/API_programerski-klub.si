@@ -15,7 +15,7 @@ class test_auth(unittest.TestCase):
 		cls.client = TestClient(API.fapi)
 
 	def login(self):
-		res = self.client.post('/auth/login', data={'username': 'urosjarc', 'password': 'geslo'})
+		res = self.client.post('/auth/login', data={'username': 'username', 'password': 'geslo'})
 		body = res.json()
 		self.assertListEqual(list(body.keys()), ['access_token', 'token_type'])
 		return body['access_token']
@@ -34,8 +34,8 @@ class test_auth(unittest.TestCase):
 		self.assertGreater(len(token), 0)
 		res = self.client.get('/auth/info', headers={'Authorization': f"Bearer {token}"})
 		body = res.json()
-		self.assertEqual(body['ime'], 'Uroš')
-		self.assertEqual(body['priimek'], 'Jarc')
+		self.assertEqual(body['ime'], 'Janez')
+		self.assertEqual(body['priimek'], 'Novak')
 
 	def test_02_info_fail(self):
 		res = self.client.get('/auth/info', headers={'Authorization': f"Bearer xxx"})

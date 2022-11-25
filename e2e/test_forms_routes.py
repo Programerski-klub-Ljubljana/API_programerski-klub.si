@@ -16,10 +16,10 @@ class test_forms(unittest.TestCase):
 		API.init()
 		cls.email: EmailService = APP.services.email()
 		cls.client = TestClient(API.fapi)
-		cls.testing_email = 'jar.fmf@gmail.com'
-		cls.testing_email_skrbnik = 'jarf.mf@gmail.com'
-		cls.testing_phone = '051240885'
-		cls.testing_phone_skrbnika = '+38651240880'
+		cls.testing_email = CONST.alt_email
+		cls.testing_email_skrbnik = CONST.alt_email
+		cls.testing_phone = CONST.phone
+		cls.testing_phone_skrbnika = CONST.phone
 
 
 	def vpis_data(self, mladoletnik: bool = False, **kwargs):

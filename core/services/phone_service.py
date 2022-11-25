@@ -16,5 +16,5 @@ class PhoneService(ABC):
 	def format(self, phone: str) -> str:
 		pass
 
-	def sms(self, phone: str, text: str) -> str:
+	def sms(self, phone: str, text: str) -> bool:
 		pass
