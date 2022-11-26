@@ -1,5 +1,7 @@
 import logging
 from dataclasses import dataclass
+from enum import Enum
+from typing import Callable
 
 from autologging import traced
 
@@ -20,7 +22,7 @@ class Validate_kontakt(UseCase):
 	def invoke(self, *kontakti: Kontakt) -> list[Kontakt]:
 		'''Vrne kontakte ki so bili validirani!'''
 
-		mapping = {
+		mapping: dict[Enum, Callable] = {
 			TipKontakta.EMAIL: self.email.obstaja,
 			TipKontakta.PHONE: self.phone.obstaja
 		}

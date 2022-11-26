@@ -73,7 +73,7 @@ logging.basicConfig(
 
 
 @traced
-def init(seed: bool = False, fake_services: bool = False):
+def init(seed: bool = False):
 	if this.inited:
 		log.info('APP already inited!!!')
 		return

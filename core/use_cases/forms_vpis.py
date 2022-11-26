@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum, auto
 
-from autologging import traced
-
 from app import CONST
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, TipValidacije, TipOsebe
 from core.services.db_service import DbService

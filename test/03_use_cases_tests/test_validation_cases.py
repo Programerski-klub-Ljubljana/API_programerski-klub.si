@@ -1,36 +1,49 @@
 import unittest
-from unittest.mock import Mock
+from copy import copy
+from unittest.mock import MagicMock
 
-from app import APP, CONST
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta, TipValidacije
+from core.domain.arhitektura_kluba import Kontakt, TipValidacije, TipKontakta
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Validate_kontakt
 
 
-class test_validate(unittest.TestCase):
+class test_kontakt(unittest.TestCase):
+	case = None
 
 	@classmethod
 	def setUpClass(cls) -> None:
-		APP.init(seed=False)
+		cls.in_kontakti = [
+			Kontakt(data='data0', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
+			Kontakt(data='data1', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
+			Kontakt(data='data2', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='data3', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
+			Kontakt(data='data4', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
+			Kontakt(data='data5', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)]
 
-		# MOCKS
-		cls.kontakt: Kontakt = Mock(Kontakt)
-		cls.kontakt.data = CONST.alt_email
-		cls.kontakt.tip = TipKontakta.EMAIL
-		cls.kontakt.validacija = TipValidacije.NI_VALIDIRAN
-		cls.email_service = Mock(EmailService)
-		cls.email_service.obstaja.return_value = TipValidacije.VALIDIRAN
-		cls.sms_service: PhoneService = Mock(PhoneService)
-		cls.sms_service.obstaja.return_value = TipValidacije.VALIDIRAN
+		cls.case = Validate_kontakt(
+			email=MagicMock(EmailService),
+			phone=MagicMock(PhoneService))
 
-		# USE CASE
-		cls.validate_kontakt = Validate_kontakt(email=cls.email_service, phone=cls.sms_service)
+	def test_all_pass(self):
+		self.case.phone.obstaja.return_value = True
+		self.case.email.obstaja.return_value = True
 
-	def test_validate_kontakt(self):
-		validated_kontakti: list[Kontakt] = self.validate_kontakt.invoke(self.kontakt)
-		self.assertEqual(len(validated_kontakti), 1)
-		self.assertEqual(validated_kontakti[0].validacija, TipValidacije.VALIDIRAN)
+		out_kontakti = self.case.invoke(*copy(self.in_kontakti))
+
+		self.assertEqual(out_kontakti, [self.in_kontakti[0], self.in_kontakti[3]])
+		self.assertEqual(out_kontakti[0].validacija, TipValidacije.VALIDIRAN)
+		self.assertEqual(out_kontakti[1].validacija, TipValidacije.VALIDIRAN)
+
+	def test_all_fail(self):
+		self.case.phone.obstaja.return_value = False
+		self.case.email.obstaja.return_value = False
+
+		out_kontakti = self.case.invoke(*copy(self.in_kontakti))
+
+		self.assertEqual(out_kontakti, [self.in_kontakti[0], self.in_kontakti[3]])
+		self.assertEqual(out_kontakti[0].validacija, TipValidacije.NI_VALIDIRAN)
+		self.assertEqual(out_kontakti[1].validacija, TipValidacije.NI_VALIDIRAN)
 
 
 if __name__ == '__main__':

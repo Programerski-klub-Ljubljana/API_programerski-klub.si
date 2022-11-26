@@ -5,7 +5,7 @@ from core.domain.arhitektura_kluba import Oseba, Kontakt, TipKontakta
 from core.use_cases.db_cases import Db_path
 
 
-class test_validate(unittest.TestCase):
+class test_path(unittest.TestCase):
 	geslo = None
 	case = None
 
