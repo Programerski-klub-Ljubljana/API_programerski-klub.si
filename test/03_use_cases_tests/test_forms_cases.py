@@ -1,3 +1,4 @@
+import re
 import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock, call, ANY
@@ -152,6 +153,10 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			call(recipients=['mail@gmail.com'], subject=CONST.email_subject.vpis, vsebina=ANY)])
 		self.assertEqual(self.case.phone.sms.call_args_list, [
 			call(phone='+38651240885', text=ANY)])
+
+		# TESTING SMS, EMAIL VSEBINA ============================================
+		self.assertRegex(self.case.email.send.call_args_list[0].kwargs['vsebina'], r'<a href=".{170,}">')
+		self.assertRegex(self.case.phone.sms.call_args_list[0].kwargs['text'], r'https://programerski-klub.si\/.*')
 
 
 if __name__ == '__main__':
