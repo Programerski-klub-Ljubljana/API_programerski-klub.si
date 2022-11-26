@@ -1,5 +1,5 @@
-import os
 import unittest
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -65,7 +65,8 @@ class test_validate(unittest.TestCase):
 		self.assertTrue(test(Fixtures.tree_wide.o[0].o, '/o/0/o'))
 
 	def test_object_json(self):
-		self.assertEqual(cutils.object_json([Fixtures.tree_wide, Fixtures.tree_wide], max_depth=10), [Fixtures.tree_wide_json, Fixtures.tree_wide_json])
+		self.assertEqual(cutils.object_json([Fixtures.tree_wide, Fixtures.tree_wide], max_depth=10),
+		                 [Fixtures.tree_wide_json, Fixtures.tree_wide_json])
 
 	def test_object_json_max_depth_width(self):
 		self.assertEqual(cutils.object_json(Fixtures.tree_deep, max_width=2, max_depth=0), 'MAX_DEPTH_LIST')
@@ -131,6 +132,14 @@ class test_validate(unittest.TestCase):
 			'c': 'c',
 			'd': 'd',
 		}, cutils.filter_dict(test, kwargs))
+
+	def test_list_field(self):
+		@dataclass
+		class FakeDataclass:
+			test: list = cutils.list_field(1, 2, 3)
+
+		dc = FakeDataclass()
+		self.assertListEqual(dc.test, [1, 2, 3])
 
 
 if __name__ == '__main__':

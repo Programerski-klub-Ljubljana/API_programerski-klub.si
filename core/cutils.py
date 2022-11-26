@@ -1,4 +1,5 @@
 import inspect
+from dataclasses import field
 from datetime import date
 from pathlib import Path
 from typing import Mapping, Union
@@ -104,3 +105,7 @@ def filter_dict(func, kwarg_dict):
 	filtered_dict = {key: kwarg_dict[key] for key in common_args}
 
 	return filtered_dict
+
+
+def list_field(*values: any):
+	return field(default_factory=lambda: list(values))

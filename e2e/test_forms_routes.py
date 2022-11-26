@@ -9,7 +9,7 @@ from app import APP, CONST
 from core.services.email_service import EmailService
 
 
-class test_forms(unittest.TestCase):
+class test_forms(unittest.IsolatedAsyncioTestCase):
 
 	@classmethod
 	def setUpClass(cls) -> None:

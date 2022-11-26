@@ -2,10 +2,10 @@ import unittest
 from copy import copy
 from unittest.mock import MagicMock
 
+from app import APP
 from core.domain.arhitektura_kluba import Kontakt, TipValidacije, TipKontakta
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
-from core.use_cases.validation_cases import Validate_kontakt
 
 
 class test_kontakt(unittest.TestCase):
@@ -20,8 +20,8 @@ class test_kontakt(unittest.TestCase):
 			Kontakt(data='data3', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
 			Kontakt(data='data4', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
 			Kontakt(data='data5', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)]
-
-		cls.case = Validate_kontakt(
+		APP.init(seed=False)
+		cls.case = APP.useCases.validate_kontakt(
 			email=MagicMock(EmailService),
 			phone=MagicMock(PhoneService))
 

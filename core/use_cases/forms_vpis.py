@@ -4,6 +4,7 @@ from datetime import date
 from enum import Enum, auto
 
 from app import CONST
+from core.cutils import list_field
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, TipValidacije, TipOsebe
 from core.services.db_service import DbService
 from core.services.email_service import EmailService
@@ -38,18 +39,11 @@ class TipProblema(str, Enum):
 class StatusVpisa:
 	clan: Oseba | None
 	skrbnik: Oseba = None
-	razlogi_duplikacije_skrbnika: list[RazlogDuplikacije] = None
-	razlogi_duplikacije_clana: list[RazlogDuplikacije] = None
-	razlogi_prekinitve: list[TipProblema] = None
-	validirani_podatki_skrbnika: list[Kontakt] = None
-	validirani_podatki_clana: list[Kontakt] = None
-
-	def __post_init__(self):
-		self.razlogi_duplikacije_clana = []
-		self.razlogi_duplikacije_skrbnika = []
-		self.razlogi_prekinitve = []
-		self.validirani_podatki_clana = []
-		self.validirani_podatki_skrbnika = []
+	razlogi_duplikacije_skrbnika: list[RazlogDuplikacije] = list_field()
+	razlogi_duplikacije_clana: list[RazlogDuplikacije] = list_field()
+	razlogi_prekinitve: list[TipProblema] = list_field()
+	validirani_podatki_skrbnika: list[Kontakt] = list_field()
+	validirani_podatki_clana: list[Kontakt] = list_field()
 
 	def _napacni_podatki(self, kontakti):
 		lam_ni_validiran = lambda kontakt: kontakt.validacija == TipValidacije.NI_VALIDIRAN
@@ -63,6 +57,7 @@ class StatusVpisa:
 	def napacni_podatki_clana(self):
 		return self._napacni_podatki(self.validirani_podatki_clana)
 
+	@property
 	def stevilo_napacnih_podatkov(self):
 		return len(self.napacni_podatki_skrbnika + self.napacni_podatki_clana)
 
@@ -81,8 +76,8 @@ class StatusVpisa:
 			Razlogi duplikacije skrbnika: {self.razlogi_duplikacije_skrbnika}
 			Razlogi duplikacije clana   : {self.razlogi_duplikacije_clana}
 			Razlogi prekinitve          : {self.razlogi_prekinitve}
-			Napake skrbnika: {", ".join(k.token_data for k in self.napacni_podatki_skrbnika)}
-			Napake clana   : {", ".join(k.token_data for k in self.napacni_podatki_clana)}
+			Napake skrbnika: {", ".join(k.data for k in self.napacni_podatki_skrbnika)}
+			Napake clana   : {", ".join(k.data for k in self.napacni_podatki_clana)}
 		""".removeprefix('\t\t')
 
 
@@ -112,9 +107,10 @@ class Forms_vpis(UseCase):
 			tip_osebe=[TipOsebe.CLAN], kontakti=[
 				Kontakt(data=email, tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
 				Kontakt(data=telefon, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
+		clan.nov_vpis()
 
 		# ZACNI VPISNI POSTOPEK
-		vpis = StatusVpisa(clan=clan)
+		vpis: StatusVpisa = StatusVpisa(clan=clan)
 
 		skrbnik = None
 		if clan.mladoletnik:
@@ -124,6 +120,7 @@ class Forms_vpis(UseCase):
 				tip_osebe=[TipOsebe.SKRBNIK], kontakti=[
 					Kontakt(data=email_skrbnika, tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
 					Kontakt(data=telefon_skrbnika, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
+			skrbnik.nov_vpis()
 
 			vpis.skrbnik = skrbnik
 			# PREVERI ZLORABO AUTORITETO?
@@ -166,12 +163,12 @@ class Forms_vpis(UseCase):
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
-		vpis.validirani_kontaki_clana = self.validate_kontakt.invoke(*clan.kontakti)
+		vpis.validirani_podatki_clana = self.validate_kontakt.invoke(*clan.kontakti)
 		if clan.mladoletnik:
 			vpis.validirani_podatki_skrbnika = self.validate_kontakt.invoke(*skrbnik.kontakti)
 
 		ST_VALIDACIJ = len(vpis.validirani_podatki)
-		ST_NAPAK = vpis.stevilo_napacnih_podatkov()
+		ST_NAPAK = vpis.stevilo_napacnih_podatkov
 		if ST_NAPAK > 0:
 			vpis.razlogi_prekinitve.append(TipProblema.NAPAKE)
 			if ST_NAPAK == ST_VALIDACIJ:

@@ -13,8 +13,8 @@ from core.use_cases._usecase import UseCase
 log = logging.getLogger(__name__)
 
 
-@traced
 @dataclass
+@traced
 class Validate_kontakt(UseCase):
 	email: EmailService
 	phone: PhoneService
