@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, call, ANY
 
-from app import APP
+from app import APP, CONST
 from core.domain.arhitektura_kluba import TipKontakta, TipValidacije, TipOsebe, Kontakt, Oseba
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
@@ -66,7 +66,6 @@ class Test_vpis_status(unittest.TestCase):
 		""".removeprefix('\t\t'))
 
 
-
 class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 	phone_service = None
 	email_service = None
@@ -91,6 +90,15 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			template=APP.services.template(),
 			validate_kontakt=validate_kontakt)
 
+	def full_props(self, status):
+		prop = []
+		for k, v in status.__dict__.items():
+			if isinstance(v, list) and len(v) > 0:
+				prop.append(k)
+			elif isinstance(v, Oseba) and v is not None:
+				prop.append(k)
+		return prop
+
 	async def test_polnoleten_not_exists_yet_all_pass(self):
 		self.email_service.obstaja.return_value = True
 		self.phone_service.obstaja.return_value = True
@@ -104,13 +112,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 
 		# TEST STATUS ======================================================
 		self.assertIsInstance(status, StatusVpisa)
-		self.assertListEqual(status.validirani_podatki_skrbnika, [])
-		self.assertListEqual(status.razlogi_prekinitve, [])
-		self.assertListEqual(status.razlogi_duplikacije_clana, [])
-		self.assertListEqual(status.razlogi_duplikacije_skrbnika, [])
-
-		# SKRBNIK ==========================================================
-		self.assertEqual(status.skrbnik, None)
+		self.assertListEqual(self.full_props(status), ['clan', 'validirani_podatki_clana'])
 
 		# VALIDIRANI PODATKI CLANA =========================================
 		self.assertEqual(status.validirani_podatki_clana, [
@@ -130,6 +132,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(len(c.izpisi), 0)
 		self.assertEqual(c.tip_osebe, [TipOsebe.CLAN])
 
+		# KONTAKTI CLANA ====================================================
 		self.assertEqual(c.kontakti[0].data, 'mail@gmail.com')
 		self.assertEqual(c.kontakti[0].tip, TipKontakta.EMAIL)
 		self.assertEqual(c.kontakti[0].validacija, TipValidacije.VALIDIRAN)
@@ -138,6 +141,17 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(c.kontakti[1].tip, TipKontakta.PHONE)
 		self.assertEqual(c.kontakti[1].validacija, TipValidacije.VALIDIRAN)
 		self.assertTrue(before_now <= c.vpisi[0] <= after_now)
+
+		# DB TESTING ========================================================
+		with self.case.db.transaction() as root:
+			self.assertEqual(len(root.oseba), 1)
+			self.assertEqual(root.oseba[0], c)
+
+		# SMS EMAIL TESTING =====================================================
+		self.assertEqual(self.case.email.send.call_args_list, [
+			call(recipients=['mail@gmail.com'], subject=CONST.email_subject.vpis, vsebina=ANY)])
+		self.assertEqual(self.case.phone.sms.call_args_list, [
+			call(phone='+38651240885', text=ANY)])
 
 
 if __name__ == '__main__':
