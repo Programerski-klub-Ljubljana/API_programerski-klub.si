@@ -31,6 +31,7 @@ class test_login(unittest.TestCase):
 		])
 
 		with cls.case.db.transaction() as root:
+			root.oseba.clear()
 			root.save(cls.oseba, cls.oseba2)
 			assert len(root.oseba) == 2
 
@@ -81,6 +82,7 @@ class test_info(unittest.TestCase):
 		cls.token_fake = Token(data='data', type='bearer')
 
 		with cls.case.db.transaction() as root:
+			root.oseba.clear()
 			root.save(cls.oseba)
 			assert len(root.oseba) == 1
 

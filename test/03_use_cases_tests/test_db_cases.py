@@ -15,6 +15,7 @@ class test_path(unittest.TestCase):
 		cls.case: Db_path = APP.useCases.db_path()
 
 		with cls.case.db.transaction() as root:
+			root.oseba.clear()
 			ks = [Kontakt(data='asdf1234', tip=TipKontakta.EMAIL) for j in range(10)]
 			root.save(*[Oseba(ime="ime", priimek="priimek", rojen=None, kontakti=ks) for i in range(10)])
 			assert len(root.oseba) == 10

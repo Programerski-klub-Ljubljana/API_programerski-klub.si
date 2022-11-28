@@ -128,10 +128,11 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(c.rojen.year, 1234)
 		self.assertEqual(c.rojen.month, 6)
 		self.assertEqual(c.rojen.day, 15)
+		self.assertEqual(c.tip_osebe, [TipOsebe.CLAN])
 		self.assertEqual(len(c.kontakti), 2)
 		self.assertEqual(len(c.vpisi), 1)
 		self.assertEqual(len(c.izpisi), 0)
-		self.assertEqual(c.tip_osebe, [TipOsebe.CLAN])
+		self.assertTrue(before_now <= c.vpisi[0] <= after_now)
 
 		# KONTAKTI CLANA ====================================================
 		self.assertEqual(c.kontakti[0].data, 'mail@gmail.com')
@@ -141,7 +142,6 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(c.kontakti[1].data, '+38651240885')
 		self.assertEqual(c.kontakti[1].tip, TipKontakta.PHONE)
 		self.assertEqual(c.kontakti[1].validacija, TipValidacije.VALIDIRAN)
-		self.assertTrue(before_now <= c.vpisi[0] <= after_now)
 
 		# DB TESTING ========================================================
 		with self.case.db.transaction() as root:
