@@ -154,9 +154,18 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(self.case.phone.sms.call_args_list, [
 			call(phone='+38651240885', text=ANY)])
 
-		# TESTING SMS, EMAIL VSEBINA ============================================
-		self.assertRegex(self.case.email.send.call_args_list[0].kwargs['vsebina'], r'<a href=".{170,}">')
-		self.assertRegex(self.case.phone.sms.call_args_list[0].kwargs['text'], r'https://programerski-klub.si\/.*')
+		# TESTING SMS, EMAIL TOKENS ============================================
+		sms = self.case.phone.sms.call_args_list[0].kwargs['text']
+		email = self.case.phone.sms.call_args_list[0].kwargs['text']
+
+		tokens = re.findall(r"https://programerski-klub\.si/api/auth/report/(.*)", sms)
+		tokens += re.findall(r"https://programerski-klub\.si/api/auth/confirm/(.*)$", sms)
+		tokens += re.findall(r"https://programerski-klub\.si/api/auth/report/(.*)$", email)
+		tokens += re.findall(r"https://programerski-klub\.si/api/auth/confirm/(.*)$", email)
+
+		for token in tokens:
+			self.assertIn(self.case.auth_verification_token.auth.decode(token).u,
+				[k.data for k in c.kontakti])
 
 
 if __name__ == '__main__':
