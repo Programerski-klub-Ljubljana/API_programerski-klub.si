@@ -52,7 +52,7 @@ class test_db(unittest.TestCase):
 			])
 
 			# ARE THEY EQUAL?
-			self.assertNotEqual(clan2, clan1)
+			self.assertFalse(clan2.equal(clan1))
 
 			# TEST IF LIST ARE NOT YET CONVERTED TO PERSISTENT LISTS
 			self.assertIsInstance(clan1.vpisi, PersistentList)
@@ -70,14 +70,14 @@ class test_db(unittest.TestCase):
 		clan_find2 = None
 		with APP.db.transaction() as root:
 			for clan in root.oseba:
-				if clan == clan1:
+				if clan == clan1:  # TODO: Make this stricter
 					clan_find1 = clan
-				if clan == clan2:
+				if clan == clan2:  # TODO: Make this stricter
 					clan_find2 = clan
 
 			# TEST IF FOUND EQUAL TO INSERTED
-			self.assertEqual(clan_find1, clan1)
-			self.assertEqual(clan_find2, clan2)
+			self.assertTrue(clan_find1.equal(clan1))
+			self.assertTrue(clan_find2.equal(clan2))
 
 			# TEST IF LIST ARE CONVERTE TO PERSISTENT LISTS
 			self.assertIsInstance(clan_find1.vpisi, PersistentList)
@@ -92,7 +92,7 @@ class test_db(unittest.TestCase):
 			oseba = root.oseba[5]
 			data = oseba.kontakti[-1].data
 			self.assertGreater(len(data), 3)
-			self.assertEqual(oseba, root.oseba_find(data))
+			self.assertTrue(oseba.equal(root.oseba_find(data)))
 
 	def test_transaction_oseba_find_fail(self):
 		with APP.db.transaction() as root:

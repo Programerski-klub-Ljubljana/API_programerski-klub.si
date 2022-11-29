@@ -13,7 +13,7 @@ from core.domain._enums import LogLevel, LogTheme
 class Elist(PersistentList):
 	def __contains__(self, item):
 		for ele in self:
-			if ele == item:
+			if ele.equal(item):
 				return True
 		return False
 
@@ -58,6 +58,10 @@ class Entity(Persistent):
 		for e in entity:
 			self._povezave.append(e)
 			e._povezave.append(self)
+
+	#TODO: Make this abstract
+	def equal(self, entity):
+		return self == entity
 
 	def __post_init__(self):
 		attr = {

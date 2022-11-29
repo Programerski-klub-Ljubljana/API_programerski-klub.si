@@ -11,13 +11,6 @@ class TipObjave(EntityEnum):
 	ZUNANJA = auto()
 
 
-class TipSporocila(EntityEnum):
-	EMAIL = auto()
-	SMS = auto()
-	FORMS_KONTAKT = auto()
-	FORMS_VPIS = auto()
-
-
 @dataclass
 class Objava(Entity):
 	tip: TipObjave
@@ -28,5 +21,5 @@ class Objava(Entity):
 
 @dataclass
 class Sporocilo(Entity):
-	tip: TipSporocila
+	naslov: str
 	vsebina: str

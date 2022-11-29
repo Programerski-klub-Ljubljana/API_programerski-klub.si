@@ -41,7 +41,7 @@ class test_kontakt(unittest.TestCase):
 
 class test_oseba(unittest.TestCase):
 
-	def test_eq_ime_priimek_rojstvo(self):
+	def test_equal_ime_priimek_rojstvo(self):
 		k0 = Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 		k1 = Kontakt(data='xxxxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 		kwargs = {'tip_osebe': TipOsebe.CLAN}
@@ -52,12 +52,12 @@ class test_oseba(unittest.TestCase):
 		o3 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1000, month=5, day=24), kontakti=[k1], **kwargs)
 		o4 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1992, month=5, day=24), kontakti=[k1], **kwargs)
 
-		self.assertNotEqual(o0, o1)
-		self.assertNotEqual(o0, o2)
-		self.assertNotEqual(o0, o3)
-		self.assertEqual(o0, o4)
+		self.assertFalse(o0.equal(o1))
+		self.assertFalse(o0.equal(o2))
+		self.assertFalse(o0.equal(o3))
+		self.assertTrue(o0.equal(o4))
 
-	def test_eq_ime_priimek_kontakti(self):
+	def test_equal_ime_priimek_kontakti(self):
 		k0 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
 		k1 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
 		k2 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
@@ -73,11 +73,11 @@ class test_oseba(unittest.TestCase):
 		o4 = Oseba(kontakti=[k4], **kwargs)
 		o5 = Oseba(kontakti=[k5], **kwargs)
 
-		self.assertNotEqual(o0, o1)
-		self.assertNotEqual(o0, o2)
-		self.assertNotEqual(o0, o3)
-		self.assertNotEqual(o0, o4)
-		self.assertEqual(o0, o5)
+		self.assertFalse(o0.equal(o1))
+		self.assertFalse(o0.equal(o2))
+		self.assertFalse(o0.equal(o3))
+		self.assertFalse(o0.equal(o4))
+		self.assertTrue(o0.equal(o5))
 
 	def test_has_username(self):
 		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}

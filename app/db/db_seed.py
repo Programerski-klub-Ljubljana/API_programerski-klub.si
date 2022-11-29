@@ -8,7 +8,7 @@ from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipValidacije, TipOsebe
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, Bancni_racun
-from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo, TipSporocila
+from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo
 from core.domain.srecanja_dogodki import Dogodek, TipDogodka
 from core.domain.vaje_naloge import Naloga, Tezavnost, Test
 

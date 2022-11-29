@@ -93,7 +93,7 @@ class test_info(unittest.TestCase):
 			assert len(root.oseba) == 0
 
 	def test_token_good(self):
-		self.assertEqual(self.oseba, self.case.invoke(self.token))
+		self.assertTrue(self.oseba.equal(self.case.invoke(self.token)))
 
 	def test_token_bad(self):
 		self.assertIsInstance(self.case.invoke(self.token_bad), NoneType)

@@ -5,12 +5,18 @@ from typing import Callable
 
 from core.domain._entity import Elist, Entity, elist
 
+@dataclass
+class E(Entity):
+	value: int
+
+	# def equal(self, entity):
+	# 	return self.value == entity.value
 
 class test_Elist(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
-		cls.elist_100 = Elist([i for i in range(10000)])
-		cls.elist = Elist([0, 1, 2, 3, 4, 5])
+		cls.elist_100 = Elist([E(value=i) for i in range(10000)])
+		cls.elist = Elist([E(value=i) for i in range(6)])
 		cls.elist_empty = Elist([])
 
 	def test_contains(self):
@@ -18,9 +24,9 @@ class test_Elist(unittest.TestCase):
 		self.assertTrue(None not in self.elist_empty)
 		for i in range(10):
 			if i <= 5:
-				self.assertTrue(i in self.elist)
+				self.assertTrue(E(value=i) in self.elist)
 			else:
-				self.assertTrue(i not in self.elist)
+				self.assertTrue(E(value=i) not in self.elist)
 
 	def test_append_pop(self):
 		self.assertEqual(len(self.elist_empty), 0)

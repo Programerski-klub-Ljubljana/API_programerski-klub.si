@@ -50,7 +50,7 @@ class Oseba(Entity):
 	izpisi: elist[datetime] = Elist.field()
 	kontakti: elist[Kontakt] = Elist.field()
 
-	def __eq__(self, oseba):
+	def equal(self, oseba):
 		# EQUACIJA MORA BITI MEHKA DA SE PREJ DETEKTIRAJO MOZNI DUPLIKATI
 		if not (self.ime == oseba.ime and self.priimek == oseba.priimek):
 			return False

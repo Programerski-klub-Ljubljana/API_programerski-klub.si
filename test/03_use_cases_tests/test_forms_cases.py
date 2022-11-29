@@ -1,13 +1,15 @@
 import re
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock, call, ANY
+from unittest.mock import MagicMock, call, ANY
 
 from app import APP, CONST
 from core.domain.arhitektura_kluba import TipKontakta, TipValidacije, TipOsebe, Kontakt, Oseba
-from core.services.email_service import EmailService
+from core.services.db_service import DbService, DbRoot
 from core.services.phone_service import PhoneService
-from core.use_cases.forms_vpis import StatusVpisa, RazlogDuplikacije, TipProblema
+from core.use_cases.db_cases import Db_merge_oseba
+from core.use_cases.forms_vpis import StatusVpisa, TipProblema
+from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
 
 
 class Test_vpis_status(unittest.TestCase):
@@ -16,8 +18,6 @@ class Test_vpis_status(unittest.TestCase):
 		cls.status = StatusVpisa(
 			clan=Oseba(ime='ime', priimek='priimek', rojen=None),
 			skrbnik=Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None),
-			razlogi_duplikacije_skrbnika=[RazlogDuplikacije.SKRBNIK_POSTAJA_CLAN, RazlogDuplikacije.ZE_VPISAN],
-			razlogi_duplikacije_clana=[RazlogDuplikacije.CLAN_POSTAJA_SKRBNIK, RazlogDuplikacije.ZE_IMA_VAROVANCA],
 			razlogi_prekinitve=[TipProblema.NAPAKE, TipProblema.HACKER, TipProblema.CHUCK_NORIS],
 			validirani_podatki_clana=[
 				Kontakt(data='data_clan_0', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
@@ -59,49 +59,84 @@ class Test_vpis_status(unittest.TestCase):
 		self.assertEqual(str(self.status), f"""
 			Clan   : imepriimek_
 			Skrbnik: ime_skrbnikapriimek_skrbnika_
-			Razlogi duplikacije skrbnika: [<RazlogDuplikacije.SKRBNIK_POSTAJA_CLAN: '4'>, <RazlogDuplikacije.ZE_VPISAN: '2'>]
-			Razlogi duplikacije clana   : [<RazlogDuplikacije.CLAN_POSTAJA_SKRBNIK: '1'>, <RazlogDuplikacije.ZE_IMA_VAROVANCA: '5'>]
 			Razlogi prekinitve          : [<TipProblema.NAPAKE: '1'>, <TipProblema.HACKER: '3'>, <TipProblema.CHUCK_NORIS: '2'>]
 			Napake skrbnika: data_skrbnik_0
 			Napake clana   : data_clan_0
 		""".removeprefix('\t\t'))
 
 
-class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
-	phone_service = None
-	email_service = None
+class AsyncMock(MagicMock):
+	async def __call__(self, *args, **kwargs):
+		return super(AsyncMock, self).__call__(*args, **kwargs)
 
-	@classmethod
-	def setUpClass(cls) -> None:
+	def __enter__(self):
+		return self
+
+
+class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
+	db_service = None
+	phone_service = None
+	validate_kontakts_ownerships = None
+	validate_kontakts_existances = None
+	db_merge_oseba = None
+
+	def setUp(self) -> None:
 		APP.init(seed=False)
 
-		cls.email_service: EmailService = MagicMock(EmailService)
-		cls.email_service.send = AsyncMock()
+		# MOCKS
+		self.root = MagicMock(DbRoot, name='DbRoot')
+		self.db_service: DbService = MagicMock(DbService, name='DbService')
+		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
+		self.validate_kontakts_existances = MagicMock(Validate_kontakts_existances, name='Validate_kontakts_existances')
+		self.validate_kontakts_ownerships = AsyncMock(Validate_kontakts_ownerships, name='Validate_kontakts_ownerships')
+		self.db_merge_oseba = MagicMock(Db_merge_oseba, name='Db_merge_oseba')
 
-		cls.phone_service: PhoneService = MagicMock(PhoneService)
-		cls.phone_service.format = APP.services.phone().format
+		# SETUP
+		self.case = APP.useCases.forms_vpis(
+			db=self.db_service,
+			phone=self.phone_service,
+			validate_kontakts_existances=self.validate_kontakts_existances,
+			validate_kontakts_ownerships=self.validate_kontakts_ownerships,
+			db_merge_oseba=self.db_merge_oseba)
 
-		validate_kontakt = APP.useCases.validate_kontakt(
-			email=cls.email_service,
-			phone=cls.phone_service)
+		# LOGIC
+		self.phone_service.format = lambda phone: phone
+		self.db_merge_oseba.invoke = lambda oseba, as_type: oseba
 
-		cls.case = APP.useCases.forms_vpis(
-			email=cls.email_service,
-			phone=cls.phone_service,
-			template=APP.services.template(),
-			validate_kontakt=validate_kontakt)
-
+	# MOCKS LOGIC
 	def full_props(self, status):
 		prop = []
 		for k, v in status.__dict__.items():
 			if isinstance(v, list) and len(v) > 0:
 				prop.append(k)
-			elif isinstance(v, Oseba) and v is not None:
+			elif isinstance(v, Oseba | MagicMock) and v is not None:
 				prop.append(k)
 		return prop
 
-	async def test_polnoleten_not_exists_yet_all_pass(self):
-		self.email_service.obstaja.return_value = True
+	async def test_polnoleten_all_pass(self):
+		leto = datetime.utcnow().year - 20
+		# INVOKE
+		status: StatusVpisa = await self.case.invoke(
+			ime='ime', priimek='priimek',
+			email='email', telefon='telefon',
+			dan_rojstva=15, mesec_rojstva=6, leto_rojstva=leto,
+			ime_skrbnika='ime_skrbnika', priimek_skrbnika='priimek_skrbnika',
+			email_skrbnika='email_skrbnika', telefon_skrbnika="telefon_skrbnika")
+
+		# TEST STATUS ======================================================
+		self.assertListEqual(self.full_props(status), ['clan', 'validirani_podatki_clana'])
+
+		self.assertEqual(status.clan.ime, 'ime')
+		self.assertEqual(status.clan.priimek, 'priimek')
+		self.assertEqual(status.clan.rojen, datetime(year=leto, month=6, day=15))
+		self.assertTrue(status.clan.has_kontakt_data('email'))
+		self.assertTrue(status.clan.has_kontakt_data('phone'))
+		self.assertEqual(status.clan.tip_osebe, [TipOsebe.CLAN])
+		self.assertEqual(status.clan.izpisi, [])
+		self.assertEqual(len(status.clan.vpisi), [])
+
+
+	async def test_clan_polnoleten_not_exists_yet_all_pass(self):
 		self.phone_service.obstaja.return_value = True
 
 		before_now = datetime.utcnow()
@@ -165,7 +200,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 
 		for token in tokens:
 			self.assertIn(self.case.auth_verification_token.auth.decode(token).u,
-				[k.data for k in c.kontakti])
+			              [k.data for k in c.kontakti])
 
 
 if __name__ == '__main__':

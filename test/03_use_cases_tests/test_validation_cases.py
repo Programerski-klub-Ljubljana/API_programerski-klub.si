@@ -21,7 +21,7 @@ class test_kontakt(unittest.TestCase):
 			Kontakt(data='data4', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
 			Kontakt(data='data5', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)]
 		APP.init(seed=False)
-		cls.case = APP.useCases.validate_kontakt(
+		cls.case = APP.useCases.validate_kontakts_existances(
 			email=MagicMock(EmailService),
 			phone=MagicMock(PhoneService))
 
