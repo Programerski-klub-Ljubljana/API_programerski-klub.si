@@ -79,8 +79,8 @@ class Forms_vpis(UseCase):
 			ime: str, priimek: str,
 			dan_rojstva: int, mesec_rojstva: int, leto_rojstva: int,
 			email: str, telefon: str,
-			ime_skrbnika: str = None, priimek_skrbnika: str = None,
-			email_skrbnika: str = None, telefon_skrbnika: str = None) -> StatusVpisa:
+			ime_skrbnika: str | None = None, priimek_skrbnika: str | None = None,
+			email_skrbnika: str | None = None, telefon_skrbnika: str | None = None) -> StatusVpisa:
 		kwargs = locals()
 		del kwargs['self']
 
@@ -103,7 +103,6 @@ class Forms_vpis(UseCase):
 		# MERGE CLAN
 		vpis.clan = self.db_merge_oseba.invoke(oseba=vpis.clan, as_type=TipOsebe.CLAN)
 
-		skrbnik = None
 		if vpis.clan.mladoletnik:
 			# FORMAT PHONE
 			telefon_skrbnika = self.phone.format(phone=telefon_skrbnika)
@@ -120,7 +119,7 @@ class Forms_vpis(UseCase):
 				vpis.razlogi_prekinitve.append(TipProblema.CHUCK_NORIS)
 
 			# MERGE SKRBNIK
-			vpis.skrbnik = self.db_merge_oseba.invoke(oseba=skrbnik, as_type=TipOsebe.SKRBNIK)
+			vpis.skrbnik = self.db_merge_oseba.invoke(oseba=vpis.skrbnik, as_type=TipOsebe.SKRBNIK)
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
@@ -142,8 +141,8 @@ class Forms_vpis(UseCase):
 			with self.db.transaction(note=f'Shrani {vpis.clan}') as root:
 				root.save(vpis.clan, unique=True)
 				if vpis.clan.mladoletnik:
-					vpis.clan.povezi(skrbnik)
-					root.save(skrbnik, unique=True)
+					vpis.clan.povezi(vpis.skrbnik)
+					root.save(vpis.skrbnik, unique=True)
 					await self.validate_kontakts_ownerships.invoke(vpis.skrbnik)
 				await self.validate_kontakts_ownerships.invoke(vpis.skrbnik)
 

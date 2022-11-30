@@ -17,7 +17,7 @@ class test_tip_osebe(unittest.TestCase):
 
 class test_kontakt(unittest.TestCase):
 
-	def test_eq(self):
+	def test_equal(self):
 		k0 = Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
 		kontakti = [
 			Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
@@ -34,8 +34,10 @@ class test_kontakt(unittest.TestCase):
 			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
 		]
 		for k in kontakti:
-			self.assertEqual(k0, k)
+			self.assertTrue(k0.equal(k))
+			self.assertNotEqual(k0, k)
 		for k in fail_kontakti:
+			self.assertFalse(k0.equal(k))
 			self.assertNotEqual(k0, k)
 
 

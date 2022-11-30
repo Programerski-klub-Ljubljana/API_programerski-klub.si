@@ -35,7 +35,7 @@ class Kontakt(Entity):
 	tip: TipKontakta
 	validacija: TipValidacije = TipValidacije.NI_VALIDIRAN
 
-	def __eq__(self, kontakt):
+	def equal(self, kontakt):
 		return self.data == kontakt.data
 
 
@@ -65,7 +65,7 @@ class Oseba(Entity):
 		for k1 in self.kontakti:
 			for k2 in oseba.kontakti:
 				if (
-						k1 == k2 and
+						k1.equal(k2) and
 						k1.validacija == TipValidacije.POTRJEN and
 						k2.validacija == TipValidacije.POTRJEN and
 						k1.tip == k2.tip):

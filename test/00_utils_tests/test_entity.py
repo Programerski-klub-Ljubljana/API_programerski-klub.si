@@ -9,9 +9,6 @@ from core.domain._entity import Elist, Entity, elist
 class E(Entity):
 	value: int
 
-	# def equal(self, entity):
-	# 	return self.value == entity.value
-
 class test_Elist(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):

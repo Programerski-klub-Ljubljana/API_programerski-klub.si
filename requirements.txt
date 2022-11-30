@@ -3,7 +3,6 @@ fastapi~=0.86.0
 starlette~=0.20.4
 uvicorn~=0.19.0
 python-multipart
-
 pydantic[email,dotenv]
 
 # SERVER UTILS
@@ -30,6 +29,7 @@ dependency-injector
 # TESTING
 coverage
 autologging
+behave
 
 # SERVICES
 stripe
