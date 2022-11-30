@@ -38,7 +38,7 @@ class test_bancni_racun(unittest.TestCase):
 				self.init_transakcija(prihodek=False, znesek=5, placano=5),
 			])
 
-		self.assertListEqual(br.transakcije[3:5], br.dolgovi(tip_transakcije=TipTransakcije.ODHODEK))
+		self.assertCountEqual(br.transakcije[3:5], br.dolgovi(tip_transakcije=TipTransakcije.ODHODEK))
 		self.assertEqual(br.transakcije[:2], br.dolgovi(tip_transakcije=TipTransakcije.PRIHODEK))
 
 

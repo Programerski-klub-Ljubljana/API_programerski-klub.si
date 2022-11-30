@@ -143,7 +143,7 @@ class Forms_vpis(UseCase):
 				if vpis.clan.mladoletnik:
 					vpis.clan.povezi(vpis.skrbnik)
 					root.save(vpis.skrbnik, unique=True)
-					await self.validate_kontakts_ownerships.invoke(vpis.skrbnik)
-				await self.validate_kontakts_ownerships.invoke(vpis.skrbnik)
+					await self.validate_kontakts_ownerships.invoke(oseba=vpis.skrbnik)
+				await self.validate_kontakts_ownerships.invoke(oseba=vpis.clan)
 
 		return vpis

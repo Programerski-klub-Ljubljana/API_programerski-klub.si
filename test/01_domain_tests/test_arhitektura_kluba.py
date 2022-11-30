@@ -153,7 +153,7 @@ class test_oseba(unittest.TestCase):
 
 	def test_starost(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=12 * 365 + 6 * 31 + 10))
-		self.assertEqual(round(o.starost, 2), 12.52)
+		self.assertEqual(round(o.starost, 1), 12.5)
 
 	def test_mladoletnik(self):
 		o0 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 + 30))

@@ -12,7 +12,7 @@ class test_autils(unittest.TestCase):
 		router = autils.router(__name__)
 		self.assertIsInstance(router, APIRouter)
 		self.assertEqual(router.prefix, f'/test_autils')
-		self.assertListEqual(router.tags, ['test_autils'])
+		self.assertCountEqual(router.tags, ['test_autils'])
 
 	def test_openapi(self):
 		data = autils.openapi({

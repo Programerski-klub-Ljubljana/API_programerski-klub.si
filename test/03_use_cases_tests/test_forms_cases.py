@@ -1,10 +1,11 @@
 import unittest
 from datetime import date, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call, AsyncMock
 
 from app import APP
 from core.domain.arhitektura_kluba import TipKontakta, TipValidacije, TipOsebe, Kontakt, Oseba
 from core.services.phone_service import PhoneService
+from core.use_cases.db_cases import Db_merge_oseba
 from core.use_cases.forms_vpis import StatusVpisa, TipProblema
 from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
 
@@ -62,13 +63,6 @@ class Test_vpis_status(unittest.TestCase):
 		""".removeprefix('\t\t'))
 
 
-class AsyncMock(MagicMock):
-	async def __call__(self, *args, **kwargs):
-		return super(AsyncMock, self).__call__(*args, **kwargs)
-
-	def __enter__(self):
-		return self
-
 
 class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 	phone_service = None
@@ -79,18 +73,24 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		APP.init(seed=False)
 
 		# MOCKS
+		self.db_merge_oseba: Db_merge_oseba = MagicMock(Db_merge_oseba, name='Db_merge_oseba')
 		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
 		self.validate_kontakts_existances = MagicMock(Validate_kontakts_existances, name='Validate_kontakts_existances')
 		self.validate_kontakts_ownerships = AsyncMock(Validate_kontakts_ownerships, name='Validate_kontakts_ownerships')
+		self.validate_kontakts_ownerships.invoke = AsyncMock()
+
+		# MOCKS LOGIC
+		self.db_merge_oseba.invoke.side_effect = lambda oseba, as_type: oseba
+		self.phone_service.format.side_effect = lambda phone: phone
 
 		# SETUP
 		self.case = APP.useCases.forms_vpis(
+			db_merge_oseba=self.db_merge_oseba,
 			phone=self.phone_service,
 			validate_kontakts_existances=self.validate_kontakts_existances,
 			validate_kontakts_ownerships=self.validate_kontakts_ownerships)
 
 		self.today = date.today()
-
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
 			Kontakt(data='email_skrbnika0', tip=TipKontakta.EMAIL),
 			Kontakt(data='phone_skrbnika0', tip=TipKontakta.PHONE),
@@ -109,7 +109,6 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			root.oseba.clear()
 			assert len(root.oseba) == 0
 
-	# MOCKS LOGIC
 	def assertEqualProperties(self, status: StatusVpisa, expected):
 		prop = []
 		for k, v in status.__dict__.items():
@@ -118,144 +117,131 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			elif isinstance(v, Oseba | MagicMock) and v is not None:
 				prop.append(k)
 
-		self.assertListEqual(sorted(prop), sorted(expected))
+		self.assertCountEqual(sorted(prop), sorted(expected))
 
-	def assertEqualOseba(self, oseba1, oseba2, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
+	def assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
 		if vpis:
 			before = datetime.now()
-			self.assertAlmostEqual(before.timestamp() / 10000, oseba1.vpisi[0].timestamp() / 10000, places=0)
-			self.assertEqual(len(oseba1.vpisi), 1)
+			self.assertAlmostEqual(before.timestamp() / 10000, original_oseba.vpisi[0].timestamp() / 10000, places=0)
+			self.assertEqual(len(original_oseba.vpisi), 1)
 
-		self.assertEqual(oseba1.ime, oseba2.ime)
-		self.assertEqual(oseba1.priimek, oseba2.priimek)
-		self.assertEqual(oseba1.rojen, oseba2.rojen)
-		self.assertListEqual([k.data for k in oseba1.kontakti], [k.data for k in oseba2.kontakti])
-		self.assertEqual(oseba1.tip_osebe, [tip])
-		self.assertEqual(oseba1.izpisi, [])
+		self.assertEqual(original_oseba.ime, status_oseba.ime)
+		self.assertEqual(original_oseba.priimek, status_oseba.priimek)
+		self.assertEqual(original_oseba.rojen, status_oseba.rojen)
+		self.assertEqual(original_oseba.tip_osebe, [tip])
+		self.assertEqual(original_oseba.izpisi, [])
 
-	async def invoke_mladoletnik(self, clan: Oseba, skrbnik: Oseba, db_saved: bool):
-		self.phone_service.format.side_effect = [k.data for k in clan.kontakti + skrbnik.kontakti if k.tip == TipKontakta.PHONE]
+		self.assertEqual(len(original_oseba.kontakti), len(status_oseba.kontakti))
+		for i, k1 in enumerate(original_oseba.kontakti):
+			k2 = status_oseba.kontakti[i]
+			self.assertEqual(k1.tip, k2.tip)
+			self.assertEqual(k1.data, k2.data)
+
+	# MORA SE NAHAJATI V STATUSU
+	# MORA IMETI TELEFON FORMATIRAN
+	# MORA IMETI KONTAKTE NEVALIDIRANE
+	# MORA BITI TIPA CLAN
+
+	# MORA IMETI NOV VPIS
+	# TODO: MERGE SE MORA ZGODITI CE ZE OBSTAJA
+	# PREVERITI SE MORAJO KONTAKTI CE OBSTAJAJO
+	# V PRIMERU NAPAK HACKER ALI NAPAKE
+	# V BAZI SE MORA SHRANITI
+	# CLAN MORA BITI POVEZAN Z SKRBNIKOM
+	# TODO: VALIDIRATI SE MORA KONTAKT OVNERSHIP
+	async def invoke(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True):
+		kwargs = {
+			'ime': clan.ime,
+			'priimek': clan.priimek,
+			'email': clan.kontakti[0].data,
+			'telefon': clan.kontakti[1].data,
+			'dan_rojstva': clan.rojen.day,
+			'mesec_rojstva': clan.rojen.month,
+			'leto_rojstva': clan.rojen.year,
+		}
+
+		if skrbnik is not None:
+			kwargs = {
+				**kwargs, 'ime_skrbnika': skrbnik.ime, 'priimek_skrbnika': skrbnik.priimek,
+				'email_skrbnika': skrbnik.kontakti[0].data, 'telefon_skrbnika': skrbnik.kontakti[1].data}
 
 		# INVOKE
-		status: StatusVpisa = await self.case.invoke(
-			ime=clan.ime, priimek=clan.priimek,
-			email=clan.kontakti[0].data, telefon=clan.kontakti[1].data,
-			dan_rojstva=clan.rojen.day, mesec_rojstva=clan.rojen.month, leto_rojstva=clan.rojen.year,
-			ime_skrbnika=skrbnik.ime, priimek_skrbnika=skrbnik.priimek, email_skrbnika=skrbnik.kontakti[0].data,
-			telefon_skrbnika=skrbnik.kontakti[1].data
-		)
+		status: StatusVpisa = await self.case.invoke(**kwargs)
 
 		self.assertEqualOseba(status.clan, clan, vpis=True, tip=TipOsebe.CLAN)
-		self.assertEqualOseba(status.skrbnik, skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
+		self.assertEqual(status.validirani_podatki_clana, self.validate_kontakts_existances.invoke())
+
+		db_merge_oseba_calls = [call(oseba=status.clan, as_type=TipOsebe.CLAN)]
+		validate_ownerships = [call(oseba=status.clan)]
+
+		if skrbnik is not None:
+			db_merge_oseba_calls.append(call(oseba=status.skrbnik, as_type=TipOsebe.SKRBNIK))
+			validate_ownerships.append(call(oseba=status.skrbnik))
+			self.assertEqualOseba(status.skrbnik, skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
+			self.assertEqual(status.validirani_podatki_skrbnika, self.validate_kontakts_existances.invoke())
+
+		self.assertCountEqual(self.db_merge_oseba.invoke.call_args_list, db_merge_oseba_calls)
 
 		# DB SAVED
-		if db_saved:
-			with self.case.db.transaction() as root:
-				self.assertEqual(len(root.oseba), 2)
+		with self.case.db.transaction() as root:
+			if db_saved:
+				self.assertCountEqual(self.validate_kontakts_ownerships.invoke.call_args_list, validate_ownerships)
+
+				self.assertEqual(len(root.oseba), 1 if skrbnik is None else 2)
 				self.assertEqual(root.oseba[0], status.clan)
-				self.assertEqual(root.oseba[1], status.skrbnik)
-
-		return status
-
-	async def invoke_polnoletnik(self, clan: Oseba, db_saved: bool):
-		self.phone_service.format.side_effect = [k.data for k in clan.kontakti if k.tip == TipKontakta.PHONE]
-
-		# INVOKE
-		status: StatusVpisa = await self.case.invoke(
-			ime=clan.ime, priimek=clan.priimek,
-			email=clan.kontakti[0].data, telefon=clan.kontakti[1].data,
-			dan_rojstva=clan.rojen.day, mesec_rojstva=clan.rojen.month, leto_rojstva=clan.rojen.year)
-
-		self.assertEqualOseba(status.clan, clan, vpis=True)
-
-		# DB SAVED
-		if db_saved:
-			with self.case.db.transaction() as root:
-				self.assertEqual(len(root.oseba), 1)
-				self.assertEqual(root.oseba[0], status.clan)
+				if skrbnik is not None:
+					self.assertEqual(root.oseba[1], status.skrbnik)
+					self.assertEqual(root.oseba[0]._povezave, [status.skrbnik])
+					self.assertEqual(root.oseba[1]._povezave, [status.clan])
+			else:
+				self.assertEqual(len(root.oseba), 0)
 
 		return status
 
 	async def test_polnoleten_all_pass(self):
-		status = await self.invoke_polnoletnik(self.polnoletna_oseba, db_saved=True)
+		status = await self.invoke(self.polnoletna_oseba, db_saved=True)
 		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana'])
 
+	async def test_polnoleten_napacni_podatki(self):
+		self.polnoletna_oseba.kontakti[0].validacija = TipValidacije.VALIDIRAN
+		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.polnoletna_oseba.kontakti
+
+		status = await self.invoke(self.polnoletna_oseba, db_saved=False)
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE])
+
+	async def test_polnoleten_hacker(self):
+		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.polnoletna_oseba.kontakti
+
+		status = await self.invoke(self.polnoletna_oseba, db_saved=False)
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE, TipProblema.HACKER])
+
 	async def test_mladoletnik_all_pass(self):
-		status = await self.invoke_mladoletnik(self.mladoletna_oseba, self.skrbnik, db_saved=True)
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=True)
 		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika'])
 
-	# async def test_mladoletnik_chuck_noris(self):
-	# 	status = await self.invoke_mladoletnik(self.mladoletna_oseba, self.skrbnik, db_saved=True)
-	# 	self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika'])
+	async def test_mladoletnik_chuck_noris(self):
+		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.CHUCK_NORIS])
 
+	async def test_mladoletnik_napacni_podatki(self):
+		self.mladoletna_oseba.kontakti[0].validacija = TipValidacije.VALIDIRAN
+		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
 
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE])
 
-# async def test_clan_polnoleten_not_exists_yet_all_pass(self):
-# 	self.phone_service.obstaja.return_value = True
-#
-# 	before_now = datetime.utcnow()
-# 	status: StatusVpisa = await self.case.invoke(
-# 		ime='ime', priimek='priimek',
-# 		dan_rojstva=15, mesec_rojstva=6, leto_rojstva=1234,
-# 		email='mail@gmail.com', telefon='051240885')
-# 	after_now = datetime.utcnow()
-#
-# 	# TEST STATUS ======================================================
-# 	self.assertIsInstance(status, StatusVpisa)
-# 	self.assertListEqual(self.full_props(status), ['clan', 'validirani_podatki_clana'])
-#
-# 	# VALIDIRANI PODATKI CLANA =========================================
-# 	self.assertEqual(status.validirani_podatki_clana, [
-# 		Kontakt(data='mail@gmail.com', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-# 		Kontakt(data='+38651240885', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN)])
-#
-# 	# CLAN =============================================================
-# 	c = status.clan
-# 	self.assertEqual(c.ime, 'ime')
-# 	self.assertEqual(c.priimek, 'priimek')
-# 	self.assertEqual(c.geslo, None)
-# 	self.assertEqual(c.rojen.year, 1234)
-# 	self.assertEqual(c.rojen.month, 6)
-# 	self.assertEqual(c.rojen.day, 15)
-# 	self.assertEqual(c.tip_osebe, [TipOsebe.CLAN])
-# 	self.assertEqual(len(c.kontakti), 2)
-# 	self.assertEqual(len(c.vpisi), 1)
-# 	self.assertEqual(len(c.izpisi), 0)
-# 	self.assertTrue(before_now <= c.vpisi[0] <= after_now)
-#
-# 	# KONTAKTI CLANA ====================================================
-# 	self.assertEqual(c.kontakti[0].data, 'mail@gmail.com')
-# 	self.assertEqual(c.kontakti[0].tip, TipKontakta.EMAIL)
-# 	self.assertEqual(c.kontakti[0].validacija, TipValidacije.VALIDIRAN)
-#
-# 	self.assertEqual(c.kontakti[1].data, '+38651240885')
-# 	self.assertEqual(c.kontakti[1].tip, TipKontakta.PHONE)
-# 	self.assertEqual(c.kontakti[1].validacija, TipValidacije.VALIDIRAN)
-#
-# 	# DB TESTING ========================================================
-# 	with self.case.db.transaction() as root:
-# 		self.assertEqual(len(root.oseba), 1)
-# 		self.assertEqual(root.oseba[0], c)
-#
-# 	# SMS EMAIL TESTING =====================================================
-# 	self.assertEqual(self.case.email.send.call_args_list, [
-# 		call(recipients=['mail@gmail.com'], subject=CONST.email_subject.vpis, vsebina=ANY)])
-# 	self.assertEqual(self.case.phone.sms.call_args_list, [
-# 		call(phone='+38651240885', text=ANY)])
-#
-# 	# TESTING SMS, EMAIL TOKENS ============================================
-# 	sms = self.case.phone.sms.call_args_list[0].kwargs['text']
-# 	email = self.case.phone.sms.call_args_list[0].kwargs['text']
-#
-# 	tokens = re.findall(r"https://programerski-klub\.si/api/auth/report/(.*)", sms)
-# 	tokens += re.findall(r"https://programerski-klub\.si/api/auth/confirm/(.*)$", sms)
-# 	tokens += re.findall(r"https://programerski-klub\.si/api/auth/report/(.*)$", email)
-# 	tokens += re.findall(r"https://programerski-klub\.si/api/auth/confirm/(.*)$", email)
-#
-# 	for token in tokens:
-# 		self.assertIn(self.case.auth_verification_token.auth.decode(token).u,
-# 		              [k.data for k in c.kontakti])
-#
+	async def test_mladoletnik_hacker(self):
+		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
+		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
+
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.CHUCK_NORIS, TipProblema.NAPAKE, TipProblema.HACKER])
 
 
 if __name__ == '__main__':

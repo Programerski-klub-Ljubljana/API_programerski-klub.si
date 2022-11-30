@@ -13,7 +13,7 @@ class FakeEnum(EntityEnum):
 
 class test_Elist(unittest.TestCase):
 	def test_values(self):
-		self.assertListEqual(FakeEnum.values(), [FakeEnum.NAME, FakeEnum.SURNAME, FakeEnum.AGE, FakeEnum.COUNTRY])
+		self.assertCountEqual(FakeEnum.values(), [FakeEnum.NAME, FakeEnum.SURNAME, FakeEnum.AGE, FakeEnum.COUNTRY])
 
 	def test_random(self):
 		rand = [FakeEnum.random() for _ in range(20)]

@@ -17,7 +17,7 @@ class test_auth(unittest.TestCase):
 	def login(self):
 		res = self.client.post('/auth/login', data={'username': 'username', 'password': 'geslo'})
 		body = res.json()
-		self.assertListEqual(list(body.keys()), ['access_token', 'token_type'])
+		self.assertCountEqual(list(body.keys()), ['access_token', 'token_type'])
 		return body['access_token']
 
 	def test_00_login_fail(self):

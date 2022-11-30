@@ -16,8 +16,8 @@ class test_validate(unittest.TestCase):
 
 	def test_age(self):
 		today = datetime.utcnow()
-		self.assertEqual(12.503, round(cutils.age(today.year - 12, today.month - 6, today.day - 1), 3))
-		self.assertEqual(-11.496, round(cutils.age(today.year + 12, today.month - 6, today.day - 1), 3))
+		self.assertEqual(12.51, round(cutils.age(today.year - 12, today.month - 6, today.day - 1), 2))
+		self.assertEqual(-11.49, round(cutils.age(today.year + 12, today.month - 6, today.day - 1), 2))
 
 	def test_is_iterable(self):
 		for ele in Fixtures.iterables:
@@ -139,7 +139,7 @@ class test_validate(unittest.TestCase):
 			test: list = cutils.list_field(1, 2, 3)
 
 		dc = FakeDataclass()
-		self.assertListEqual(dc.test, [1, 2, 3])
+		self.assertCountEqual(dc.test, [1, 2, 3])
 
 
 if __name__ == '__main__':

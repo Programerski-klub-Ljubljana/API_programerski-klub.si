@@ -60,7 +60,7 @@ class UseCases(DeclarativeContainer):
 	# OSEBA
 	validate_kontakts_existances: Provider[Validate_kontakts_existances] = Factory(Validate_kontakts_existances, email=d.email, phone=d.phone)
 	validate_kontakts_ownerships: Provider[Validate_kontakts_ownerships] = Factory(
-		Validate_kontakts_ownerships, templates=d.template, msg_send=msg_send)
+		Validate_kontakts_ownerships, template=d.template, msg_send=msg_send, auth_verification_token=auth_verification_token)
 
 	""" THIRD LEVEL USE CASES """
 

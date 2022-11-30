@@ -11,6 +11,7 @@ from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.template_service import TemplateService, TemplateRenderer
 from core.use_cases._usecase import UseCase
+from core.use_cases.auth_cases import Auth_verification_token
 from core.use_cases.msg_cases import Msg_send
 
 log = logging.getLogger(__name__)
@@ -43,16 +44,17 @@ class Validate_kontakts_existances(UseCase):
 @traced
 @dataclass
 class Validate_kontakts_ownerships(UseCase):
-	templates: TemplateService
+	template: TemplateService
 	msg_send: Msg_send
+	auth_verification_token: Auth_verification_token
 
 	async def invoke(self, oseba: Oseba):
 		temp: TemplateRenderer = self.template.init(ime=oseba.ime, priimek=oseba.priimek)
 
 		for kontakt in oseba.kontakti:
 			if kontakt.validacija == TipValidacije.VALIDIRAN:
-				temp('token', self.auth_verification_token.invoke(kontakt.data))
+				temp('token', self.auth_verification_token.invoke(kontakt.data).data)
 				if kontakt.tip == TipKontakta.EMAIL:
 					await self.msg_send.invoke(kontakt=kontakt, naslov=CONST.email_subject.verifikacija, vsebina=temp.email_verifikacija)
 				elif kontakt.tip == TipKontakta.PHONE:
-					await self.msg_send.invoke(kontakt=kontakt, naslov=None, vsebina=temp.email_verifikacija)
+					await self.msg_send.invoke(kontakt=kontakt, naslov=None, vsebina=temp.sms_verifikacija)

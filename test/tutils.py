@@ -1,4 +1,14 @@
+from unittest.mock import MagicMock
+
 from persistent.list import PersistentList
+
+
+class AsyncMock(MagicMock):
+	async def __call__(self, *args, **kwargs):
+		return super(AsyncMock, self).__call__(*args, **kwargs)
+
+	def __enter__(self):
+		return self
 
 
 class BigNode:
