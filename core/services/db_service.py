@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from core.domain._entity import elist, Log
+from core.domain._entity import elist, Log, Entity
 from core.domain.arhitektura_kluba import Oseba, Ekipa, Oddelek, Klub
 from core.domain.bancni_racun import Transakcija, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, Sporocilo
@@ -53,4 +53,8 @@ class DbService(ABC):
 
 	@abstractmethod
 	def seed(self):
+		pass
+
+	@abstractmethod
+	def find(self, entity: Entity) -> list[Entity]:
 		pass

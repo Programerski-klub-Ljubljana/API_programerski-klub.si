@@ -77,7 +77,7 @@ class test_path(unittest.TestCase):
 		self.assertIsInstance(r[1], dict)
 		self.assertEqual(r[2], 'MAX_WIDTH')
 
-		for i in range(len(r)-1):
+		for i in range(len(r) - 1):
 			ri = r[i]
 			self.assertIsInstance(ri['kontakti'][0], dict, ri)
 			self.assertIsInstance(ri['kontakti'][1], dict, ri)

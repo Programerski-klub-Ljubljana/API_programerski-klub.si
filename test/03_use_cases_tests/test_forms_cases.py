@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, call, AsyncMock
 from app import APP
 from core.domain.arhitektura_kluba import TipKontakta, TipValidacije, TipOsebe, Kontakt, Oseba
 from core.services.phone_service import PhoneService
-from core.use_cases.db_cases import Db_merge_oseba
 from core.use_cases.forms_vpis import StatusVpisa, TipProblema
 from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
 
@@ -63,7 +62,6 @@ class Test_vpis_status(unittest.TestCase):
 		""".removeprefix('\t\t'))
 
 
-
 class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 	phone_service = None
 	validate_kontakts_ownerships = None
@@ -73,19 +71,16 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		APP.init(seed=False)
 
 		# MOCKS
-		self.db_merge_oseba: Db_merge_oseba = MagicMock(Db_merge_oseba, name='Db_merge_oseba')
 		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
 		self.validate_kontakts_existances = MagicMock(Validate_kontakts_existances, name='Validate_kontakts_existances')
 		self.validate_kontakts_ownerships = AsyncMock(Validate_kontakts_ownerships, name='Validate_kontakts_ownerships')
 		self.validate_kontakts_ownerships.invoke = AsyncMock()
 
 		# MOCKS LOGIC
-		self.db_merge_oseba.invoke.side_effect = lambda oseba, as_type: oseba
 		self.phone_service.format.side_effect = lambda phone: phone
 
 		# SETUP
 		self.case = APP.useCases.forms_vpis(
-			db_merge_oseba=self.db_merge_oseba,
 			phone=self.phone_service,
 			validate_kontakts_existances=self.validate_kontakts_existances,
 			validate_kontakts_ownerships=self.validate_kontakts_ownerships)
@@ -171,16 +166,14 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqualOseba(status.clan, clan, vpis=True, tip=TipOsebe.CLAN)
 		self.assertEqual(status.validirani_podatki_clana, self.validate_kontakts_existances.invoke())
 
-		db_merge_oseba_calls = [call(oseba=status.clan, as_type=TipOsebe.CLAN)]
+		db_merge_oseba_calls = [call(oseba=status.clan)]
 		validate_ownerships = [call(oseba=status.clan)]
 
 		if skrbnik is not None:
-			db_merge_oseba_calls.append(call(oseba=status.skrbnik, as_type=TipOsebe.SKRBNIK))
+			db_merge_oseba_calls.append(call(oseba=status.skrbnik))
 			validate_ownerships.append(call(oseba=status.skrbnik))
 			self.assertEqualOseba(status.skrbnik, skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
 			self.assertEqual(status.validirani_podatki_skrbnika, self.validate_kontakts_existances.invoke())
-
-		self.assertCountEqual(self.db_merge_oseba.invoke.call_args_list, db_merge_oseba_calls)
 
 		# DB SAVED
 		with self.case.db.transaction() as root:

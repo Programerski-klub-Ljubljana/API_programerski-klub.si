@@ -16,7 +16,7 @@ from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
 from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token
-from core.use_cases.db_cases import Db_path, Db_merge_oseba
+from core.use_cases.db_cases import Db_path
 from core.use_cases.forms_vpis import Forms_vpis
 from core.use_cases.msg_cases import Msg_send
 from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
@@ -53,7 +53,6 @@ class UseCases(DeclarativeContainer):
 
 	# DB
 	db_path: Provider[Db_path] = Factory(Db_path, db=d.db)
-	db_merge_oseba: Provider[Db_merge_oseba] = Factory(Db_merge_oseba, db=d.db)
 
 	""" SECOND LEVEL USE CASES """
 
@@ -66,8 +65,9 @@ class UseCases(DeclarativeContainer):
 
 	# FORMS
 	forms_vpis: Provider = Factory(
-		Forms_vpis, db=d.db, phone=d.phone, validate_kontakts_existances=validate_kontakts_existances,
-		validate_kontakts_ownerships=d.validate_kontakts_ownerships, db_merge_oseba=db_merge_oseba)
+		Forms_vpis, db=d.db, phone=d.phone,
+		validate_kontakts_existances=validate_kontakts_existances,
+		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
 
 
 log = logging.getLogger(__name__)

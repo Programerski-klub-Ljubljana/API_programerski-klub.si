@@ -8,7 +8,6 @@ from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, TipValida
 from core.services.db_service import DbService
 from core.services.phone_service import PhoneService
 from core.use_cases._usecase import UseCase
-from core.use_cases.db_cases import Db_merge_oseba
 from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
 
 log = logging.getLogger(__name__)
@@ -72,7 +71,6 @@ class Forms_vpis(UseCase):
 	phone: PhoneService
 	validate_kontakts_existances: Validate_kontakts_existances
 	validate_kontakts_ownerships: Validate_kontakts_ownerships
-	db_merge_oseba: Db_merge_oseba
 
 	async def invoke(
 			self,
@@ -101,7 +99,10 @@ class Forms_vpis(UseCase):
 		vpis.clan.nov_vpis()
 
 		# MERGE CLAN
-		vpis.clan = self.db_merge_oseba.invoke(oseba=vpis.clan, as_type=TipOsebe.CLAN)
+		oseba: Oseba
+		for oseba in self.db.find(entity=vpis.clan):
+			oseba.merge(vpis.clan)
+			vpis.clan = oseba
 
 		if vpis.clan.mladoletnik:
 			# FORMAT PHONE
@@ -119,7 +120,9 @@ class Forms_vpis(UseCase):
 				vpis.razlogi_prekinitve.append(TipProblema.CHUCK_NORIS)
 
 			# MERGE SKRBNIK
-			vpis.skrbnik = self.db_merge_oseba.invoke(oseba=vpis.skrbnik, as_type=TipOsebe.SKRBNIK)
+			for oseba in self.db.find(entity=vpis.clan):
+				oseba.merge(vpis.clan)
+				vpis.skrbnik = oseba
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!

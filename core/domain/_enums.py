@@ -11,6 +11,9 @@ class EntityEnum(str, Enum):
 	def random(cls):
 		return random.choice(cls.values())
 
+	def equal(self, ele):
+		return self == ele
+
 
 class LogLevel(EntityEnum):
 	DEBUG = auto()

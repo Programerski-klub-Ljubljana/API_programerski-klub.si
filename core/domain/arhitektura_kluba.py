@@ -44,11 +44,11 @@ class Oseba(Entity):
 	ime: str
 	priimek: str
 	rojen: date | None
-	tip_osebe: elist[TipOsebe] = Elist.field()
 	geslo: str = None
+	tip_osebe: elist[TipOsebe] = Elist.field()
+	kontakti: elist[Kontakt] = Elist.field()
 	vpisi: elist[datetime] = Elist.field()
 	izpisi: elist[datetime] = Elist.field()
-	kontakti: elist[Kontakt] = Elist.field()
 
 	def equal(self, oseba):
 		# EQUACIJA MORA BITI MEHKA DA SE PREJ DETEKTIRAJO MOZNI DUPLIKATI
@@ -72,6 +72,26 @@ class Oseba(Entity):
 					return True
 
 		return False
+
+	def merge(self, oseba, merge_vpisi_izpisi: bool = True):
+		"""
+		Vse razen ime, priimek se proba mergat!
+		"""
+		if self.rojen is None: self.rojen = oseba.rojen
+		if self.geslo is None: self.geslo = oseba.geslo
+
+		self.dodaj_tip_osebe(*oseba.tip_osebe)
+		self.dodaj_kontakte(*oseba.kontakti)
+		if merge_vpisi_izpisi:
+			for vpis in oseba.vpisi:
+				if vpis not in self.vpisi:
+					self.vpisi.append(vpis)
+			for izpis in oseba.izpisi:
+				if izpis not in self.izpisi:
+					self.izpisi.append(izpis)
+
+			self.vpisi += oseba.vpisi
+			self.izpisi += oseba.izpisi
 
 	def has_kontakt_data(self, kontakt_data: str) -> bool:
 		for kontakt in self.kontakti:

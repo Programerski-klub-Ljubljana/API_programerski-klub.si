@@ -3,7 +3,7 @@ from ZODB.DB import ContextManager
 from autologging import traced
 
 from app.db import db_seed
-from core.domain._entity import Elist
+from core.domain._entity import Elist, Entity
 from core.domain.arhitektura_kluba import Oseba
 from core.services.db_service import DbService, DbRoot, Transaction
 
@@ -79,3 +79,13 @@ class DbZo(DbService):
 		if self.db is None:
 			raise Exception("WTF are you doing?")
 		return ZoDbTransaction(self.db, note)
+
+	def find(self, entity: Entity) -> list[Entity]:
+		# PREVERI MOZNO DUPLIKACIJO PODATKOV!
+		entity_type = entity.__class__.__name__.lower()
+		print(entity_type)
+		with self.transaction(note=f'Find {entity}') as root:
+			table = getattr(root, entity_type, None)
+			for old_entity in table:
+				if old_entity.equal(entity):
+					yield old_entity
