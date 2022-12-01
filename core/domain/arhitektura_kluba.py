@@ -90,9 +90,6 @@ class Oseba(Entity):
 				if izpis not in self.izpisi:
 					self.izpisi.append(izpis)
 
-			self.vpisi += oseba.vpisi
-			self.izpisi += oseba.izpisi
-
 	def has_kontakt_data(self, kontakt_data: str) -> bool:
 		for kontakt in self.kontakti:
 			if kontakt.data == kontakt_data and kontakt.validacija == TipValidacije.POTRJEN:

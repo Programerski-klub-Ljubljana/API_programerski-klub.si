@@ -29,12 +29,12 @@ class test_db(unittest.TestCase):
 		with self.service.transaction() as root:
 			root.oseba.clear()
 
-	def test_transaction_root_properties(self):
+	def test_root_properties(self):
 		with self.service.transaction() as root:
 			self.assertGreater(len(root.oseba), 0)
 			self.assertIsInstance(root.oseba, Elist)
 
-	def test_transaction_root_change(self):
+	def test_root_change(self):
 		new_ime = '12345'
 
 		with self.service.transaction() as root:
@@ -47,7 +47,7 @@ class test_db(unittest.TestCase):
 			self.assertEqual(root.oseba[index].ime, new_ime)
 			root.oseba[index].ime = old_ime
 
-	def test_transaction_root_save(self):
+	def test_root_save(self):
 
 		with self.service.transaction() as root:
 			# CREATE KONTACTS
@@ -94,14 +94,26 @@ class test_db(unittest.TestCase):
 			self.assertIsInstance(clan1.vpisi, PersistentList)
 			self.assertIsInstance(clan2.vpisi, PersistentList)
 
-	def test_transaction_oseba_find(self):
+	def test_save_unique(self):
+		with self.service.transaction() as root:
+			root.oseba.clear()
+
+			# CREATE KONTACTS
+			clan1 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
+				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+
+			root.save(clan1, clan1, clan1, unique=True)
+
+			self.assertEqual(len(root.oseba), 1)
+
+	def test_oseba_find(self):
 		with self.service.transaction() as root:
 			oseba = root.oseba[5]
 			data = oseba.kontakti[-1].data
 			self.assertGreater(len(data), 3)
 			self.assertTrue(oseba.equal(root.oseba_find(data)))
 
-	def test_transaction_oseba_find_fail(self):
+	def test_oseba_find_fail(self):
 		with self.service.transaction() as root:
 			self.assertIsInstance(root.oseba_find('asdfasdfasdf'), NoneType)
 

@@ -17,12 +17,12 @@ class ZoDbRoot(DbRoot):
 			setattr(root, k, value)
 			setattr(self, k, value)
 
-	def save(self, *entities, unique=False):
+	def save(self, *entities: Entity, unique=False):
 		for entity in entities:
-			table = getattr(self, entity.__class__.__name__.lower())
+			table = getattr(self, entity.type)
 			if unique and entity not in table:  # TODO: Does this works???
 				table.append(entity)
-			else:
+			elif not unique:
 				table.append(entity)
 
 	def oseba_find(self, kontakt_data: str) -> Oseba | None:
@@ -82,8 +82,7 @@ class DbZo(DbService):
 
 	def find(self, entity: Entity) -> list[Entity]:
 		# PREVERI MOZNO DUPLIKACIJO PODATKOV!
-		entity_type = entity.__class__.__name__.lower()
-		print(entity_type)
+		entity_type = entity.type
 		with self.transaction(note=f'Find {entity}') as root:
 			table = getattr(root, entity_type, None)
 			for old_entity in table:

@@ -121,7 +121,7 @@ class Forms_vpis(UseCase):
 
 			# MERGE SKRBNIK
 			for oseba in self.db.find(entity=vpis.clan):
-				oseba.merge(vpis.clan)
+				oseba.merge(vpis.skrbnik)
 				vpis.skrbnik = oseba
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO

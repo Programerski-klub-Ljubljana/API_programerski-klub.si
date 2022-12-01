@@ -90,6 +90,10 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			Kontakt(data='email_skrbnika0', tip=TipKontakta.EMAIL),
 			Kontakt(data='phone_skrbnika0', tip=TipKontakta.PHONE),
 		])
+		self.skrbnik_confirmed = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
+			Kontakt(data='email_skrbnika0', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='email_skrbnika0', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+		])
 		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
 			Kontakt(data='email0', tip=TipKontakta.EMAIL),
 			Kontakt(data='phone0', tip=TipKontakta.PHONE),
@@ -144,7 +148,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 	# V BAZI SE MORA SHRANITI
 	# CLAN MORA BITI POVEZAN Z SKRBNIKOM
 	# TODO: VALIDIRATI SE MORA KONTAKT OVNERSHIP
-	async def invoke(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True):
+	async def invoke(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True, merged: bool = True):
 		kwargs = {
 			'ime': clan.ime,
 			'priimek': clan.priimek,
@@ -163,7 +167,8 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		# INVOKE
 		status: StatusVpisa = await self.case.invoke(**kwargs)
 
-		self.assertEqualOseba(status.clan, clan, vpis=True, tip=TipOsebe.CLAN)
+		if not merged:
+			self.assertEqualOseba(status.clan, clan, vpis=True, tip=TipOsebe.CLAN)
 		self.assertEqual(status.validirani_podatki_clana, self.validate_kontakts_existances.invoke())
 
 		db_merge_oseba_calls = [call(oseba=status.clan)]
@@ -176,24 +181,48 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			self.assertEqual(status.validirani_podatki_skrbnika, self.validate_kontakts_existances.invoke())
 
 		# DB SAVED
-		with self.case.db.transaction() as root:
-			if db_saved:
-				self.assertCountEqual(self.validate_kontakts_ownerships.invoke.call_args_list, validate_ownerships)
+		if not merged:
+			with self.case.db.transaction() as root:
+				if db_saved:
+					self.assertCountEqual(self.validate_kontakts_ownerships.invoke.call_args_list, validate_ownerships)
 
-				self.assertEqual(len(root.oseba), 1 if skrbnik is None else 2)
-				self.assertEqual(root.oseba[0], status.clan)
-				if skrbnik is not None:
-					self.assertEqual(root.oseba[1], status.skrbnik)
-					self.assertEqual(root.oseba[0]._povezave, [status.skrbnik])
-					self.assertEqual(root.oseba[1]._povezave, [status.clan])
-			else:
-				self.assertEqual(len(root.oseba), 0)
+					self.assertEqual(len(root.oseba), 1 if skrbnik is None else 2)
+					self.assertEqual(root.oseba[0], status.clan)
+					if skrbnik is not None:
+						self.assertEqual(root.oseba[1], status.skrbnik)
+						self.assertEqual(root.oseba[0]._povezave, [status.skrbnik])
+						self.assertEqual(root.oseba[1]._povezave, [status.clan])
+				else:
+					self.assertEqual(len(root.oseba), 0)
 
 		return status
 
 	async def test_polnoleten_all_pass(self):
 		status = await self.invoke(self.polnoletna_oseba, db_saved=True)
 		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana'])
+
+	async def test_polnoleten_all_pass_merge(self):
+		kontakti = [Kontakt(data='old_email0', tip=TipKontakta.EMAIL), Kontakt(data='old_phone0', tip=TipKontakta.PHONE)]
+		old_person = Oseba(ime='ime', priimek='priimek', rojen=self.polnoletna_oseba.rojen, tip_osebe=[TipOsebe.SKRBNIK], kontakti=kontakti)
+
+		new_person = self.polnoletna_oseba
+
+		self.assertIsNotNone(new_person.rojen)
+		self.assertEqual(len(new_person.kontakti), 2)
+
+		with self.case.db.transaction() as root:
+			root.oseba.append(old_person)
+			assert len(root.oseba) == 1
+
+		status = await self.invoke(clan=new_person, merged=True)
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana'])
+
+		with self.case.db.transaction() as root:
+			self.assertEqual(len(root.oseba), 1)
+			self.assertEqual(root.oseba[0].rojen, new_person.rojen)
+			self.assertCountEqual(root.oseba[0].kontakti, kontakti + self.polnoletna_oseba.kontakti)
+			self.assertCountEqual(root.oseba[0].vpisi, self.polnoletna_oseba.vpisi + old_person.vpisi)
+			self.assertEqual(root.oseba[0].tip_osebe, [TipOsebe.SKRBNIK, TipOsebe.CLAN])
 
 	async def test_polnoleten_napacni_podatki(self):
 		self.polnoletna_oseba.kontakti[0].validacija = TipValidacije.VALIDIRAN
@@ -213,6 +242,41 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 	async def test_mladoletnik_all_pass(self):
 		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=True)
 		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika'])
+
+	async def test_mladoletnik_all_pass_merge(self):
+		kontakti_clana = [Kontakt(data='old_email0', tip=TipKontakta.EMAIL), Kontakt(data='old_phone0', tip=TipKontakta.PHONE)]
+		kontakti_skrbnika = [Kontakt(data='skrbnik_old_email0', tip=TipKontakta.EMAIL)] + self.skrbnik_confirmed.kontakti
+		old_person = Oseba(ime='ime', priimek='priimek', rojen=self.polnoletna_oseba.rojen, tip_osebe=[TipOsebe.SKRBNIK], kontakti=kontakti_clana)
+		old_skrbnik = Oseba(
+			ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, tip_osebe=[TipOsebe.CLAN], kontakti=kontakti_skrbnika)
+
+		new_person = self.polnoletna_oseba
+		new_skrbnik = self.skrbnik_confirmed
+
+		self.assertIsNotNone(new_person.rojen)
+		self.assertIsNone(new_skrbnik.rojen)
+		self.assertEqual(len(new_person.kontakti), 2)
+		self.assertEqual(len(new_skrbnik.kontakti), 2)
+
+		with self.case.db.transaction() as root:
+			root.oseba.append(old_person)
+			root.oseba.append(old_skrbnik)
+			assert len(root.oseba) == 2
+
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, merged=True)
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika'])
+
+		with self.case.db.transaction() as root:
+			self.assertEqual(len(root.oseba), 2)
+			self.assertEqual(root.oseba[0].rojen, new_person.rojen)
+			self.assertCountEqual(root.oseba[0].kontakti, kontakti_clana + self.polnoletna_oseba.kontakti)
+			self.assertCountEqual(root.oseba[0].vpisi, self.polnoletna_oseba.vpisi + old_person.vpisi)
+			self.assertEqual(root.oseba[0].tip_osebe, [TipOsebe.SKRBNIK, TipOsebe.CLAN])
+
+			self.assertEqual(root.oseba[1].rojen, new_skrbnik.rojen)
+			self.assertCountEqual(root.oseba[1].kontakti, kontakti_skrbnika + self.skrbnik.kontakti)
+			self.assertCountEqual(root.oseba[1].vpisi, self.skrbnik.vpisi + old_skrbnik.vpisi)
+			self.assertEqual(root.oseba[1].tip_osebe, [TipOsebe.SKRBNIK, TipOsebe.CLAN])
 
 	async def test_mladoletnik_chuck_noris(self):
 		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data

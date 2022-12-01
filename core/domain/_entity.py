@@ -54,6 +54,10 @@ class Entity(Persistent):
 	_dnevnik: elist | None
 	_povezave: elist | None
 
+	@property
+	def type(self):
+		return self.__class__.__name__.lower()
+
 	def povezi(self, *entity):
 		for e in entity:
 			self._povezave.append(e)
@@ -65,7 +69,7 @@ class Entity(Persistent):
 
 	def __post_init__(self):
 		attr = {
-			'_razred': self.__class__.__name__.upper(),
+			'_razred': self.type.upper(),
 			'_ustvarjen': datetime.utcnow(),
 			'_posodobljen': datetime.utcnow(),
 			'_dnevnik': Elist(),
