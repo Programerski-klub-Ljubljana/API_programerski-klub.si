@@ -85,7 +85,10 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			validate_kontakts_existances=self.validate_kontakts_existances,
 			validate_kontakts_ownerships=self.validate_kontakts_ownerships)
 
-		def find(entity):
+		self.merge_call_args = []
+
+		def find(entity: Oseba):
+			self.merge_call_args.append(entity)
 			yield entity
 
 		self.case.db.find = find
@@ -164,23 +167,39 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		# INVOKE
 		status: StatusVpisa = await self.case.invoke(**kwargs)
 
-		# ALI SE JE VALIDACIJA PODATKOV CLANA ZGODILA
-		validate_ownerships = [call(oseba=status.clan)]
-		validate_kontakts_existances = [call(*status.clan.kontakti)]
+		# PREVERI ALI SE JE FORMATIRANJE TELEFONA ZGODILO
+		phone_format_call_args_list = [call(phone=clan.kontakti[1].data)]
 		if skrbnik is not None:
-			validate_kontakts_existances.append(call(*status.skrbnik.kontakti))
-			validate_ownerships.append(call(oseba=status.skrbnik))
-		self.assertEqual(self.validate_kontakts_existances.invoke.call_args_list, validate_kontakts_existances)
-		self.assertCountEqual(self.validate_kontakts_ownerships.invoke.call_args_list, validate_ownerships if db_saved else [])
+			phone_format_call_args_list.append(call(phone=skrbnik.kontakti[1].data))
+		self.assertCountEqual(self.phone_service.format.call_args_list, phone_format_call_args_list)
 
-		# PREVERI ENAKOST IZTOPNIH PODATKOV
+		# PREVERI ALI JE CLAN V VPISNEM STATUSU
+		# PREVERI CE SO PROPERTIJI CLANA VSI COOL
 		self.assertEqualOseba(original_oseba=clan, status_oseba=status.clan, vpis=True, tip=TipOsebe.CLAN)
+
+		# PREVERI ALI SE JE MERGE ZGODIL...
+		merge_call_args_list = [status.clan]
+		if skrbnik is not None:
+			merge_call_args_list.append(status.skrbnik)
+		self.assertCountEqual(self.merge_call_args, merge_call_args_list)
+
+		# PREVERI ALI JE SKRBNIK V VPISNEM STATUSU
+		# PREVERI CE SO PROPERTIJI SKRBNIKA VSI COOL
+		if skrbnik is not None:
+			self.assertEqualOseba(original_oseba=skrbnik, status_oseba=status.skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
+
+		# ALI SE JE VALIDACIJA PODATKOV ZGODILA
+		validate_kontakts_existances_call_args_list = [call(*status.clan.kontakti)]
+		if skrbnik is not None:
+			validate_kontakts_existances_call_args_list.append(call(*status.skrbnik.kontakti))
+		self.assertEqual(self.validate_kontakts_existances.invoke.call_args_list, validate_kontakts_existances_call_args_list)
+
+		# PREVERI ALI IMA STATUS VRACAJOCE PODATKE OD PRAVILNEGA SERVISA
 		self.assertEqual(status.validirani_podatki_clana, self.validate_kontakts_existances.invoke())
 		if skrbnik is not None:
 			self.assertEqual(status.validirani_podatki_skrbnika, self.validate_kontakts_existances.invoke())
-			self.assertEqualOseba(original_oseba=skrbnik, status_oseba=status.skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
 
-		# DB SAVED
+		# PREVERI CE SO SE STVARI PRAVILNO SHRANILE IN POVEZALE MED SABO V DB-ju
 		with self.case.db.transaction() as root:
 			if db_saved:
 				self.assertEqual(len(root.oseba), 1 if skrbnik is None else 2)
@@ -191,6 +210,12 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 					self.assertEqual(root.oseba[1]._povezave, [status.clan])
 			else:
 				self.assertEqual(len(root.oseba), 0)
+
+		# PREVERI ALI SO SE PRAVILNE FUNKCIJE KLICALE KI PREVERIJO KONTAKTS OWNERSHIPS
+		validate_ownerships_call_args_list = [call(oseba=status.clan)]
+		if skrbnik is not None:
+			validate_ownerships_call_args_list.append(call(oseba=status.skrbnik))
+		self.assertCountEqual(self.validate_kontakts_ownerships.invoke.call_args_list, validate_ownerships_call_args_list if db_saved else [])
 
 		return status
 

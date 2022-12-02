@@ -17,9 +17,10 @@ class test_tip_osebe(unittest.TestCase):
 
 class test_kontakt(unittest.TestCase):
 
+	@classmethod
 	def setUpClass(cls) -> None:
-		cls.assertEqual(len(TipKontakta.values()), 2)
-		cls.assertEqual(len(TipValidacije.values()), 3)
+		assert len(TipKontakta.values()) == 2
+		assert len(TipValidacije.values()) == 3
 
 	def test_equal(self):
 		k0 = Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
@@ -42,9 +43,10 @@ class test_kontakt(unittest.TestCase):
 
 class test_oseba(unittest.TestCase):
 
+	@classmethod
 	def setUpClass(cls) -> None:
-		cls.assertEqual(len(TipKontakta.values()), 2)
-		cls.assertEqual(len(TipValidacije.values()), 3)
+		assert len(TipKontakta.values()) == 2
+		assert len(TipValidacije.values()) == 3
 
 	def test_equal_ime_priimek_rojstvo(self):
 		k0 = Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
@@ -189,6 +191,7 @@ class test_oseba(unittest.TestCase):
 
 	def test_merge(self):
 		raise Exception()
+
 
 if __name__ == '__main__':
 	unittest.main()
