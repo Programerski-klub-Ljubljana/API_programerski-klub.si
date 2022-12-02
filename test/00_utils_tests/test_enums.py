@@ -19,9 +19,23 @@ class test_Elist(unittest.TestCase):
 		rand = [FakeEnum.random() for _ in range(20)]
 		self.assertNotEqual(rand.count(rand[0]), 0)
 
-	def test_equal(self):
+	def test_eq(self):
 		self.assertNotEqual('FakeEnum.NAME', FakeEnum.NAME)
 		self.assertEqual('FakeEnum.NAME', str(FakeEnum.NAME))
+
+	def test_equal(self):
+		self.assertTrue(FakeEnum.NAME.equal(FakeEnum.NAME))
+		self.assertFalse(FakeEnum.NAME.equal(FakeEnum.AGE))
+
+	def test_comparisons(self):
+		self.assertLess(FakeEnum.NAME, FakeEnum.SURNAME)
+		self.assertLess(FakeEnum.NAME, FakeEnum.AGE)
+		self.assertLess(FakeEnum.NAME, FakeEnum.COUNTRY)
+
+		self.assertLess(FakeEnum.SURNAME, FakeEnum.AGE)
+		self.assertLess(FakeEnum.SURNAME, FakeEnum.COUNTRY)
+
+		self.assertRaises(Exception, lambda: FakeEnum.AGE < "asdf")
 
 
 if __name__ == '__main__':

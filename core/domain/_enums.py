@@ -1,7 +1,9 @@
 import random
 from enum import Enum, auto
+from functools import total_ordering
 
 
+@total_ordering
 class EntityEnum(str, Enum):
 	@classmethod
 	def values(cls) -> list[str]:
@@ -13,6 +15,11 @@ class EntityEnum(str, Enum):
 
 	def equal(self, ele):
 		return self == ele
+
+	def __lt__(self, other):
+		if self.__class__ is other.__class__:
+			return self.value < other.value
+		raise Exception("Not implemented")
 
 
 class LogLevel(EntityEnum):

@@ -120,7 +120,7 @@ class Forms_vpis(UseCase):
 				vpis.razlogi_prekinitve.append(TipProblema.CHUCK_NORIS)
 
 			# MERGE SKRBNIK
-			for oseba in self.db.find(entity=vpis.clan):
+			for oseba in self.db.find(entity=vpis.skrbnik):
 				oseba.merge(vpis.skrbnik)
 				vpis.skrbnik = oseba
 

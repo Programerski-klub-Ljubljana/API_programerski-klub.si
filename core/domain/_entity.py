@@ -13,7 +13,10 @@ from core.domain._enums import LogLevel, LogTheme
 class Elist(PersistentList):
 	def __contains__(self, item):
 		for ele in self:
-			if ele.equal(item):
+			if isinstance(ele, Entity):
+				if ele.equal(item):
+					return True
+			elif ele == item:
 				return True
 		return False
 

@@ -36,7 +36,7 @@ class Kontakt(Entity):
 	validacija: TipValidacije = TipValidacije.NI_VALIDIRAN
 
 	def equal(self, kontakt):
-		return self.data == kontakt.data
+		return self.data == kontakt.data and self.tip == kontakt.tip
 
 
 @dataclass
@@ -66,8 +66,7 @@ class Oseba(Entity):
 			for k2 in oseba.kontakti:
 				if (
 						k1.equal(k2) and
-						k1.validacija == TipValidacije.POTRJEN and
-						k2.validacija == TipValidacije.POTRJEN and
+						(k1.validacija == TipValidacije.POTRJEN or k2.validacija == TipValidacije.POTRJEN) and
 						k1.tip == k2.tip):
 					return True
 
@@ -97,8 +96,15 @@ class Oseba(Entity):
 		return False
 
 	def dodaj_kontakte(self, *kontakti: Kontakt):
+		"""If kontakt equal take that with highest validation status"""
 		for kontakt in kontakti:
-			if kontakt not in self.kontakti:
+			exists = False
+			for old_kontakt in self.kontakti:
+				if kontakt.equal(old_kontakt):
+					exists = True
+					if kontakt.validacija > old_kontakt.validacija:
+						old_kontakt.tip = kontakt.tip
+			if not exists:
 				self.kontakti.append(kontakt)
 
 	def dodaj_tip_osebe(self, *statusi: TipOsebe):
