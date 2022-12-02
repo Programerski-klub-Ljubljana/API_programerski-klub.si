@@ -17,18 +17,17 @@ class test_tip_osebe(unittest.TestCase):
 
 class test_kontakt(unittest.TestCase):
 
+	def setUpClass(cls) -> None:
+		cls.assertEqual(len(TipKontakta.values()), 2)
+		cls.assertEqual(len(TipValidacije.values()), 3)
+
 	def test_equal(self):
 		k0 = Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
 		kontakti = [
-			# Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
 			Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
-			# Kontakt(data='1234', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
-			# Kontakt(data='1234', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
-			# Kontakt(data='1234', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
 		]
 		fail_kontakti = [
 			Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-			# Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
 			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
 			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
 			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
@@ -42,6 +41,10 @@ class test_kontakt(unittest.TestCase):
 
 
 class test_oseba(unittest.TestCase):
+
+	def setUpClass(cls) -> None:
+		cls.assertEqual(len(TipKontakta.values()), 2)
+		cls.assertEqual(len(TipValidacije.values()), 3)
 
 	def test_equal_ime_priimek_rojstvo(self):
 		k0 = Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
@@ -184,6 +187,8 @@ class test_oseba(unittest.TestCase):
 		o2.izpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(o2.vpisan)
 
+	def test_merge(self):
+		raise Exception()
 
 if __name__ == '__main__':
 	unittest.main()

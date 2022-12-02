@@ -104,6 +104,7 @@ class test_Entity(unittest.TestCase):
 		self.assertLessEqual(self.entity._posodobljen, datetime.utcnow())
 		self.assertIsInstance(self.entity._dnevnik, Elist)
 		self.assertIsInstance(self.entity._povezave, Elist)
+		self.assertEqual(len(self.entity.__dict__), 8)
 
 	def test_povezi(self):
 		entity = FakeEntity(a='a')

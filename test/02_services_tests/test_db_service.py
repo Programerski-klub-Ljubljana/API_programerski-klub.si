@@ -59,7 +59,7 @@ class test_db(unittest.TestCase):
 			])
 
 			# ARE THEY EQUAL?
-			self.assertFalse(clan2.equal(clan1))
+			self.assertNotEqual(clan2, clan1)
 
 			# TEST IF LIST ARE NOT YET CONVERTED TO PERSISTENT LISTS
 			self.assertIsInstance(clan1.vpisi, PersistentList)
@@ -117,5 +117,19 @@ class test_db(unittest.TestCase):
 		with self.service.transaction() as root:
 			self.assertIsInstance(root.oseba_find('asdfasdfasdf'), NoneType)
 
-	if __name__ == '__main__':
-		unittest.main()
+	def test_find(self):
+		oseba = Oseba(ime=f'ime8', priimek=f'priimek8', rojen=None, kontakti=[
+			Kontakt(data=f'data8', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+
+		count = 0
+		for found_oseba in self.service.find(oseba):
+			self.assertEqual(found_oseba, oseba)
+			count += 1
+		self.assertEqual(count, 1)
+
+	def test_open(self):
+		self.assertRaises(Exception, lambda : (self.service.open(), self.service.open()))
+
+
+if __name__ == '__main__':
+	unittest.main()
