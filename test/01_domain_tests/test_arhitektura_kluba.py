@@ -201,8 +201,8 @@ class test_oseba(unittest.TestCase):
 		self.assertTrue(o2.vpisan)
 
 	def test_merge_vpisi_izpisi(self):
-		vpisi = [datetime.now() - timedelta(days=i * 10) for i in range(4)]
-		izpisi = [datetime.now() - timedelta(days=i * 5) for i in range(4)]
+		vpisi = [datetime.utcnow() - timedelta(days=i * 10) for i in range(4)]
+		izpisi = [datetime.utcnow() - timedelta(days=i * 5) for i in range(4)]
 
 		empty_oseba0 = Oseba(ime='ime', priimek='priimek', rojen=date.today(), geslo=None, tip_osebe=[], kontakti=[], vpisi=[], izpisi=[])
 		empty_oseba1 = copy.deepcopy(empty_oseba0)

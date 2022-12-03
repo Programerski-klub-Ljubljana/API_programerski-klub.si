@@ -153,7 +153,7 @@ class Oseba(Entity):
 
 	@property
 	def vpisan(self) -> bool:
-		if len(self.izpisi) == 0:
+		if len(self.izpisi) == 0 or len(self.vpisi) == 0:
 			if len(self.vpisi) > 0:
 				return True
 			else:

@@ -125,7 +125,7 @@ class Test_vpis(unittest.IsolatedAsyncioTestCase):
 	def assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
 		# MORA IMETI VPIS.
 		if vpis:
-			before = datetime.now()
+			before = datetime.utcnow()
 			self.assertAlmostEqual(before.timestamp() / 10000, status_oseba.vpisi[0].timestamp() / 10000, places=0)
 			self.assertEqual(len(status_oseba.vpisi), 1)
 

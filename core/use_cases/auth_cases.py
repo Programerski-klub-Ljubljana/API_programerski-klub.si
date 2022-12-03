@@ -28,6 +28,40 @@ class Auth_login(UseCase):
 
 @traced
 @dataclass
+class Auth_signin(UseCase):
+	db: DbService
+	auth: AuthService
+
+	def invoke(self, oseba_id: str) -> bool:
+		# TODO: Here you have to activated payment subscription on stripe!
+		vpisan = False
+		for oseba in self.db.oseba_find(data=oseba_id):
+			if oseba._id == oseba_id:
+				if not oseba.vpisan:
+					oseba.nov_vpis()
+					vpisan = True
+		return vpisan
+
+
+@traced
+@dataclass
+class Auth_signout(UseCase):
+	db: DbService
+	auth: AuthService
+
+	def invoke(self, oseba_id: str) -> bool:
+		# TODO: Here you have to DE - activated payment subscription on stripe!
+		izpisan = False
+		for oseba in self.db.oseba_find(data=oseba_id):
+			if oseba._id == oseba_id:
+				if oseba.vpisan:
+					oseba.nov_izpis()
+					izpisan = True
+		return izpisan
+
+
+@traced
+@dataclass
 class Auth_info(UseCase):
 	db: DbService
 	auth: AuthService

@@ -15,7 +15,7 @@ from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
-from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token
+from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token, Auth_signin, Auth_signout
 from core.use_cases.db_cases import Db_path
 from core.use_cases.forms_izpis import Forms_izpis
 from core.use_cases.forms_vpis import Forms_vpis
@@ -51,6 +51,8 @@ class UseCases(DeclarativeContainer):
 	auth_login: Provider[Auth_login] = Factory(Auth_login, db=d.db, auth=d.auth)
 	auth_info: Provider[Auth_info] = Factory(Auth_info, db=d.db, auth=d.auth)
 	auth_verification_token: Provider[Auth_verification_token] = Factory(Auth_verification_token, db=d.db, auth=d.auth)
+	auth_signin: Provider[Auth_signin] = Factory(Auth_signin, db=d.db, auth=d.auth)
+	auth_signout: Provider[Auth_signout] = Factory(Auth_signout, db=d.db, auth=d.auth)
 
 	# DB
 	db_path: Provider[Db_path] = Factory(Db_path, db=d.db)
