@@ -10,13 +10,13 @@ class Token:
 
 
 class TokenData:
-	def __init__(self, username: str | None):
-		self.u = username
+	def __init__(self, data: str | None):
+		self.d = data
 		self.exp: datetime | None = None
 
 	@staticmethod
 	def from_token(**kwargs):
-		t = TokenData(username=None)
+		t = TokenData(data=None)
 		for k, v in kwargs.items():
 			setattr(t, k, v)
 		return t
@@ -25,7 +25,7 @@ class TokenData:
 class AuthService(ABC):
 
 	@abstractmethod
-	def encode(self, data: TokenData, expiration: timedelta) -> Token:
+	def encode(self, token_data: TokenData, expiration: timedelta) -> Token:
 		pass
 
 	@abstractmethod

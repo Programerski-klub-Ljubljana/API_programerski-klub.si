@@ -35,7 +35,7 @@ class Forms_izpis(UseCase):
 		izpis = StatusIzpisa()
 
 		# POISCI OSEBO PO POTRJENEM KONTAKTU
-		for oseba in self.db.oseba_find(kontakt_data=email):
+		for oseba in self.db.oseba_find(data=email):
 
 			# ALI SE IME UJEMA...
 			if oseba.ime == ime and oseba.priimek == priimek:

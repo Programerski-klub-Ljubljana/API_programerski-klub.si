@@ -11,17 +11,17 @@ class test_auth(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 		cls.service: AuthService = APP.services.auth()
-		cls.token_data = TokenData(username='username')
+		cls.token_data = TokenData(data='username')
 
 	def test_encode_decode_pass(self):
-		jwt = self.service.encode(data=self.token_data, expiration=timedelta(seconds=1))
+		jwt = self.service.encode(token_data=self.token_data, expiration=timedelta(seconds=1))
 		data_new = self.service.decode(jwt.data)
 
 		for k, v in self.token_data.__dict__.items():
 			self.assertEqual(self.token_data.__dict__[k], data_new.__dict__[k], k)
 
 	def test_encode_decode_expirated(self):
-		jwt = self.service.encode(data=self.token_data, expiration=timedelta(seconds=-1))
+		jwt = self.service.encode(token_data=self.token_data, expiration=timedelta(seconds=-1))
 		data_new = self.service.decode(jwt.data)
 		self.assertEqual(data_new, None)
 
@@ -47,9 +47,9 @@ class test_auth(unittest.TestCase):
 class test_token_data(unittest.TestCase):
 
 	def test_from_token(self):
-		td = TokenData(username='username')
+		td = TokenData(data='data')
 		td.exp = '123'
-		td2 = TokenData.from_token(**{'u': 'username', 'exp': '123'})
+		td2 = TokenData.from_token(**{'d': 'data', 'exp': '123'})
 		self.assertDictEqual(td.__dict__, td2.__dict__)
 
 

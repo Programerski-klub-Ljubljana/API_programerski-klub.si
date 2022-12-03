@@ -76,7 +76,7 @@ class test_kontakts_ownerships(unittest.IsolatedAsyncioTestCase):
 	def decode_tokens(self, *tokens):
 		d = []
 		for t in tokens:
-			d.append(self.case.auth_verification_token.auth.decode(t).u)
+			d.append(self.case.auth_verification_token.auth.decode(t).d)
 		return d
 
 	async def test_pass(self):
@@ -88,12 +88,12 @@ class test_kontakts_ownerships(unittest.IsolatedAsyncioTestCase):
 			call(kontakt=self.kontakts[-2], naslov=CONST.email_subject.verifikacija, vsebina=ANY)])
 
 		phone_vsebina = self.msg_send.invoke.call_args_list[0].kwargs['vsebina']
-		self.assertCountEqual([self.kontakts[1].data], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)', phone_vsebina)))
-		self.assertCountEqual([self.kontakts[1].data], self.decode_tokens(*re.findall(f'{CONST.auth_ownership_url}/(.*)', phone_vsebina)))
+		self.assertCountEqual([self.kontakts[1]._id], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)', phone_vsebina)))
+		self.assertCountEqual([self.kontakts[1]._id], self.decode_tokens(*re.findall(f'{CONST.auth_ownership_url}/(.*)', phone_vsebina)))
 
 		email_vsebina = self.msg_send.invoke.call_args_list[1].kwargs['vsebina']
-		self.assertCountEqual([self.kontakts[-2].data], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)\"+', email_vsebina)))
-		self.assertCountEqual([self.kontakts[-2].data], self.decode_tokens(*re.findall(f'{CONST.auth_ownership_url}/(.*)\"+', email_vsebina)))
+		self.assertCountEqual([self.kontakts[-2]._id], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)\"+', email_vsebina)))
+		self.assertCountEqual([self.kontakts[-2]._id], self.decode_tokens(*re.findall(f'{CONST.auth_ownership_url}/(.*)\"+', email_vsebina)))
 
 
 class test_izpis_request(unittest.IsolatedAsyncioTestCase):
@@ -126,7 +126,7 @@ class test_izpis_request(unittest.IsolatedAsyncioTestCase):
 	def decode_tokens(self, *tokens):
 		d = []
 		for t in tokens:
-			d.append(self.case.auth_verification_token.auth.decode(t).u)
+			d.append(self.case.auth_verification_token.auth.decode(t).d)
 		return d
 
 	async def test_pass(self):
@@ -136,8 +136,8 @@ class test_izpis_request(unittest.IsolatedAsyncioTestCase):
 			call(kontakt=self.oseba.kontakti[2], naslov=CONST.email_subject.verifikacija_izpisa, vsebina=ANY)])
 
 		email_vsebina = self.msg_send.invoke.call_args_list[0].kwargs['vsebina']
-		self.assertCountEqual([self.oseba.kontakti[2].data], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)\"+', email_vsebina)))
-		self.assertCountEqual([self.oseba.kontakti[2].data], self.decode_tokens(*re.findall(f'{CONST.auth_signout_url}/(.*)\"+', email_vsebina)))
+		self.assertCountEqual([self.oseba._id], self.decode_tokens(*re.findall(f'{CONST.auth_report_url}/(.*)\"+', email_vsebina)))
+		self.assertCountEqual([self.oseba._id], self.decode_tokens(*re.findall(f'{CONST.auth_signout_url}/(.*)\"+', email_vsebina)))
 
 	async def test_fail(self):
 		self.assertFalse(await self.case.invoke(self.fail_oseba))

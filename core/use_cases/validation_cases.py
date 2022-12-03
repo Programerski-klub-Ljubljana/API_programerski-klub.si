@@ -54,7 +54,10 @@ class Validate_kontakts_ownerships(UseCase):
 		kontakti = []
 		for kontakt in oseba.kontakti:
 			if kontakt.validacija == TipValidacije.VALIDIRAN:
-				temp('token', self.auth_verification_token.invoke(username=kontakt.data).data)
+				"""
+					THIS SENDS KONTAKT _ID BECAUSE EMAILS WILL NOT BE UNIQUE AND CAN BE MULTIPLIED (CHILD, PARENTS)
+				"""
+				temp('token', self.auth_verification_token.invoke(data=kontakt._id).data)
 				kontakti.append(kontakt)
 				if kontakt.tip == TipKontakta.EMAIL:
 					await self.msg_send.invoke(kontakt=kontakt, naslov=CONST.email_subject.verifikacija, vsebina=temp.email_verifikacija)
@@ -74,10 +77,15 @@ class Validate_izpis_request(UseCase):
 	async def invoke(self, oseba: Oseba) -> Kontakt:
 		temp: TemplateRenderer = self.template.init(ime=oseba.ime, priimek=oseba.priimek)
 
+		"""
+			THIS SENDS USER _ID BECAUSE EMAILS WILL NOT BE UNIQUE AND CAN BE MULTIPLIED (CHILD, PARENTS)
+		"""
+		temp('token', self.auth_verification_token.invoke(data=oseba._id).data)
+
 		for kontakt in oseba.kontakti:
 			if kontakt.validacija == TipValidacije.POTRJEN:
-				temp('token', self.auth_verification_token.invoke(username=kontakt.data).data)
 				if kontakt.tip == TipKontakta.EMAIL:
 					await self.msg_send.invoke(kontakt=kontakt, naslov=CONST.email_subject.verifikacija_izpisa, vsebina=temp.email_izpis_clan)
 					return kontakt
+
 		return None

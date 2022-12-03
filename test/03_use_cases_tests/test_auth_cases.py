@@ -58,7 +58,7 @@ class test_login(unittest.TestCase):
 		self.assertIsInstance(token, Token)
 		self.assertGreater(len(token.data), 30)
 		token_data = self.case.auth.decode(token.data)
-		self.assertEqual(token_data.u, self.oseba.kontakti[0].data)
+		self.assertEqual(token_data.d, self.oseba._id)
 		self.assertIsInstance(token_data, TokenData)
 
 
@@ -112,7 +112,7 @@ class test_verification_token(unittest.TestCase):
 		token = self.case.invoke('1234asdf')
 		self.assertIsInstance(token, Token)
 		tokenData = self.case.auth.decode(token.data)
-		self.assertEqual(tokenData.u, '1234asdf')
+		self.assertEqual(tokenData.d, '1234asdf')
 
 
 if __name__ == '__main__':

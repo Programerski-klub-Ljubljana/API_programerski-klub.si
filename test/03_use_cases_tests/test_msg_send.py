@@ -43,7 +43,7 @@ class test_msg_send(unittest.IsolatedAsyncioTestCase):
 			root.sporocilo.clear()
 			root.oseba.clear()
 
-	async def test(self):
+	async def test_pass(self):
 		spor = []
 		for i, k in enumerate(self.kontakti):
 			await self.case.invoke(kontakt=k, naslov=f'naslov{i}', vsebina=f'vsebina{i}')

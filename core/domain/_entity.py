@@ -3,6 +3,7 @@ from datetime import datetime
 from random import choices, choice
 from typing import TypeVar
 
+import shortuuid
 from persistent import Persistent
 from persistent.list import PersistentList
 
@@ -51,6 +52,7 @@ elist = list[T] | Elist
 
 
 class Entity(Persistent):
+	_id: str | None
 	_razred: str | None
 	_ustvarjen: datetime | None
 	_posodobljen: datetime | None
@@ -66,12 +68,13 @@ class Entity(Persistent):
 			self._povezave.append(e)
 			e._povezave.append(self)
 
-	#TODO: Make this abstract
+	# TODO: Make this abstract
 	def equal(self, entity):
 		return self == entity
 
 	def __post_init__(self):
 		attr = {
+			'_id': shortuuid.uuid(),
 			'_razred': self.type.upper(),
 			'_ustvarjen': datetime.utcnow(),
 			'_posodobljen': datetime.utcnow(),

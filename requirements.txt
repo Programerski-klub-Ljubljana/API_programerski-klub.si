@@ -15,6 +15,7 @@ ZODB~=5.7.0
 persistent~=4.9.2
 Faker
 Unidecode
+shortuuid
 
 # PASS
 python-jose[cryptography]

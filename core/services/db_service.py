@@ -56,5 +56,5 @@ class DbService(ABC):
 		pass
 
 	@abstractmethod
-	def oseba_find(self, kontakt_data) -> list[Oseba]:
+	def oseba_find(self, data: str) -> list[Oseba]:
 		pass

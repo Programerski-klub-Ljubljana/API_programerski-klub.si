@@ -99,12 +99,13 @@ class test_Entity(unittest.TestCase):
 		self.assertTrue(self.entity.a, 'a')
 		self.assertTrue(self.entity.b, 'b')
 		self.assertTrue(self.entity.c, Elist([1, 2, 3]))
+		self.assertEqual(len(self.entity._id), 22)
 		self.assertEqual(self.entity._razred, 'FAKEENTITY')
 		self.assertLessEqual(self.entity._ustvarjen, datetime.utcnow())
 		self.assertLessEqual(self.entity._posodobljen, datetime.utcnow())
 		self.assertIsInstance(self.entity._dnevnik, Elist)
 		self.assertIsInstance(self.entity._povezave, Elist)
-		self.assertEqual(len(self.entity.__dict__), 8)
+		self.assertEqual(len(self.entity.__dict__), 9)
 
 	def test_povezi(self):
 		entity = FakeEntity(a='a')

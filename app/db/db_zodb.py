@@ -85,8 +85,13 @@ class DbZo(DbService):
 				if old_entity.equal(entity):
 					yield old_entity
 
-	def oseba_find(self, kontakt_data: str) -> list[Oseba]:
-		with self.transaction(note=f'Find oseba {kontakt_data}') as root:
+	def oseba_find(self, data: str) -> list[Oseba]:
+		"""
+		* Can find by
+		"""
+		with self.transaction(note=f'Find oseba {data}') as root:
 			for oseba in root.oseba:
-				if oseba.has_kontakt_data(kontakt_data):
+				if oseba._id == data:
+					yield oseba
+				elif oseba.has_kontakt_data(data):
 					yield oseba

@@ -116,6 +116,9 @@ class test_db(unittest.TestCase):
 
 		for db_oseba in self.service.oseba_find(data):
 			self.assertTrue(db_oseba.equal(oseba))
+		for db_oseba in self.service.oseba_find(oseba._id):
+			self.assertTrue(db_oseba.equal(oseba))
+
 
 	def test_oseba_find_fail(self):
 		count = 0

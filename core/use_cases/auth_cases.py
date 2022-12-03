@@ -19,7 +19,10 @@ class Auth_login(UseCase):
 	def invoke(self, username, password) -> Token | None:
 		for oseba in self.db.oseba_find(username):
 			if self.auth.verify(password=password, hashed_password=oseba.geslo):
-				return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_token_life))
+				"""
+					THIS SENDS OSEBA ID SINCE EMAILS ARE NOT UNIQUE AND CAN BE SHARED!
+				"""
+				return self.auth.encode(TokenData(data=oseba._id), expiration=timedelta(hours=CONST.auth_token_life))
 		return None
 
 
@@ -33,7 +36,7 @@ class Auth_info(UseCase):
 		token_data = self.auth.decode(token.data)
 		if token_data is None:
 			return None
-		for oseba in self.db.oseba_find(token_data.u):
+		for oseba in self.db.oseba_find(token_data.d):
 			return oseba
 
 
@@ -43,5 +46,5 @@ class Auth_verification_token(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, username: str) -> Token:
-		return self.auth.encode(TokenData(username=username), expiration=timedelta(hours=CONST.auth_verification_token_life))
+	def invoke(self, data: str) -> Token:
+		return self.auth.encode(TokenData(data=data), expiration=timedelta(hours=CONST.auth_verification_token_life))

@@ -16,9 +16,9 @@ class AuthJwt(AuthService):
 		self.secret = secret
 		self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-	def encode(self, data: TokenData, expiration: timedelta) -> Token:
-		data.exp = datetime.utcnow() + expiration
-		encoded_jwt = jwt.encode(data.__dict__, self.secret, algorithm=self.algo)
+	def encode(self, token_data: TokenData, expiration: timedelta) -> Token:
+		token_data.exp = datetime.utcnow() + expiration
+		encoded_jwt = jwt.encode(token_data.__dict__, self.secret, algorithm=self.algo)
 		return Token(type='bearer', data=encoded_jwt)
 
 	def decode(self, token: str) -> TokenData | None:
