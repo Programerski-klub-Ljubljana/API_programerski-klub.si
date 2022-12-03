@@ -44,7 +44,7 @@ class Oseba(Entity):
 	ime: str
 	priimek: str
 	rojen: date | None
-	geslo: str = None
+	geslo: str | None = None
 	tip_osebe: elist[TipOsebe] = Elist.field()
 	kontakti: elist[Kontakt] = Elist.field()
 	vpisi: elist[datetime] = Elist.field()
@@ -72,22 +72,34 @@ class Oseba(Entity):
 
 		return False
 
-	def merge(self, oseba, merge_vpisi_izpisi: bool = True):
-		"""
-		Vse razen ime, priimek se proba mergat!
-		"""
+	def merge(self, oseba, merge_vpisi_izpisi: bool = True) -> bool:
+		# Save GUARD FOR STUPID DEVELOPERS!
+		if not self.equal(oseba):
+			return False
+
+		# Ce skrbnik postane clan potem kot clan vnese rojstvo in se mora shraniti v skrbnika ki nima rojstvo.
 		if self.rojen is None: self.rojen = oseba.rojen
+
+		# V primeru ce ima oseba geslo potem ga shranis v starega (zelo redko se bo to zgodilo)
 		if self.geslo is None: self.geslo = oseba.geslo
 
+		# Ce skrbnik postane clan potem je potrebno dodati njegov tip notri.
 		self.dodaj_tip_osebe(*oseba.tip_osebe)
+
+		# Vse unikatne kontakte tudi nevalidirane je potrebno dodati notri, ce se kontakt duplicira potem dodas kontakt z vecjo validacijo.
 		self.dodaj_kontakte(*oseba.kontakti)
 		if merge_vpisi_izpisi:
+
+			# Ce uporabnik ustvari 2 clanska accounta bi zelel mergati informacije o vpisu in izpisu v enega
 			for vpis in oseba.vpisi:
 				if vpis not in self.vpisi:
 					self.vpisi.append(vpis)
+
 			for izpis in oseba.izpisi:
 				if izpis not in self.izpisi:
 					self.izpisi.append(izpis)
+
+		return True
 
 	def has_kontakt_data(self, kontakt_data: str) -> bool:
 		for kontakt in self.kontakti:

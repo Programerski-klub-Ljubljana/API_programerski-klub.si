@@ -1,3 +1,4 @@
+import copy
 import unittest
 from datetime import datetime, timedelta, date
 
@@ -189,8 +190,75 @@ class test_oseba(unittest.TestCase):
 		o2.izpisi.append(datetime.utcnow() + timedelta(days=5))
 		self.assertTrue(o2.vpisan)
 
-	def test_merge(self):
-		raise Exception()
+	def test_merge_vpisi_izpisi(self):
+		vpisi = [datetime.now() - timedelta(days=i * 10) for i in range(4)]
+		izpisi = [datetime.now() - timedelta(days=i * 5) for i in range(4)]
+
+		empty_oseba0 = Oseba(ime='ime', priimek='priimek', rojen=date.today(), geslo=None, tip_osebe=[], kontakti=[], vpisi=[], izpisi=[])
+		empty_oseba1 = copy.deepcopy(empty_oseba0)
+		empty_oseba2 = copy.deepcopy(empty_oseba0)
+		empty_oseba3 = copy.deepcopy(empty_oseba0)
+		empty_oseba3.ime = 'xxx'
+
+		full_oseba0 = Oseba(ime='ime', priimek='priimek', rojen=date.today(), geslo='geslo', tip_osebe=[TipOsebe.CLAN, TipOsebe.SKRBNIK], kontakti=[
+			Kontakt(data='data0', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='data1', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
+			Kontakt(data='data2', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='data3', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='data4', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
+			Kontakt(data='data5', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN),
+		], vpisi=vpisi, izpisi=izpisi)
+		full_oseba1 = copy.deepcopy(full_oseba0)
+
+		# HALF OSEBA (TEST IF ROJEN IS NONE AND HAVE KONTAKTS CONFIRMED
+		half_oseba = copy.deepcopy(full_oseba0)
+		half_oseba.rojen = None
+		half_oseba.tip_osebe = half_oseba.tip_osebe[:1]
+		half_oseba.kontakti = half_oseba.kontakti[:1]
+		half_oseba.vpisi = half_oseba.vpisi[:2]
+		half_oseba.izpisi = half_oseba.izpisi[:2]
+
+		# MERGE RETURN FALSE ON OSEBA NOT MATCHING!
+		self.assertFalse(empty_oseba3.merge(full_oseba0))
+		self.assertFalse(full_oseba0.merge(empty_oseba3))
+
+		# AFTER FAILED MERGE NOTHING SHOULD CHANGE!
+		self.assertEqual(full_oseba0, full_oseba1)
+
+		# TEST IF OBJECTS ARE STILL REALLY EQUAL
+		self.assertEqual(full_oseba0, full_oseba1)
+		self.assertEqual(empty_oseba0, empty_oseba1)
+		self.assertEqual(empty_oseba0, empty_oseba2)
+		self.assertNotEqual(empty_oseba0, empty_oseba3)
+		self.assertNotEqual(half_oseba, full_oseba0)
+
+		self.assertTrue(full_oseba0.merge(full_oseba0))
+		self.assertTrue(empty_oseba0.merge(empty_oseba1))
+		self.assertTrue(empty_oseba2.merge(empty_oseba1, merge_vpisi_izpisi=False))
+
+		# MERGE SAME OBJECT SHOULD NOT CHANGE ANYTHING
+		self.assertEqual(full_oseba0, full_oseba1)
+		self.assertEqual(empty_oseba0, empty_oseba1)
+		self.assertEqual(empty_oseba0, empty_oseba2)
+
+		self.assertTrue(empty_oseba0.merge(full_oseba0))
+		self.assertTrue(half_oseba.merge(full_oseba0))
+		self.assertTrue(full_oseba1.merge(empty_oseba1))
+
+		# MERGE ORDER SHOULD NOT BE IMPORTANT!
+		self.assertEqual(empty_oseba0, full_oseba0)
+		self.assertEqual(full_oseba0, full_oseba1)
+		self.assertEqual(half_oseba, full_oseba1)
+
+		self.assertTrue(empty_oseba2.merge(full_oseba0, merge_vpisi_izpisi=False))
+		self.assertEqual(empty_oseba2.ime, full_oseba0.ime)
+		self.assertEqual(empty_oseba2.priimek, full_oseba0.priimek)
+		self.assertEqual(empty_oseba2.rojen, full_oseba0.rojen)
+		self.assertEqual(empty_oseba2.geslo, full_oseba0.geslo)
+		self.assertEqual(empty_oseba2.tip_osebe, full_oseba0.tip_osebe)
+		self.assertEqual(empty_oseba2.kontakti, full_oseba0.kontakti)
+		self.assertEqual(empty_oseba2.vpisi, [])
+		self.assertEqual(empty_oseba2.izpisi, [])
 
 
 if __name__ == '__main__':
