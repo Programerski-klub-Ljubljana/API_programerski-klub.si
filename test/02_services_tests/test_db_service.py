@@ -107,15 +107,21 @@ class test_db(unittest.TestCase):
 			self.assertEqual(len(root.oseba), 1)
 
 	def test_oseba_find(self):
+		oseba = None
+		data = None
 		with self.service.transaction() as root:
 			oseba = root.oseba[5]
 			data = oseba.kontakti[-1].data
 			self.assertGreater(len(data), 3)
-			self.assertTrue(oseba.equal(root.oseba_find(data)))
+
+		for db_oseba in self.service.oseba_find(data):
+			self.assertTrue(db_oseba.equal(oseba))
 
 	def test_oseba_find_fail(self):
-		with self.service.transaction() as root:
-			self.assertIsInstance(root.oseba_find('asdfasdfasdf'), NoneType)
+		count = 0
+		for _ in self.service.oseba_find('asdfasfasdf'):
+			count += 1
+		self.assertEqual(count, 0)
 
 	def test_find(self):
 		oseba = Oseba(ime=f'ime8', priimek=f'priimek8', rojen=None, kontakti=[
@@ -128,7 +134,7 @@ class test_db(unittest.TestCase):
 		self.assertEqual(count, 1)
 
 	def test_open(self):
-		self.assertRaises(Exception, lambda : (self.service.open(), self.service.open()))
+		self.assertRaises(Exception, lambda: (self.service.open(), self.service.open()))
 
 
 if __name__ == '__main__':

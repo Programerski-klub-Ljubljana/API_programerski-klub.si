@@ -25,11 +25,6 @@ class ZoDbRoot(DbRoot):
 			elif not unique:
 				table.append(entity)
 
-	def oseba_find(self, kontakt_data: str) -> Oseba | None:
-		for oseba in self.oseba:
-			if oseba.has_kontakt_data(kontakt_data):
-				return oseba
-
 
 @traced
 class ZoDbTransaction(ContextManager, Transaction):
@@ -47,6 +42,7 @@ class ZoDbTransaction(ContextManager, Transaction):
 
 @traced
 class DbZo(DbService):
+
 	def __init__(self, storage: str, default_password: str):
 		self.storage = storage
 		self.seeded = False
@@ -88,3 +84,9 @@ class DbZo(DbService):
 			for old_entity in table:
 				if old_entity.equal(entity):
 					yield old_entity
+
+	def oseba_find(self, kontakt_data: str) -> list[Oseba]:
+		with self.transaction(note=f'Find oseba {kontakt_data}') as root:
+			for oseba in root.oseba:
+				if oseba.has_kontakt_data(kontakt_data):
+					yield oseba

@@ -17,12 +17,10 @@ class Auth_login(UseCase):
 	auth: AuthService
 
 	def invoke(self, username, password) -> Token | None:
-		with self.db.transaction() as root:
-			oseba = root.oseba_find(username)
-			if oseba is not None:
-				if self.auth.verify(password=password, hashed_password=oseba.geslo):
-					return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_token_life))
-			return None
+		for oseba in self.db.oseba_find(username):
+			if self.auth.verify(password=password, hashed_password=oseba.geslo):
+				return self.auth.encode(TokenData(username), expiration=timedelta(hours=CONST.auth_token_life))
+		return None
 
 
 @traced
@@ -35,10 +33,8 @@ class Auth_info(UseCase):
 		token_data = self.auth.decode(token.data)
 		if token_data is None:
 			return None
-		with self.db.transaction() as root:
-			oseba = root.oseba_find(token_data.u)
-			if oseba is not None:
-				return oseba
+		for oseba in self.db.oseba_find(token_data.u):
+			return oseba
 
 
 @traced

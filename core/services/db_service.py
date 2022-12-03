@@ -26,10 +26,6 @@ class DbRoot(ABC):
 	def save(self, *entities, unique=False):
 		pass
 
-	@abstractmethod
-	def oseba_find(self, kontakt_data) -> Oseba | None:
-		pass
-
 
 class Transaction(ABC):
 	@abstractmethod
@@ -57,4 +53,8 @@ class DbService(ABC):
 
 	@abstractmethod
 	def find(self, entity: Entity) -> list[Entity]:
+		pass
+
+	@abstractmethod
+	def oseba_find(self, kontakt_data) -> list[Oseba]:
 		pass
