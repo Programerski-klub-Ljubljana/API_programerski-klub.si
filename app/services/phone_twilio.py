@@ -13,6 +13,15 @@ log = logging.getLogger(__name__)
 
 @traced
 class PhoneTwilio(PhoneService):
+	success_statuses = [
+		MessageInstance.Status.ACCEPTED,
+		MessageInstance.Status.QUEUED,
+		MessageInstance.Status.SENDING,
+		MessageInstance.Status.SENT,
+		MessageInstance.Status.DELIVERED,
+		MessageInstance.Status.RECEIVED
+	]
+
 	def __init__(self, service_sid: str, account_sid: str, auth_token: str, default_country_code: str, from_number: str):
 		self.default_country_code = default_country_code
 		self.from_number = from_number
@@ -41,14 +50,4 @@ class PhoneTwilio(PhoneService):
 	def sms(self, phone: str, text: str) -> bool:
 		# TODO: LOG sms status.
 		sms = self.client.messages.create(to=phone, body=text, messaging_service_sid=self.service_sid)
-		s = MessageInstance.Status
-		return sms.status in [
-			s.ACCEPTED,
-			s.QUEUED,
-
-			s.SENDING,
-			s.SENT,
-
-			s.DELIVERED,
-			s.RECEIVED
-		]
+		return sms.status in self.success_statuses

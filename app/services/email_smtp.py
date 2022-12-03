@@ -54,6 +54,4 @@ class EmailSmtp(EmailService):
 			subject=subject,
 			subtype=MessageType.html)
 
-		print(self.conn.SUPPRESS_SEND)
-
 		await self.inst.send_message(message)
