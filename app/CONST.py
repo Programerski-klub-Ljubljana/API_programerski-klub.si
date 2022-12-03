@@ -14,7 +14,9 @@ logo = "https://avatars.githubusercontent.com/u/105967036"
 auth_token_url = '/auth/login'
 auth_token_life = 24  # 24ur
 auth_verification_token_life = 48  # 2 dni
-auth_confirm_url = f'{web_api}/auth/confirm'
+
+auth_signout_url = f'{web_api}/auth/signout'
+auth_ownership_url = f'{web_api}/auth/ownership'
 auth_report_url = f'{web_api}/auth/report'
 
 phone_country_code = "SI"
@@ -46,3 +48,4 @@ class email_subject:
 	vpis = f'{klub} | Potrdilo ob vpisu'
 	vpis_skrbnik = f'{klub} | Obvestilo skrbnika o vpisu'
 	verifikacija = f'{klub} | Verifikacija osebe'
+	verifikacija_izpisa = f'{klub} | Verifikacija izpisa'

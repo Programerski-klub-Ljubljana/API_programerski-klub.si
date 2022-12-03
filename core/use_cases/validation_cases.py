@@ -48,13 +48,36 @@ class Validate_kontakts_ownerships(UseCase):
 	msg_send: Msg_send
 	auth_verification_token: Auth_verification_token
 
-	async def invoke(self, oseba: Oseba):
+	async def invoke(self, oseba: Oseba) -> list[Kontakt]:
 		temp: TemplateRenderer = self.template.init(ime=oseba.ime, priimek=oseba.priimek)
 
+		kontakti = []
 		for kontakt in oseba.kontakti:
 			if kontakt.validacija == TipValidacije.VALIDIRAN:
-				temp('token', self.auth_verification_token.invoke(kontakt.data).data)
+				temp('token', self.auth_verification_token.invoke(username=kontakt.data).data)
+				kontakti.append(kontakt)
 				if kontakt.tip == TipKontakta.EMAIL:
 					await self.msg_send.invoke(kontakt=kontakt, naslov=CONST.email_subject.verifikacija, vsebina=temp.email_verifikacija)
 				elif kontakt.tip == TipKontakta.PHONE:
 					await self.msg_send.invoke(kontakt=kontakt, naslov=None, vsebina=temp.sms_verifikacija)
+
+		return kontakti
+
+
+@traced
+@dataclass
+class Validate_izpis_request(UseCase):
+	template: TemplateService
+	msg_send: Msg_send
+	auth_verification_token: Auth_verification_token
+
+	async def invoke(self, oseba: Oseba) -> Kontakt:
+		temp: TemplateRenderer = self.template.init(ime=oseba.ime, priimek=oseba.priimek)
+
+		for kontakt in oseba.kontakti:
+			if kontakt.validacija == TipValidacije.POTRJEN:
+				temp('token', self.auth_verification_token.invoke(username=kontakt.data).data)
+				if kontakt.tip == TipKontakta.EMAIL:
+					await self.msg_send.invoke(kontakt=kontakt, naslov=CONST.email_subject.verifikacija_izpisa, vsebina=temp.email_izpis_clan)
+					return kontakt
+		return None

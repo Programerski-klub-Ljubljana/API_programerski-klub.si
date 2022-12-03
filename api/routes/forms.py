@@ -9,7 +9,7 @@ from starlette.responses import HTMLResponse
 from api import autils
 from app import APP
 from core.services.template_service import TemplateService
-from core.use_cases.forms_vpis import Forms_vpis, TipProblema, StatusVpisa
+from core.use_cases.forms_vpis import Forms_vpis, TipPrekinitveVpisa, StatusVpisa
 
 router = autils.router(__name__)
 log = logging.getLogger(__name__)
@@ -33,12 +33,12 @@ async def vpis(
 	log.info(status)
 
 	temp = template.init(**{**kwargs, **{'kontakti': [k.token_data for k in status.validirani_podatki]}})
-	if TipProblema.HACKER in status.razlogi_prekinitve:
+	if TipPrekinitveVpisa.HACKER in status.razlogi_prekinitve:
 		return HTMLResponse(content=temp.warn_prekrsek, status_code=400)
-	elif TipProblema.NAPAKE in status.razlogi_prekinitve:
+	elif TipPrekinitveVpisa.NAPAKE in status.razlogi_prekinitve:
 		temp.napake = [k.token_data for k in status.napacni_podatki_skrbnika + status.napacni_podatki_clana]
 		return HTMLResponse(content=temp.warn_napaka, status_code=400)
-	elif TipProblema.CHUCK_NORIS in status.razlogi_prekinitve:
+	elif TipPrekinitveVpisa.CHUCK_NORIS in status.razlogi_prekinitve:
 		return HTMLResponse(content=temp.warn_chuck_noris)
 
 	# POSILJANJE POTRDITVENEGA EMAILA

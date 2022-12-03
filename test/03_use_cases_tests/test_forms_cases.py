@@ -5,8 +5,9 @@ from unittest.mock import MagicMock, call, AsyncMock
 from app import APP
 from core.domain.arhitektura_kluba import TipKontakta, TipValidacije, TipOsebe, Kontakt, Oseba
 from core.services.phone_service import PhoneService
-from core.use_cases.forms_vpis import StatusVpisa, TipProblema
-from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
+from core.use_cases.forms_izpis import Forms_izpis, StatusIzpisa, TipPrekinitveIzpisa
+from core.use_cases.forms_vpis import StatusVpisa, TipPrekinitveVpisa
+from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships, Validate_izpis_request
 
 
 class Test_vpis_status(unittest.TestCase):
@@ -15,7 +16,7 @@ class Test_vpis_status(unittest.TestCase):
 		cls.status = StatusVpisa(
 			clan=Oseba(ime='ime', priimek='priimek', rojen=None),
 			skrbnik=Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None),
-			razlogi_prekinitve=[TipProblema.NAPAKE, TipProblema.HACKER, TipProblema.CHUCK_NORIS],
+			razlogi_prekinitve=[TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER, TipPrekinitveVpisa.CHUCK_NORIS],
 			validirani_podatki_clana=[
 				Kontakt(data='data_clan_0', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
 				Kontakt(data='data_clan_1', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
@@ -56,13 +57,13 @@ class Test_vpis_status(unittest.TestCase):
 		self.assertEqual(str(self.status), f"""
 			Clan   : imepriimek_
 			Skrbnik: ime_skrbnikapriimek_skrbnika_
-			Razlogi prekinitve          : [<TipProblema.NAPAKE: '1'>, <TipProblema.HACKER: '3'>, <TipProblema.CHUCK_NORIS: '2'>]
+			Razlogi prekinitve          : [<TipPrekinitveVpisa.NAPAKE: '2'>, <TipPrekinitveVpisa.HACKER: '4'>, <TipPrekinitveVpisa.CHUCK_NORIS: '3'>]
 			Napake skrbnika: data_skrbnik_0
 			Napake clana   : data_clan_0
 		""".removeprefix('\t\t'))
 
 
-class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
+class Test_vpis(unittest.IsolatedAsyncioTestCase):
 	phone_service = None
 	validate_kontakts_ownerships = None
 	validate_kontakts_existances = None
@@ -86,10 +87,12 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 			validate_kontakts_ownerships=self.validate_kontakts_ownerships)
 
 		self.merge_call_args = []
+		self.db_find_and_merge: bool = False
 
 		def find(entity: Oseba):
-			self.merge_call_args.append(entity)
-			yield entity
+			if self.db_find_and_merge:
+				self.merge_call_args.append(entity)
+				yield entity
 
 		self.case.db.find = find
 
@@ -178,10 +181,11 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.assertEqualOseba(original_oseba=clan, status_oseba=status.clan, vpis=True, tip=TipOsebe.CLAN)
 
 		# PREVERI ALI SE JE MERGE ZGODIL...
-		merge_call_args_list = [status.clan]
-		if skrbnik is not None:
-			merge_call_args_list.append(status.skrbnik)
-		self.assertCountEqual(self.merge_call_args, merge_call_args_list)
+		if self.db_find_and_merge:
+			merge_call_args_list = [status.clan]
+			if skrbnik is not None:
+				merge_call_args_list.append(status.skrbnik)
+			self.assertCountEqual(self.merge_call_args, merge_call_args_list)
 
 		# PREVERI ALI JE SKRBNIK V VPISNEM STATUSU
 		# PREVERI CE SO PROPERTIJI SKRBNIKA VSI COOL
@@ -229,14 +233,20 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 
 		status = await self.invoke(self.polnoletna_oseba, db_saved=False)
 		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE])
 
 	async def test_polnoleten_hacker(self):
 		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.polnoletna_oseba.kontakti
 
 		status = await self.invoke(self.polnoletna_oseba, db_saved=False)
 		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE, TipProblema.HACKER])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER])
+
+	async def test_polnoleten_already_vpisan(self):
+		self.db_find_and_merge = True
+		status = await self.invoke(self.polnoletna_oseba, db_saved=False)
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
 
 	async def test_mladoletnik_all_pass(self):
 		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=True)
@@ -246,7 +256,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
 		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
 		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.CHUCK_NORIS])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS])
 
 	async def test_mladoletnik_napacni_podatki(self):
 		self.mladoletna_oseba.kontakti[0].validacija = TipValidacije.VALIDIRAN
@@ -254,7 +264,7 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 
 		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
 		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.NAPAKE])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE])
 
 	async def test_mladoletnik_hacker(self):
 		self.validate_kontakts_existances.invoke.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
@@ -262,7 +272,63 @@ class Test_forms_vpis(unittest.IsolatedAsyncioTestCase):
 
 		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
 		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipProblema.CHUCK_NORIS, TipProblema.NAPAKE, TipProblema.HACKER])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS, TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER])
+
+	async def test_mladoletnik_already_vpisan(self):
+		self.db_find_and_merge = True
+		status = await self.invoke(self.mladoletna_oseba, self.skrbnik, db_saved=False)
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
+
+
+class Test_izpis(unittest.IsolatedAsyncioTestCase):
+	def setUp(self) -> None:
+		APP.init(seed=False)
+
+		# SETUP
+		self.validate_izpis_request = MagicMock(Validate_izpis_request)
+		self.validate_izpis_request.invoke = AsyncMock()
+		self.case: Forms_izpis = APP.useCases.forms_izpis(validate_izpis_request=self.validate_izpis_request)
+		self.oseba = Oseba(ime='ime', priimek='priimek', rojen=None, kontakti=[
+			Kontakt(data='data', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+		self.vpisana_oseba = Oseba(ime='ime2', priimek='priimek2', rojen=None, kontakti=[
+			Kontakt(data='data2', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+		self.vpisana_oseba.nov_vpis()
+
+		with self.case.db.transaction() as root:
+			root.oseba.clear()
+			root.save(self.oseba, self.vpisana_oseba)
+
+	def tearDown(self) -> None:
+		with self.case.db.transaction() as root:
+			root.oseba.clear()
+
+	async def test_pass(self):
+		status: StatusIzpisa = await self.case.invoke(
+			ime=self.vpisana_oseba.ime, priimek=self.vpisana_oseba.priimek, email=self.vpisana_oseba.kontakti[0].data, razlog='razlog')
+
+		self.assertEqual(status.clan, self.vpisana_oseba)
+		self.assertEqual(status.razlogi_prekinitve, [])
+		self.assertEqual(self.validate_izpis_request.invoke.call_args_list, [
+			call(oseba=self.vpisana_oseba)
+		])
+
+	async def test_ni_vpisan(self):
+		status: StatusIzpisa = await self.case.invoke(
+			ime=self.oseba.ime, priimek=self.oseba.priimek, email=self.oseba.kontakti[0].data, razlog='razlog')
+
+		self.assertEqual(status.clan, self.oseba)
+		self.assertEqual(status.razlogi_prekinitve, [TipPrekinitveIzpisa.NI_VPISAN])
+		self.assertEqual(self.validate_izpis_request.invoke.call_args_list, [])
+
+	async def test_ne_obstaja(self):
+		status: StatusIzpisa = await self.case.invoke(
+			ime=self.oseba.ime, priimek=self.oseba.priimek, email='xxx', razlog='razlog')
+
+		self.assertEqual(status.clan, None)
+		self.assertEqual(status.razlogi_prekinitve, [TipPrekinitveIzpisa.NE_OBSTAJA])
+		self.assertEqual(self.validate_izpis_request.invoke.call_args_list, [])
+
 
 
 if __name__ == '__main__':

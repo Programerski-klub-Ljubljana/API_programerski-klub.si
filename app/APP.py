@@ -17,9 +17,10 @@ from core import cutils
 from core.services.db_service import DbService
 from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token
 from core.use_cases.db_cases import Db_path
+from core.use_cases.forms_izpis import Forms_izpis
 from core.use_cases.forms_vpis import Forms_vpis
 from core.use_cases.msg_cases import Msg_send
-from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
+from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships, Validate_izpis_request
 
 
 class Services(DeclarativeContainer):
@@ -60,14 +61,17 @@ class UseCases(DeclarativeContainer):
 	validate_kontakts_existances: Provider[Validate_kontakts_existances] = Factory(Validate_kontakts_existances, email=d.email, phone=d.phone)
 	validate_kontakts_ownerships: Provider[Validate_kontakts_ownerships] = Factory(
 		Validate_kontakts_ownerships, template=d.template, msg_send=msg_send, auth_verification_token=auth_verification_token)
+	validate_izpis_request: Provider[Validate_izpis_request] = Factory(
+		Validate_izpis_request, template=d.template, msg_send=msg_send, auth_verification_token=auth_verification_token)
 
 	""" THIRD LEVEL USE CASES """
 
 	# FORMS
-	forms_vpis: Provider = Factory(
+	forms_vpis: Provider[Forms_vpis] = Factory(
 		Forms_vpis, db=d.db, phone=d.phone,
 		validate_kontakts_existances=validate_kontakts_existances,
 		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
+	forms_izpis: Provider[Forms_izpis] = Factory(Forms_izpis, db=d.db, validate_izpis_request=validate_izpis_request)
 
 
 log = logging.getLogger(__name__)

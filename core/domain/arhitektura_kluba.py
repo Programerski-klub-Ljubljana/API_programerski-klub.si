@@ -137,6 +137,9 @@ class Oseba(Entity):
 	def nov_vpis(self):
 		self.vpisi.append(datetime.utcnow())
 
+	def nov_izpis(self):
+		self.izpisi.append(datetime.utcnow())
+
 	@property
 	def starost(self) -> float:
 		return cutils.age(

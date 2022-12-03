@@ -13,7 +13,8 @@ from core.use_cases.validation_cases import Validate_kontakts_existances, Valida
 log = logging.getLogger(__name__)
 
 
-class TipProblema(str, Enum):
+class TipPrekinitveVpisa(str, Enum):
+	ZE_VPISAN = auto()
 	NAPAKE = auto()  # UPORABNIK JE VNESEL PODATKE KI SO SIGURNO NAPACNE.
 	CHUCK_NORIS = auto()  # MUDEL JE CHUCK NORIS KER SAMO CHUCK NORIS JE LAHKO STARS SAMEMU SEBI
 	# ---- When Chuck Norris was born the doctor asked him to name his parents.
@@ -27,7 +28,7 @@ class TipProblema(str, Enum):
 class StatusVpisa:
 	clan: Oseba | None = None
 	skrbnik: Oseba | None = None
-	razlogi_prekinitve: list[TipProblema] = list_field()
+	razlogi_prekinitve: list[TipPrekinitveVpisa] = list_field()
 	validirani_podatki_skrbnika: list[Kontakt] = list_field()
 	validirani_podatki_clana: list[Kontakt] = list_field()
 
@@ -79,9 +80,6 @@ class Forms_vpis(UseCase):
 			email: str, telefon: str,
 			ime_skrbnika: str | None = None, priimek_skrbnika: str | None = None,
 			email_skrbnika: str | None = None, telefon_skrbnika: str | None = None) -> StatusVpisa:
-		kwargs = locals()
-		del kwargs['self']
-
 		# ZACNI VPISNI POSTOPEK
 		vpis: StatusVpisa = StatusVpisa()
 
@@ -95,14 +93,17 @@ class Forms_vpis(UseCase):
 				Kontakt(data=email, tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
 				Kontakt(data=telefon, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
 
-		# VPISI CLANA
+		# VPISI SAMO IN SAMO CLANA! SKRBNIK SE NE STEJE KOT VPISAN ELEMENT!
 		vpis.clan.nov_vpis()
 
 		# MERGE CLAN
-		oseba: Oseba
-		for oseba in self.db.find(entity=vpis.clan):
-			oseba.merge(vpis.clan)
-			vpis.clan = oseba
+		db_oseba: Oseba
+		for db_oseba in self.db.find(entity=vpis.clan):
+			# CE JE CLAN ZE VPISAN POTEM PREKINI CELOTEN PROCES!
+			if db_oseba.vpisan:
+				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.ZE_VPISAN)
+			db_oseba.merge(vpis.clan)
+			vpis.clan = db_oseba
 
 		if vpis.clan.mladoletnik:
 			# FORMAT PHONE
@@ -117,25 +118,25 @@ class Forms_vpis(UseCase):
 
 			# PREVERI ZLORABO AUTORITETO?
 			if email == email_skrbnika or telefon == telefon_skrbnika:  # Nisi chuck noris da bi bil sam seb skrbnik.
-				vpis.razlogi_prekinitve.append(TipProblema.CHUCK_NORIS)
+				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.CHUCK_NORIS)
 
 			# MERGE SKRBNIK
-			for oseba in self.db.find(entity=vpis.skrbnik):
-				oseba.merge(vpis.skrbnik)
-				vpis.skrbnik = oseba
+			for db_oseba in self.db.find(entity=vpis.skrbnik):
+				db_oseba.merge(vpis.skrbnik)
+				vpis.skrbnik = db_oseba
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
+		# TODO: Ce se validacija zgodi... sli se spremembe na kontaktih shranijo v podatkovni bazi???
 		vpis.validirani_podatki_clana = self.validate_kontakts_existances.invoke(*vpis.clan.kontakti)
 		if vpis.clan.mladoletnik:
 			vpis.validirani_podatki_skrbnika = self.validate_kontakts_existances.invoke(*vpis.skrbnik.kontakti)
 
 		ST_VALIDACIJ = len(vpis.validirani_podatki)
-		ST_NAPAK = vpis.stevilo_napacnih_podatkov
-		if ST_NAPAK > 0:
-			vpis.razlogi_prekinitve.append(TipProblema.NAPAKE)
-			if ST_NAPAK == ST_VALIDACIJ:
-				vpis.razlogi_prekinitve.append(TipProblema.HACKER)
+		if vpis.stevilo_napacnih_podatkov > 0:
+			vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.NAPAKE)
+			if vpis.stevilo_napacnih_podatkov == ST_VALIDACIJ:
+				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
 
 		# CE NI BILO NAPAK...
 		if len(vpis.razlogi_prekinitve) == 0:

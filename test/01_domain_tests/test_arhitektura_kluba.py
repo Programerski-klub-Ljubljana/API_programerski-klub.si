@@ -166,6 +166,16 @@ class test_oseba(unittest.TestCase):
 		self.assertEqual(len(o.vpisi), 2)
 		self.assertGreater(o.vpisi[-1], t)
 
+	def test_nov_izpis(self):
+		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
+		t = datetime.utcnow()
+		self.assertEqual(len(o.izpisi), 0)
+		o.nov_izpis()
+		self.assertEqual(len(o.izpisi), 1)
+		o.nov_izpis()
+		self.assertEqual(len(o.izpisi), 2)
+		self.assertGreater(o.izpisi[-1], t)
+
 	def test_starost(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=12 * 365 + 6 * 31 + 10))
 		self.assertEqual(round(o.starost, 1), 12.5)
