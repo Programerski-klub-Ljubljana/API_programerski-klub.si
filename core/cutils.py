@@ -97,14 +97,14 @@ def object_json(
 		return obj
 
 
-def filter_dict(func, kwarg_dict):
+def call(func, **kwargs):
 	sign = inspect.signature(func).parameters.values()
 	sign = set([val.name for val in sign])
 
-	common_args = sign.intersection(kwarg_dict.keys())
-	filtered_dict = {key: kwarg_dict[key] for key in common_args}
+	common_args = sign.intersection(kwargs.keys())
+	filtered_dict = {key: kwargs[key] for key in common_args}
 
-	return filtered_dict
+	return func(**filtered_dict)
 
 
 def list_field(*values: any):

@@ -115,7 +115,7 @@ class test_validate(unittest.TestCase):
 
 	def test_filter_dict(self):
 		def test(a, b, c, d):
-			raise Exception()
+			return a+b+c+d
 
 		kwargs = {
 			'a': 'a',
@@ -126,12 +126,7 @@ class test_validate(unittest.TestCase):
 			'f': 'f',
 		}
 
-		self.assertEqual({
-			'a': 'a',
-			'b': 'b',
-			'c': 'c',
-			'd': 'd',
-		}, cutils.filter_dict(test, kwargs))
+		self.assertEqual("abcd", cutils.call(test, **kwargs))
 
 	def test_list_field(self):
 		@dataclass

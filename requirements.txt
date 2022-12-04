@@ -1,7 +1,7 @@
 # SERVER
-fastapi~=0.86.0
-starlette~=0.20.4
-uvicorn~=0.19.0
+fastapi
+starlette
+uvicorn
 python-multipart
 pydantic[email,dotenv]
 
@@ -11,8 +11,8 @@ fastapi-utils
 requests
 
 # DB
-ZODB~=5.7.0
-persistent~=4.9.2
+ZODB
+persistent
 Faker
 Unidecode
 shortuuid
@@ -22,8 +22,8 @@ python-jose[cryptography]
 passlib[bcrypt]
 
 # UTILS
-python-dotenv~=0.21.0
-python-dateutil~=2.8.2
+python-dotenv
+python-dateutil
 tqdm
 dependency-injector
 
@@ -37,3 +37,4 @@ stripe
 twilio
 git+https://gitea.ksol.io/karolyi/py3-validate-email@v1.0.9
 phonenumbers
+PyGithub

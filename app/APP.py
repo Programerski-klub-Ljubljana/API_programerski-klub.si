@@ -10,6 +10,7 @@ from app import ENV, CONST
 from app.db.db_zodb import DbZo
 from app.services.auth_jwt import AuthJwt
 from app.services.email_smtp import EmailSmtp
+from app.services.github_vcs import GithubVcs
 from app.services.payment_stripe import PaymentStripe
 from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
@@ -27,6 +28,8 @@ class Services(DeclarativeContainer):
 	auth: Provider[AuthJwt] = Singleton(AuthJwt, secret=ENV.SECRET_KEY)
 	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH, default_password=ENV.DB_DEFAULT_PASSWORD)
 	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
+	vcs: Provider[GithubVcs] = Singleton(
+		GithubVcs, app_id=ENV.GITHUB_APP_ID, private_key_path=ENV.GITHUB_PRIVATE_KEY_PATH, organization=CONST.github_org)
 	phone: Provider[PhoneTwilio] = Singleton(
 		PhoneTwilio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)

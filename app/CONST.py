@@ -8,7 +8,8 @@ alt_email = 'jar.fmf@gmail.com'
 phone = f'051-240-885'
 web = f'https://{domain}'
 web_api = f'{web}/api'
-github = 'https://github.com/programerski-klub-ljubljana'
+github_org = klub.lower().replace(' ', '-')
+github = f'https://github.com/{github_org}'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
 auth_token_url = '/auth/login'

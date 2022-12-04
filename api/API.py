@@ -35,9 +35,10 @@ async def exception_handler(request: Request, exc: Exception):
 def custom_openapi():
 	if fapi.openapi_schema:
 		return fapi.openapi_schema
-	kwargs = cutils.filter_dict(get_openapi, fapi.__dict__)
+	kwargs = fapi.__dict__
 	kwargs['routes'] = fapi.routes
-	fapi.openapi_schema = autils.openapi(get_openapi(**kwargs))
+	fapi.openapi_schema = autils.openapi(
+		cutils.call(get_openapi, **fapi.__dict__))
 	return fapi.openapi_schema
 
 
