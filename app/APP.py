@@ -28,7 +28,7 @@ from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek
 class Services(DeclarativeContainer):
 	auth: Provider[AuthJwt] = Singleton(AuthJwt, secret=ENV.SECRET_KEY)
 	db: Provider[DbZo] = Singleton(DbZo, storage=ENV.DB_PATH, default_password=ENV.DB_DEFAULT_PASSWORD)
-	payment: Provider[PaymentStripe] = Singleton(PaymentStripe)
+	payment: Provider[PaymentStripe] = Singleton(PaymentStripe, api_key=ENV.STRIPE_API_KEY)
 	vcs: Provider[GithubVcs] = Singleton(
 		GithubVcs, app_id=ENV.GITHUB_APP_ID, private_key_path=ENV.GITHUB_PRIVATE_KEY_PATH, organization=CONST.github_org)
 	phone: Provider[PhoneTwilio] = Singleton(
