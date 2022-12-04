@@ -6,7 +6,7 @@ from autologging import traced
 from core.cutils import fake
 from core.domain._entity import Log
 from core.domain._enums import LogLevel, LogTheme
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, TipValidacije, TipOsebe
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, NivoValidiranosti, TipOsebe
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo
 from core.domain.srecanja_dogodki import Dogodek, TipDogodka
@@ -20,7 +20,7 @@ def arhitektura_kluba(root, **kwargs):
 		for i in range(randint(2, kwargs['kontakti'])):
 			tip = TipKontakta.random()
 			data = str(fake.email) if tip == TipKontakta.EMAIL else fake.phone_number()
-			kontakt = Kontakt(data=data, tip=tip, validacija=TipValidacije.random())
+			kontakt = Kontakt(data=data, tip=tip, nivo_validiranosti=NivoValidiranosti.random())
 			kontakti.append(kontakt)
 
 		root.save(Oseba(
@@ -124,11 +124,11 @@ def logs(root, **kwargs):
 		for entity in table:
 			for _ in range(randint(0, kwargs['logs'])):
 				log = Log(
-					nivo=LogLevel.random(),
-					tema=LogTheme.random(),
-					sporocilo=fake.sentence(20))
+					level=LogLevel.random(),
+					theme=LogTheme.random(),
+					msg=fake.sentence(20))
 				root.save(log)
-				entity._dnevnik.append(log)
+				entity._logs.append(log)
 
 
 @traced
@@ -145,4 +145,4 @@ def povezave(root, **kwargs):
 			for parent in parents:
 				for _ in range(randint(0, kwargs['povezave'])):
 					child = tables[j].random()
-					parent.povezi(child)
+					parent.connect(child)

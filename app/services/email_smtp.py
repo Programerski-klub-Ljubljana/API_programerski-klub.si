@@ -31,7 +31,7 @@ class EmailSmtp(EmailService):
 			TEMPLATE_FOLDER=str(cutils.root_path('templates')))
 		self.inst = FastMail(self.conn)
 
-	def obstaja(self, email: str):
+	def check_existance(self, email: str):
 		return validate_email(
 			email_address=email,
 			check_format=True,

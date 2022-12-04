@@ -19,8 +19,8 @@ class TokenResponse(BaseModel):
 @traced
 @router.post("/login", response_model=TokenResponse)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
-	login = APP.useCases.auth_login()
-	token = login.invoke(username=form_data.username, password=form_data.password)
+	login = APP.cases.vpisi_osebo()
+	token = login.exe(username=form_data.username, password=form_data.password)
 
 	if token is not None:
 		return {'access_token': token.data, "token_type": token.type}
@@ -35,8 +35,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @traced
 @router.get("/info")
 def info(token: str = Depends(oauth2_scheme)):
-	auth_info = APP.useCases.auth_info()
-	info = auth_info.invoke(token)
+	auth_info = APP.cases.preberi_informacije_osebnega_zetona()
+	info = auth_info.exe(token)
 
 	if info is not None:
 		return info

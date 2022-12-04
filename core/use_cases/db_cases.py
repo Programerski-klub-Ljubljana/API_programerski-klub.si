@@ -10,10 +10,10 @@ from core.use_cases._usecase import UseCase
 
 @traced
 @dataclass
-class Db_path(UseCase):
+class Vrni_vsebino_baze(UseCase):
 	db: DbService
 
-	def invoke(self, table: str, path: str = None, page: int = 0, per_page: int = 10, max_depth: int = 3, max_width: int = 10) -> Any:
+	def exe(self, table: str, path: str = None, page: int = 0, per_page: int = 10, max_depth: int = 3, max_width: int = 10) -> Any:
 		with self.db.transaction() as root:
 			result = cutils.object_path(getattr(root, table), path)
 			start = per_page * page
@@ -27,7 +27,7 @@ class Db_path(UseCase):
 class Db_check_consistency(UseCase):
 	db: DbService
 
-	def invoke(self) -> Any:  # TODO: ensure that only valid originals are in db!!!
+	def exe(self) -> Any:  # TODO: ensure that only valid originals are in db!!!
 		# Todo: check for duplicates in tables
 		# Todo: check for consistency for joining elements
 		# TODO: clean kontacts that are unvalidated for more than 2 days.

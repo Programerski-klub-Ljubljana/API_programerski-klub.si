@@ -5,18 +5,18 @@ from app import APP
 from core.services.phone_service import PhoneService
 
 
-class test_sms(unittest.TestCase):
+class test_phone(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 		cls.service: PhoneService = APP.services.phone()
 
-	def test_obstaja(self):
-		self.assertTrue(self.service.obstaja('051240885'))
+	def test_check_existance(self):
+		self.assertTrue(self.service.check_existance('051240885'))
 
-	def test_sms(self):
+	def test_send_sms(self):
 		text = f"TESTING: {datetime.utcnow()}"
-		self.assertTrue(self.service.sms('+38651240885', text))
+		self.assertTrue(self.service.send_sms('+38651240885', text))
 
 	def test_format(self):
 		correct_form = "+38651240885"

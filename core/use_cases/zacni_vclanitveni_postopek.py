@@ -4,11 +4,11 @@ from datetime import date
 from enum import Enum, auto
 
 from core.cutils import list_field
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, TipValidacije, TipOsebe
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, NivoValidiranosti, TipOsebe
 from core.services.db_service import DbService
 from core.services.phone_service import PhoneService
 from core.use_cases._usecase import UseCase
-from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships
+from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class StatusVpisa:
 	validirani_podatki_clana: list[Kontakt] = list_field()
 
 	def _napacni_podatki(self, kontakti):
-		lam_ni_validiran = lambda kontakt: kontakt.validacija == TipValidacije.NI_VALIDIRAN
+		lam_ni_validiran = lambda kontakt: kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN
 		return list(filter(lam_ni_validiran, kontakti))
 
 	@property
@@ -67,13 +67,13 @@ class StatusVpisa:
 
 
 @dataclass
-class Forms_vpis(UseCase):
+class Zacni_vclanitveni_postopek(UseCase):
 	db: DbService
 	phone: PhoneService
-	validate_kontakts_existances: Validate_kontakts_existances
-	validate_kontakts_ownerships: Validate_kontakts_ownerships
+	validate_kontakts_existances: Preveri_obstoj_kontakta
+	validate_kontakts_ownerships: Poslji_test_ki_preveri_lastnistvo_kontakta
 
-	async def invoke(
+	async def exe(
 			self,
 			ime: str, priimek: str,
 			dan_rojstva: int, mesec_rojstva: int, leto_rojstva: int,
@@ -90,8 +90,8 @@ class Forms_vpis(UseCase):
 		vpis.clan = Oseba(
 			ime=ime, priimek=priimek, rojen=date(year=leto_rojstva, month=mesec_rojstva, day=dan_rojstva),
 			tip_osebe=[TipOsebe.CLAN], kontakti=[
-				Kontakt(data=email, tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
-				Kontakt(data=telefon, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
+				Kontakt(data=email, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
+				Kontakt(data=telefon, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
 
 		# VPISI SAMO IN SAMO CLANA! SKRBNIK SE NE STEJE KOT VPISAN ELEMENT!
 		vpis.clan.nov_vpis()
@@ -113,8 +113,8 @@ class Forms_vpis(UseCase):
 			vpis.skrbnik = Oseba(
 				ime=ime_skrbnika, priimek=priimek_skrbnika, rojen=None,
 				tip_osebe=[TipOsebe.SKRBNIK], kontakti=[
-					Kontakt(data=email_skrbnika, tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
-					Kontakt(data=telefon_skrbnika, tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN)])
+					Kontakt(data=email_skrbnika, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
+					Kontakt(data=telefon_skrbnika, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
 
 			# PREVERI ZLORABO AUTORITETO?
 			if email == email_skrbnika or telefon == telefon_skrbnika:  # Nisi chuck noris da bi bil sam seb skrbnik.
@@ -128,9 +128,9 @@ class Forms_vpis(UseCase):
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
 		# TODO: Ce se validacija zgodi... sli se spremembe na kontaktih shranijo v podatkovni bazi???
-		vpis.validirani_podatki_clana = self.validate_kontakts_existances.invoke(*vpis.clan.kontakti)
+		vpis.validirani_podatki_clana = self.validate_kontakts_existances.exe(*vpis.clan.kontakti)
 		if vpis.clan.mladoletnik:
-			vpis.validirani_podatki_skrbnika = self.validate_kontakts_existances.invoke(*vpis.skrbnik.kontakti)
+			vpis.validirani_podatki_skrbnika = self.validate_kontakts_existances.exe(*vpis.skrbnik.kontakti)
 
 		ST_VALIDACIJ = len(vpis.validirani_podatki)
 		if vpis.stevilo_napacnih_podatkov > 0:
@@ -145,9 +145,9 @@ class Forms_vpis(UseCase):
 			with self.db.transaction(note=f'Shrani {vpis.clan}') as root:
 				root.save(vpis.clan, unique=True)
 				if vpis.clan.mladoletnik:
-					vpis.clan.povezi(vpis.skrbnik)
+					vpis.clan.connect(vpis.skrbnik)
 					root.save(vpis.skrbnik, unique=True)
-					await self.validate_kontakts_ownerships.invoke(oseba=vpis.skrbnik)
-				await self.validate_kontakts_ownerships.invoke(oseba=vpis.clan)
+					await self.validate_kontakts_ownerships.exe(oseba=vpis.skrbnik)
+				await self.validate_kontakts_ownerships.exe(oseba=vpis.clan)
 
 		return vpis

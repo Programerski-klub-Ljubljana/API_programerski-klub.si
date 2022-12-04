@@ -13,17 +13,17 @@ from core.use_cases._usecase import UseCase
 
 @traced
 @dataclass
-class Msg_send(UseCase):
+class Poslji_sporocilo(UseCase):
 	db: DbService
 	phone: PhoneService
 	email: EmailService
 
-	async def invoke(self, kontakt: Kontakt, naslov: str | None, vsebina: str) -> Any:
+	async def exe(self, kontakt: Kontakt, naslov: str | None, vsebina: str) -> Any:
 		sporocilo = Sporocilo(naslov=naslov, vsebina=vsebina)
 		with self.db.transaction() as root:
 			if kontakt.tip == TipKontakta.EMAIL:
 				await self.email.send(recipients=[kontakt.data], subject=naslov, vsebina=vsebina)
 			elif kontakt.tip == TipKontakta.PHONE:
-				self.phone.sms(phone=kontakt.data, text=vsebina)
-			kontakt.povezi(sporocilo)
+				self.phone.send_sms(phone=kontakt.data, text=vsebina)
+			kontakt.connect(sporocilo)
 			root.save(sporocilo)

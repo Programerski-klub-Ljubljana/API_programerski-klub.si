@@ -2,17 +2,17 @@ import copy
 import unittest
 from datetime import datetime, timedelta, date
 
-from core.domain.arhitektura_kluba import TipOsebe, Kontakt, TipKontakta, TipValidacije, Oseba
+from core.domain.arhitektura_kluba import TipOsebe, Kontakt, TipKontakta, NivoValidiranosti, Oseba
 
 
 class test_tip_osebe(unittest.TestCase):
 
-	def test_scopes(self):
-		vals = TipOsebe.values()
-		scopes = TipOsebe.scopes()
-		self.assertGreater(len(vals), 0)
-		self.assertEqual(len(scopes.values()), len(scopes.keys()))
-		for sk, sv in scopes.items():
+	def test_dovoljenja(self):
+		values = TipOsebe.values()
+		dovoljenja = TipOsebe.dovoljenja()
+		self.assertGreater(len(values), 0)
+		self.assertEqual(len(dovoljenja.values()), len(dovoljenja.keys()))
+		for sk, sv in dovoljenja.items():
 			self.assertIn(sk, sv)
 
 
@@ -21,18 +21,18 @@ class test_kontakt(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		assert len(TipKontakta.values()) == 2
-		assert len(TipValidacije.values()) == 3
+		assert len(NivoValidiranosti.values()) == 3
 
 	def test_equal(self):
-		k0 = Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
+		k0 = Kontakt(data='1234', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
 		kontakti = [
-			Kontakt(data='1234', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='1234', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		]
 		fail_kontakti = [
-			Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.NI_VALIDIRAN),
-			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='12343', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
+			Kontakt(data='12343', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='12343', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
+			Kontakt(data='12343', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='12343', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN)
 		]
 		for k in kontakti:
 			self.assertTrue(k0.equal(k))
@@ -47,11 +47,11 @@ class test_oseba(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		assert len(TipKontakta.values()) == 2
-		assert len(TipValidacije.values()) == 3
+		assert len(NivoValidiranosti.values()) == 3
 
 	def test_equal_ime_priimek_rojstvo(self):
-		k0 = Kontakt(data='12343', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
-		k1 = Kontakt(data='xxxxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
+		k0 = Kontakt(data='12343', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN)
+		k1 = Kontakt(data='xxxxx', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN)
 		kwargs = {'tip_osebe': TipOsebe.CLAN}
 
 		o0 = Oseba(ime='Janez', priimek='Novak', rojen=date(year=1992, month=5, day=24), kontakti=[k0], **kwargs)
@@ -66,14 +66,14 @@ class test_oseba(unittest.TestCase):
 		self.assertTrue(o0.equal(o4))
 
 	def test_equal_ime_priimek_kontakti(self):
-		k = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
-		k0 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
+		k = Kontakt(data='123', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)
+		k0 = Kontakt(data='123', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
 
-		k1 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
-		k2 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
-		k3 = Kontakt(data='xxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
-		k4 = Kontakt(data='123', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN)
-		k5 = Kontakt(data='123', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+		k1 = Kontakt(data='123', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN)
+		k2 = Kontakt(data='123', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+		k3 = Kontakt(data='xxx', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)
+		k4 = Kontakt(data='123', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN)
+		k5 = Kontakt(data='123', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)
 
 		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o = Oseba(kontakti=[k], **kwargs)
@@ -96,28 +96,28 @@ class test_oseba(unittest.TestCase):
 		self.assertFalse(o.equal(o4))
 		self.assertTrue(o.equal(o5))
 
-	def test_has_username(self):
+	def test_ima_kontakt(self):
 		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[
-			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
-			Kontakt(data='1111', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
-			Kontakt(data='2222', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
+			Kontakt(data='1111', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
+			Kontakt(data='2222', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		], **kwargs)
 
-		self.assertFalse(o0.has_kontakt_data('0000'))
-		self.assertTrue(o0.has_kontakt_data('2222'))
+		self.assertFalse(o0.ima_kontakt('0000'))
+		self.assertTrue(o0.ima_kontakt('2222'))
 
 	def test_dodaj_kontakte(self):
-		k0 = Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN)
-		k1 = Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
-		k2 = Kontakt(data='1111', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN)
+		k0 = Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+		k1 = Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN)
+		k2 = Kontakt(data='1111', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN)
 
 		kwargs = {'ime': 'Janez', 'priimek': 'Novak', 'tip_osebe': [], 'rojen': None}
 		o0 = Oseba(kontakti=[
-			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.NI_VALIDIRAN),
-			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='0000', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
+			Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='0000', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		], **kwargs)
 
 		self.assertEqual(len(o0.kontakti), 3)
@@ -150,7 +150,7 @@ class test_oseba(unittest.TestCase):
 
 		o1 = Oseba(rojen=None, kontakti=[
 			Kontakt(data='123', tip=TipKontakta.EMAIL),
-			Kontakt(data='xxx', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='xxx', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		], **kwargs)
 
 		self.assertEqual(str(o0), "janeznovak_24051992")
@@ -211,12 +211,12 @@ class test_oseba(unittest.TestCase):
 		empty_oseba3.ime = 'xxx'
 
 		full_oseba0 = Oseba(ime='ime', priimek='priimek', rojen=date.today(), geslo='geslo', tip_osebe=[TipOsebe.CLAN, TipOsebe.SKRBNIK], kontakti=[
-			Kontakt(data='data0', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
-			Kontakt(data='data1', tip=TipKontakta.EMAIL, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='data2', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN),
-			Kontakt(data='data3', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN),
-			Kontakt(data='data4', tip=TipKontakta.PHONE, validacija=TipValidacije.VALIDIRAN),
-			Kontakt(data='data5', tip=TipKontakta.PHONE, validacija=TipValidacije.POTRJEN),
+			Kontakt(data='data0', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
+			Kontakt(data='data1', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='data2', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
+			Kontakt(data='data3', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN),
+			Kontakt(data='data4', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
+			Kontakt(data='data5', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		], vpisi=vpisi, izpisi=izpisi)
 		full_oseba1 = copy.deepcopy(full_oseba0)
 

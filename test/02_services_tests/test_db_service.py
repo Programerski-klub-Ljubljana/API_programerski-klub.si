@@ -6,7 +6,7 @@ from persistent.list import PersistentList
 
 from app import APP
 from core.domain._entity import Elist
-from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, TipValidacije
+from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, NivoValidiranosti
 from core.services.db_service import DbService
 
 
@@ -22,7 +22,7 @@ class test_db(unittest.TestCase):
 			root.oseba.clear()
 			for i in range(10):
 				oseba = Oseba(ime=f'ime{i}', priimek=f'priimek{i}', rojen=None, kontakti=[
-					Kontakt(data=f'data{i}', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+					Kontakt(data=f'data{i}', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 				root.save(oseba)
 
 	def tearDown(self):
@@ -52,10 +52,10 @@ class test_db(unittest.TestCase):
 		with self.service.transaction() as root:
 			# CREATE KONTACTS
 			clan1 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
-				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)
 			])
 			clan2 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
-				Kontakt(data="0392pep2opo", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)
+				Kontakt(data="0392pep2opo", tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)
 			])
 
 			# ARE THEY EQUAL?
@@ -100,7 +100,7 @@ class test_db(unittest.TestCase):
 
 			# CREATE KONTACTS
 			clan1 = Oseba(ime='ime1', priimek='priimek', tip_osebe=[TipOsebe.CLAN], rojen=None, kontakti=[
-				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+				Kontakt(data="a983joirow34je", tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
 			root.save(clan1, clan1, clan1, unique=True)
 
@@ -128,7 +128,7 @@ class test_db(unittest.TestCase):
 
 	def test_find(self):
 		oseba = Oseba(ime=f'ime8', priimek=f'priimek8', rojen=None, kontakti=[
-			Kontakt(data=f'data8', tip=TipKontakta.EMAIL, validacija=TipValidacije.POTRJEN)])
+			Kontakt(data=f'data8', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
 		count = 0
 		for found_oseba in self.service.find(oseba):

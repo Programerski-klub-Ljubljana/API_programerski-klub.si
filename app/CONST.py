@@ -1,14 +1,14 @@
 from core import cutils
 
 version = '0.1.0'
-klub = 'Programerski klub Ljubljana'
+org_name = 'Programerski klub Ljubljana'
 domain = 'programerski-klub.si'
 email = f'info@{domain}'
 alt_email = 'jar.fmf@gmail.com'
 phone = f'051-240-885'
 web = f'https://{domain}'
 web_api = f'{web}/api'
-github_org = klub.lower().replace(' ', '-')
+github_org = org_name.lower().replace(' ', '-')
 github = f'https://github.com/{github_org}'
 logo = "https://avatars.githubusercontent.com/u/105967036"
 
@@ -24,10 +24,10 @@ phone_country_code = "SI"
 
 api_openapi = {
 	'version': version,
-	'title': f"API - {klub}",
+	'title': f"API - {org_name}",
 	'contact': {'email': email, 'web': web, 'github': github},
 	'description': f"""
-		API server ki ga uporablja {klub} za svoje delovanje.
+		API server ki ga uporablja {org_name} za svoje delovanje.
 		Notri se nahaja vse stvari za popolno avtomatizacijo kluba ter spletne strani
 		na "{web}" naslovu. """.removeprefix('\t'),
 	'servers': [
@@ -46,7 +46,7 @@ api_templates = cutils.root_path('templates')
 
 
 class email_subject:
-	vpis = f'{klub} | Potrdilo ob vpisu'
-	vpis_skrbnik = f'{klub} | Obvestilo skrbnika o vpisu'
-	verifikacija = f'{klub} | Verifikacija osebe'
-	verifikacija_izpisa = f'{klub} | Verifikacija izpisa'
+	vpis = f'{org_name} | Potrdilo ob vpisu'
+	vpis_skrbnik = f'{org_name} | Obvestilo skrbnika o vpisu'
+	verifikacija = f'{org_name} | Verifikacija osebe'
+	verifikacija_izpisa = f'{org_name} | Verifikacija izpisa'

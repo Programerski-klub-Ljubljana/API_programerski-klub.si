@@ -93,5 +93,5 @@ class DbZo(DbService):
 			for oseba in root.oseba:
 				if oseba._id == data:
 					yield oseba
-				elif oseba.has_kontakt_data(data):
+				elif oseba.ima_kontakt(data):
 					yield oseba

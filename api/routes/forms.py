@@ -9,7 +9,7 @@ from starlette.responses import HTMLResponse
 from api import autils
 from app import APP
 from core.services.template_service import TemplateService
-from core.use_cases.forms_vpis import Forms_vpis, TipPrekinitveVpisa, StatusVpisa
+from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek, TipPrekinitveVpisa, StatusVpisa
 
 router = autils.router(__name__)
 log = logging.getLogger(__name__)
@@ -26,10 +26,10 @@ async def vpis(
 		email_skrbnika: str | None = Form(None, min_length=3), telefon_skrbnika: str | None = Form(None, min_length=3)):
 	kwargs = copy.copy(locals())
 
-	forms_vpis: Forms_vpis = APP.useCases.forms_vpis()
+	forms_vpis: Zacni_vclanitveni_postopek = APP.cases.zacni_vclanitveni_postopek()
 	template: TemplateService = APP.services.template()
 
-	status: StatusVpisa = await forms_vpis.invoke(**kwargs)
+	status: StatusVpisa = await forms_vpis.exe(**kwargs)
 	log.info(status)
 
 	temp = template.init(**{**kwargs, **{'kontakti': [k.token_data for k in status.validirani_podatki]}})

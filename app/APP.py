@@ -16,12 +16,13 @@ from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
-from core.use_cases.auth_cases import Auth_login, Auth_info, Auth_verification_token, Auth_signin, Auth_signout
-from core.use_cases.db_cases import Db_path
-from core.use_cases.forms_izpis import Forms_izpis
-from core.use_cases.forms_vpis import Forms_vpis
-from core.use_cases.msg_cases import Msg_send
-from core.use_cases.validation_cases import Validate_kontakts_existances, Validate_kontakts_ownerships, Validate_izpis_request
+from core.use_cases.auth_cases import Vpisi_osebo, Vpisne_informacije, Ustvari_osebni_zeton, Vclani_osebo, Izpisi_osebo
+from core.use_cases.db_cases import Vrni_vsebino_baze
+from core.use_cases.msg_cases import Poslji_sporocilo
+from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
+	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
+from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek
+from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek
 
 
 class Services(DeclarativeContainer):
@@ -34,7 +35,7 @@ class Services(DeclarativeContainer):
 		PhoneTwilio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
-		EmailSmtp, name=CONST.klub, email=CONST.email,
+		EmailSmtp, name=CONST.org_name, email=CONST.email,
 		server=CONST.domain, port=ENV.MAIL_PORT,
 		username=CONST.email, password=ENV.MAIL_PASSWORD,
 		suppress_send=ENV.MAIL_SUPPRESS_SEND
@@ -47,36 +48,33 @@ class UseCases(DeclarativeContainer):
 
 	""" FIRST LEVEL USE CASES """
 
-	# MSG
-	msg_send: Provider[Msg_send] = Factory(Msg_send, db=d.db, phone=d.phone, email=d.email)
+	poslji_sporocilo: Provider[Poslji_sporocilo] = Factory(Poslji_sporocilo, db=d.db, phone=d.phone, email=d.email)
 
 	# AUTH
-	auth_login: Provider[Auth_login] = Factory(Auth_login, db=d.db, auth=d.auth)
-	auth_info: Provider[Auth_info] = Factory(Auth_info, db=d.db, auth=d.auth)
-	auth_verification_token: Provider[Auth_verification_token] = Factory(Auth_verification_token, db=d.db, auth=d.auth)
-	auth_signin: Provider[Auth_signin] = Factory(Auth_signin, db=d.db, auth=d.auth)
-	auth_signout: Provider[Auth_signout] = Factory(Auth_signout, db=d.db, auth=d.auth)
+	vpisi_osebo: Provider[Vpisi_osebo] = Factory(Vpisi_osebo, db=d.db, auth=d.auth)
+	preberi_informacije_osebnega_zetona: Provider[Vpisne_informacije] = Factory(Vpisne_informacije, db=d.db, auth=d.auth)
+	ustvari_osebni_zeton: Provider[Ustvari_osebni_zeton] = Factory(Ustvari_osebni_zeton, db=d.db, auth=d.auth)
+	vclani_osebo: Provider[Vclani_osebo] = Factory(Vclani_osebo, db=d.db, auth=d.auth)
+	izpisi_osebo: Provider[Izpisi_osebo] = Factory(Izpisi_osebo, db=d.db, auth=d.auth)
 
 	# DB
-	db_path: Provider[Db_path] = Factory(Db_path, db=d.db)
-
-	""" SECOND LEVEL USE CASES """
+	vrni_vsebino_baze: Provider[Vrni_vsebino_baze] = Factory(Vrni_vsebino_baze, db=d.db)
 
 	# OSEBA
-	validate_kontakts_existances: Provider[Validate_kontakts_existances] = Factory(Validate_kontakts_existances, email=d.email, phone=d.phone)
-	validate_kontakts_ownerships: Provider[Validate_kontakts_ownerships] = Factory(
-		Validate_kontakts_ownerships, template=d.template, msg_send=msg_send, auth_verification_token=auth_verification_token)
-	validate_izpis_request: Provider[Validate_izpis_request] = Factory(
-		Validate_izpis_request, template=d.template, msg_send=msg_send, auth_verification_token=auth_verification_token)
-
-	""" THIRD LEVEL USE CASES """
+	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, phone=d.phone)
+	poslji_test_ki_preveri_lastnistvo_kontakta: Provider[Poslji_test_ki_preveri_lastnistvo_kontakta] = Factory(
+		Poslji_test_ki_preveri_lastnistvo_kontakta, template=d.template, msg_send=poslji_sporocilo, auth_verification_token=ustvari_osebni_zeton)
+	poslji_test_ki_preveri_zeljo_za_koncno_izclanitev: Provider[Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev] = Factory(
+		Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev, template=d.template, msg_send=poslji_sporocilo,
+		auth_verification_token=ustvari_osebni_zeton)
 
 	# FORMS
-	forms_vpis: Provider[Forms_vpis] = Factory(
-		Forms_vpis, db=d.db, phone=d.phone,
-		validate_kontakts_existances=validate_kontakts_existances,
+	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
+		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone,
+		validate_kontakts_existances=preveri_obstoj_kontakta,
 		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
-	forms_izpis: Provider[Forms_izpis] = Factory(Forms_izpis, db=d.db, validate_izpis_request=validate_izpis_request)
+	zacni_izclanitveni_postopek: Provider[Zacni_izclanitveni_postopek] = Factory(Zacni_izclanitveni_postopek, db=d.db,
+	                                                                             validate_izpis_request=poslji_test_ki_preveri_zeljo_za_koncno_izclanitev)
 
 
 log = logging.getLogger(__name__)
@@ -85,7 +83,7 @@ this = sys.modules[__name__]
 inited: bool = False
 db: DbService
 services: Services
-useCases: UseCases
+cases: UseCases
 
 logging.basicConfig(
 	level=logging.INFO if False else autologging.TRACE,
@@ -103,7 +101,7 @@ def init(seed: bool = False):
 		return
 
 	this.services = Services()
-	this.useCases = UseCases(d=services)
+	this.cases = UseCases(d=services)
 	this.db = this.services.db()
 
 	this.db.open()
@@ -112,4 +110,4 @@ def init(seed: bool = False):
 	this.inited = True
 
 
-__all__ = ['ENV', 'init', 'services', 'useCases']
+__all__ = ['ENV', 'init', 'services', 'cases']

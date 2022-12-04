@@ -3,7 +3,7 @@ from abc import abstractmethod, ABC
 
 class EmailService(ABC):
 	@abstractmethod
-	def obstaja(self, email: str) -> bool:
+	def check_existance(self, email: str) -> bool:
 		pass
 
 	@abstractmethod

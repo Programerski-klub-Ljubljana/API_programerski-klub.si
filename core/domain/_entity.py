@@ -53,33 +53,36 @@ elist = list[T] | Elist
 
 class Entity(Persistent):
 	_id: str | None
-	_razred: str | None
-	_ustvarjen: datetime | None
-	_posodobljen: datetime | None
-	_dnevnik: elist | None
-	_povezave: elist | None
+	_type: str | None
+	_created: datetime | None
+	_updated: datetime | None
+	_logs: elist | None
+	_connections: elist | None
 
 	@property
 	def type(self):
 		return self.__class__.__name__.lower()
 
-	def povezi(self, *entity):
+	def connect(self, *entity):
 		for e in entity:
-			self._povezave.append(e)
-			e._povezave.append(self)
+			self._connections.append(e)
+			e._connections.append(self)
 
 	# TODO: Make this abstract
 	def equal(self, entity):
 		return self == entity
 
+	def merge(self, *args, **kwargs):
+		raise Exception("Implement me!")
+
 	def __post_init__(self):
 		attr = {
 			'_id': shortuuid.uuid(),
-			'_razred': self.type.upper(),
-			'_ustvarjen': datetime.utcnow(),
-			'_posodobljen': datetime.utcnow(),
-			'_dnevnik': Elist(),
-			'_povezave': Elist(),
+			'_type': self.type.upper(),
+			'_created': datetime.utcnow(),
+			'_updated': datetime.utcnow(),
+			'_logs': Elist(),
+			'_connections': Elist(),
 		}
 		for k, v in attr.items():
 			setattr(self, k, v)
@@ -87,6 +90,6 @@ class Entity(Persistent):
 
 @dataclass
 class Log(Entity):
-	nivo: LogLevel
-	tema: LogTheme
-	sporocilo: str
+	level: LogLevel
+	theme: LogTheme
+	msg: str

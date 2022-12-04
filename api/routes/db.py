@@ -10,5 +10,5 @@ router = autils.router(__name__)
 @traced
 @router.get("/{table}/{path:path}")
 def get_table_data(table: str, path: str = None, page: int = 0, per_page: int = 10, max_depth: int = 3, max_width: int = 10):
-	db = APP.useCases.db_path()
-	return cutils.call(db.invoke, **locals())
+	db = APP.cases.vrni_vsebino_baze()
+	return cutils.call(db.exe, **locals())

@@ -5,5 +5,5 @@ from dataclasses import dataclass
 @dataclass
 class UseCase(ABC):
 	@abstractmethod
-	def invoke(self, *args, **kwargs):
+	def exe(self, *args, **kwargs):
 		pass

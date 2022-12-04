@@ -14,7 +14,7 @@ class TipKontakta(EntityEnum):
 	PHONE = auto()
 
 
-class TipValidacije(EntityEnum):
+class NivoValidiranosti(EntityEnum):
 	NI_VALIDIRAN = auto()
 	VALIDIRAN = auto()
 	POTRJEN = auto()
@@ -25,7 +25,7 @@ class TipOsebe(EntityEnum):
 	SKRBNIK = auto()
 
 	@classmethod
-	def scopes(cls):
+	def dovoljenja(cls):
 		return {k: f'Dovoljenje za {k}' for k in TipOsebe.values()}
 
 
@@ -33,7 +33,7 @@ class TipOsebe(EntityEnum):
 class Kontakt(Entity):
 	data: str
 	tip: TipKontakta
-	validacija: TipValidacije = TipValidacije.NI_VALIDIRAN
+	nivo_validiranosti: NivoValidiranosti = NivoValidiranosti.NI_VALIDIRAN
 
 	def equal(self, kontakt):
 		return self.data == kontakt.data and self.tip == kontakt.tip
@@ -66,7 +66,7 @@ class Oseba(Entity):
 			for k2 in oseba.kontakti:
 				if (
 						k1.equal(k2) and
-						(k1.validacija == TipValidacije.POTRJEN or k2.validacija == TipValidacije.POTRJEN) and
+						(k1.nivo_validiranosti == NivoValidiranosti.POTRJEN or k2.nivo_validiranosti == NivoValidiranosti.POTRJEN) and
 						k1.tip == k2.tip):
 					return True
 
@@ -101,9 +101,9 @@ class Oseba(Entity):
 
 		return True
 
-	def has_kontakt_data(self, kontakt_data: str) -> bool:
+	def ima_kontakt(self, kontakt_data: str) -> bool:
 		for kontakt in self.kontakti:
-			if kontakt.data == kontakt_data and kontakt.validacija == TipValidacije.POTRJEN:
+			if kontakt.data == kontakt_data and kontakt.nivo_validiranosti == NivoValidiranosti.POTRJEN:
 				return True
 		return False
 
@@ -114,7 +114,7 @@ class Oseba(Entity):
 			for old_kontakt in self.kontakti:
 				if kontakt.equal(old_kontakt):
 					exists = True
-					if kontakt.validacija > old_kontakt.validacija:
+					if kontakt.nivo_validiranosti > old_kontakt.nivo_validiranosti:
 						old_kontakt.tip = kontakt.tip
 			if not exists:
 				self.kontakti.append(kontakt)
@@ -130,7 +130,7 @@ class Oseba(Entity):
 			id = self.rojen.strftime("%d%m%Y")
 		else:
 			for k in self.kontakti:
-				if k.validacija == TipValidacije.POTRJEN:
+				if k.nivo_validiranosti == NivoValidiranosti.POTRJEN:
 					id = k.data.replace('+', '')
 		return unidecode(f'{self.ime}{self.priimek}_{id}'.replace(' ', '').lower())
 

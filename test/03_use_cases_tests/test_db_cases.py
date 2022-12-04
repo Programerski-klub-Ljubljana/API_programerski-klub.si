@@ -2,17 +2,17 @@ import unittest
 
 from app import APP
 from core.domain.arhitektura_kluba import Oseba, Kontakt, TipKontakta
-from core.use_cases.db_cases import Db_path
+from core.use_cases.db_cases import Vrni_vsebino_baze
 
 
-class test_path(unittest.TestCase):
+class test_vrni_vsebino_baze(unittest.TestCase):
 	geslo = None
 	case = None
 
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
-		cls.case: Db_path = APP.useCases.db_path()
+		cls.case: Vrni_vsebino_baze = APP.cases.vrni_vsebino_baze()
 
 		with cls.case.db.transaction() as root:
 			root.oseba.clear()
@@ -26,8 +26,8 @@ class test_path(unittest.TestCase):
 			root.oseba.clear()
 			assert len(root.oseba) == 0
 
-	def test_return(self):
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=100)
+	def test_vracajoce_vsebine(self):
+		r = self.case.exe(table='oseba', per_page=10, max_depth=100)
 		for i in range(10):
 			self.assertEqual(len(r), 10)
 			self.assertIsInstance(r, list)
@@ -37,41 +37,41 @@ class test_path(unittest.TestCase):
 			for j in range(10):
 				self.assertEqual(r[i]['kontakti'][j]['data'], 'asdf1234')
 
-	def test_pagination(self):
-		r_all = self.case.invoke(table='oseba', per_page=10)
+	def test_paginacije(self):
+		r_all = self.case.exe(table='oseba', per_page=10)
 
-		r = self.case.invoke(table='oseba', per_page=5)
+		r = self.case.exe(table='oseba', per_page=5)
 		self.assertEqual(r, r_all[:5])
 
-		r = self.case.invoke(table='oseba', per_page=5, page=1)
+		r = self.case.exe(table='oseba', per_page=5, page=1)
 		self.assertEqual(r, r_all[5:10])
 
-		r = self.case.invoke(table='oseba', per_page=2, page=4)
+		r = self.case.exe(table='oseba', per_page=2, page=4)
 		self.assertEqual(r, r_all[8:10])
 
-	def test_max_depth(self):
+	def test_maksimalne_globine(self):
 		# 4
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=4)
+		r = self.case.exe(table='oseba', per_page=10, max_depth=4)
 		for ri in r:
 			self.assertEqual(ri['kontakti'][0]['data'], 'asdf1234')
 
 		# 3
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=3)
+		r = self.case.exe(table='oseba', per_page=10, max_depth=3)
 		for ri in r:
 			self.assertEqual(ri['kontakti'][0], 'MAX_DEPTH_OBJECT')
 
 		# 2
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=2)
+		r = self.case.exe(table='oseba', per_page=10, max_depth=2)
 		for ri in r:
 			self.assertEqual(ri['kontakti'], 'MAX_DEPTH_LIST')
 
 		# 1
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=1)
+		r = self.case.exe(table='oseba', per_page=10, max_depth=1)
 		for ri in r:
 			self.assertEqual(ri, 'MAX_DEPTH_OBJECT')
 
-	def test_max_width(self):
-		r = self.case.invoke(table='oseba', per_page=10, max_depth=10, max_width=2)
+	def test_maksimalne_sirine(self):
+		r = self.case.exe(table='oseba', per_page=10, max_depth=10, max_width=2)
 		self.assertEqual(len(r), 3)
 		self.assertIsInstance(r[0], dict)
 		self.assertIsInstance(r[1], dict)
@@ -83,9 +83,9 @@ class test_path(unittest.TestCase):
 			self.assertIsInstance(ri['kontakti'][1], dict, ri)
 			self.assertEqual(ri['kontakti'][2], 'MAX_WIDTH', ri)
 
-	def test_fail(self):
+	def test_ni_najdena_vsebina(self):
 		try:
-			self.case.invoke(table='osebi')
+			self.case.exe(table='osebi')
 		except Exception as err:
 			self.assertEqual(str(err), "'ZoDbRoot' object has no attribute 'osebi'")
 

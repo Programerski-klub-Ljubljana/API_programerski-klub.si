@@ -28,7 +28,7 @@ class PhoneTwilio(PhoneService):
 		self.service_sid = service_sid
 		self.client = Client(account_sid, auth_token)
 
-	def obstaja(self, phone: str) -> bool:
+	def check_existance(self, phone: str) -> bool:
 		try:
 			phone_obj = phonenumbers.parse(phone, self.default_country_code)
 			if phonenumbers.is_valid_number(phone_obj):
@@ -47,7 +47,7 @@ class PhoneTwilio(PhoneService):
 			log.warning(err)
 			return phone
 
-	def sms(self, phone: str, text: str) -> bool:
+	def send_sms(self, phone: str, text: str) -> bool:
 		# TODO: LOG sms status.
 		sms = self.client.messages.create(to=phone, body=text, messaging_service_sid=self.service_sid)
 		return sms.status in self.success_statuses

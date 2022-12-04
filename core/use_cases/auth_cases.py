@@ -12,11 +12,11 @@ from core.use_cases._usecase import UseCase
 
 @traced
 @dataclass
-class Auth_login(UseCase):
+class Vpisi_osebo(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, username, password) -> Token | None:
+	def exe(self, username, password) -> Token | None:
 		for oseba in self.db.oseba_find(username):
 			if self.auth.verify(password=password, hashed_password=oseba.geslo):
 				"""
@@ -28,11 +28,11 @@ class Auth_login(UseCase):
 
 @traced
 @dataclass
-class Auth_signin(UseCase):
+class Vclani_osebo(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, oseba_id: str) -> bool:
+	def exe(self, oseba_id: str) -> bool:
 		# TODO: Here you have to activated payment subscription on stripe!
 		vpisan = False
 		for oseba in self.db.oseba_find(data=oseba_id):
@@ -45,11 +45,11 @@ class Auth_signin(UseCase):
 
 @traced
 @dataclass
-class Auth_signout(UseCase):
+class Izpisi_osebo(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, oseba_id: str) -> bool:
+	def exe(self, oseba_id: str) -> bool:
 		# TODO: Here you have to DE - activated payment subscription on stripe!
 		izpisan = False
 		for oseba in self.db.oseba_find(data=oseba_id):
@@ -62,11 +62,11 @@ class Auth_signout(UseCase):
 
 @traced
 @dataclass
-class Auth_info(UseCase):
+class Vpisne_informacije(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, token: Token) -> Oseba | None:
+	def exe(self, token: Token) -> Oseba | None:
 		token_data = self.auth.decode(token.data)
 		if token_data is None:
 			return None
@@ -76,9 +76,9 @@ class Auth_info(UseCase):
 
 @traced
 @dataclass
-class Auth_verification_token(UseCase):
+class Ustvari_osebni_zeton(UseCase):
 	db: DbService
 	auth: AuthService
 
-	def invoke(self, data: str) -> Token:
+	def exe(self, data: str) -> Token:
 		return self.auth.encode(TokenData(data=data), expiration=timedelta(hours=CONST.auth_verification_token_life))

@@ -100,20 +100,20 @@ class test_Entity(unittest.TestCase):
 		self.assertTrue(self.entity.b, 'b')
 		self.assertTrue(self.entity.c, Elist([1, 2, 3]))
 		self.assertEqual(len(self.entity._id), 22)
-		self.assertEqual(self.entity._razred, 'FAKEENTITY')
-		self.assertLessEqual(self.entity._ustvarjen, datetime.utcnow())
-		self.assertLessEqual(self.entity._posodobljen, datetime.utcnow())
-		self.assertIsInstance(self.entity._dnevnik, Elist)
-		self.assertIsInstance(self.entity._povezave, Elist)
+		self.assertEqual(self.entity._type, 'FAKEENTITY')
+		self.assertLessEqual(self.entity._created, datetime.utcnow())
+		self.assertLessEqual(self.entity._updated, datetime.utcnow())
+		self.assertIsInstance(self.entity._logs, Elist)
+		self.assertIsInstance(self.entity._connections, Elist)
 		self.assertEqual(len(self.entity.__dict__), 9)
 
-	def test_povezi(self):
+	def test_connect(self):
 		entity = FakeEntity(a='a')
 		entity1 = FakeEntity(a='b')
-		self.assertEqual(len(entity._povezave), 0)
-		entity.povezi(entity1)
-		self.assertEqual(len(entity._povezave), 1)
-		self.assertEqual(entity._povezave[0], entity1)
+		self.assertEqual(len(entity._connections), 0)
+		entity.connect(entity1)
+		self.assertEqual(len(entity._connections), 1)
+		self.assertEqual(entity._connections[0], entity1)
 
 
 if __name__ == '__main__':
