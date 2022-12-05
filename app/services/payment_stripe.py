@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 
 import stripe
@@ -7,6 +8,7 @@ from core import cutils
 from core.services.payment_service import PaymentService, PaymentCustomer
 
 
+@traced
 class StripeResParser:
 	@classmethod
 	def parse_customer(cls, stripe_customer: stripe.Customer) -> PaymentCustomer:
@@ -31,10 +33,12 @@ class PaymentStripe(PaymentService, StripeResParser):
 	def __init__(self, api_key: str):
 		stripe.api_key = api_key
 		self.page_limit = 100
+		self.tries_before_fail = 30
+		self.sleep_before_next_trie = 2
 
-	def create_customer(self, customer: PaymentCustomer):
+	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer:
 		"""If customer allready exists do not create it but joust return..."""
-		old_customer = self.get_customer(customer.entity_id)
+		old_customer = self.get_customer(customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
 			return old_customer
@@ -58,19 +62,41 @@ class PaymentStripe(PaymentService, StripeResParser):
 
 		return [self.parse_customer(c) for c in all_customers]
 
-	def get_customer(self, entity_id: str) -> PaymentCustomer | None:
-		customers = self.search_customer(f"metadata['entity_id']:'{entity_id}'")
-		if len(customers) == 0:
-			return None
-		if len(customers) == 1:
-			return customers[0]
+	def get_customer(self, entity_id: str, with_tries: bool = True) -> PaymentCustomer | None:
+		tries = self.tries_before_fail if with_tries else 1
 
-		raise Exception(f"Customers with duplicated entity_id: {customers}")
+		while True:
+			customers = self.search_customer(f"metadata['entity_id']:'{entity_id}'")
+			tries -= 1
+
+			if len(customers) == 0 and tries <= 0:
+				return None
+			elif len(customers) == 1:
+				return customers[0]
+			elif len(customers) > 1:
+				raise Exception(f"Customers with duplicated entity_id: {customers}")
+
+			time.sleep(self.sleep_before_next_trie)
 
 	def search_customer(self, query: str) -> list[PaymentCustomer]:
 		return [self.parse_customer(c) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
 
-	def delete_customer(self, entity_id) -> PaymentCustomer:
-		customer = self.get_customer(entity_id)
-		if customer is not None:
-			return self.parse_customer(stripe.Customer.delete(sid=customer.id))
+	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
+		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
+
+		if customer is None:
+			return False
+
+		tries = self.tries_before_fail
+
+		while True:
+
+			try:
+				return stripe.Customer.delete(sid=customer.id).deleted
+			except Exception as err:
+				pass
+
+			tries -= 1
+			if tries == 0:
+				return False
+			time.sleep(1)

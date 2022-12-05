@@ -24,7 +24,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def delete_customer(self, entity_id: str) -> PaymentCustomer:
+	def delete_customer(self, entity_id: str) -> bool:
 		pass
 
 	@abstractmethod
