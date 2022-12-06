@@ -20,15 +20,7 @@ class PaymentCustomer:
 
 class PaymentService(ABC):
 	@abstractmethod
-	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer:
-		pass
-
-	@abstractmethod
-	def delete_customer(self, entity_id: str) -> bool:
-		pass
-
-	@abstractmethod
-	def get_customer(self, entity_id: str) -> PaymentCustomer:
+	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer | None:
 		pass
 
 	@abstractmethod
@@ -36,5 +28,13 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def search_customer(self, query: str) -> PaymentCustomer:
+	def get_customer(self, entity_id: str, with_tries: bool = True) -> PaymentCustomer | None:
+		pass
+
+	@abstractmethod
+	def search_customers(self, query: str) -> list[PaymentCustomer]:
+		pass
+
+	@abstractmethod
+	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
 		pass

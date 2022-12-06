@@ -36,17 +36,20 @@ class PaymentStripe(PaymentService, StripeResParser):
 		self.tries_before_fail = 30
 		self.sleep_before_next_trie = 2
 
-	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer:
+	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer | None:
 		"""If customer allready exists do not create it but joust return..."""
 		old_customer = self.get_customer(customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
 			return old_customer
 
-		return self.parse_customer(stripe.Customer.create(
-			name=customer.name, description=customer.description,
-			phone=customer.phone, email=customer.email,
-			metadata={'entity_id': customer.entity_id}))
+		try:
+			return self.parse_customer(stripe.Customer.create(
+				name=customer.name, description=customer.description,
+				phone=customer.phone, email=customer.email,
+				metadata={'entity_id': customer.entity_id}))
+		except stripe.error.InvalidRequestError as err:
+			return None
 
 	def list_customers(self) -> list[PaymentCustomer]:
 		all_customers = []
@@ -66,7 +69,7 @@ class PaymentStripe(PaymentService, StripeResParser):
 		tries = self.tries_before_fail if with_tries else 1
 
 		while True:
-			customers = self.search_customer(f"metadata['entity_id']:'{entity_id}'")
+			customers = self.search_customers(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
 
 			if len(customers) == 0 and tries <= 0:
@@ -78,7 +81,7 @@ class PaymentStripe(PaymentService, StripeResParser):
 
 			time.sleep(self.sleep_before_next_trie)
 
-	def search_customer(self, query: str) -> list[PaymentCustomer]:
+	def search_customers(self, query: str) -> list[PaymentCustomer]:
 		return [self.parse_customer(c) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
 
 	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
@@ -93,7 +96,7 @@ class PaymentStripe(PaymentService, StripeResParser):
 
 			try:
 				return stripe.Customer.delete(sid=customer.id).deleted
-			except Exception as err:
+			except stripe.error.InvalidRequestError as err:
 				pass
 
 			tries -= 1
