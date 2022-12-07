@@ -1,34 +1,77 @@
+import datetime
 import time
-from datetime import datetime
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import stripe
 from autologging import traced
 
 from core import cutils
-from core.services.payment_service import PaymentService, PaymentCustomer
+from core.services.payment_service import PaymentService, Customer, Subscription
+
+
+@dataclass
+class StripeObj(ABC):
+
+	@staticmethod
+	@abstractmethod
+	def parse(self, kwargs):
+		pass
+
+	@staticmethod
+	@abstractmethod
+	def create(obj):
+		pass
+
+
+class StripeCustomer(Customer, StripeObj):
+
+	def json(self):
+		_dict = self.__dict__.copy()
+		_dict['metadata'] = {'entity_id': self.entity_id}
+		_dict['created'] = self.created.timestamp()
+		return _dict
+
+	@staticmethod
+	def parse(**kwargs) -> Customer:
+		return cutils.call(StripeCustomer, **{
+			**kwargs,
+			'entity_id': kwargs['metadata']['entity_id'],
+			'created': datetime.datetime.utcfromtimestamp(kwargs['created'])})
+
+	@staticmethod
+	def create(obj: Customer):
+		return stripe.Customer.create(
+			name=obj.name, description=obj.description,
+			phone=obj.phone, email=obj.email,
+			metadata={'entity_id': obj.entity_id})
+
+
+class StripeSubscription(Subscription, StripeObj):
+
+	@staticmethod
+	def create(obj: Subscription):
+		return stripe.Subscription.create(
+			description=obj.description,
+			items=obj.items,
+			customer=obj.customer.id,
+			collection_method=obj.collection_method.value,
+			days_until_due=obj.days_until_due,
+			trial_period_days=obj.trial_period_days,
+			metadata={'entity_id': obj.customer.entity_id})
+
+	def json(self) -> dict[str, any]:
+		_dict = self.__dict__.copy()
+		_dict['metadata'] = {'entity_id': self.entity_id}
+		_dict['created'] = self.created.timestamp()
+		return _dict
+
+	def parse(self, kwargs) -> Subscription:
+		pass
 
 
 @traced
-class StripeResParser:
-	@classmethod
-	def parse_customer(cls, stripe_customer: stripe.Customer) -> PaymentCustomer:
-		if stripe_customer.last_response is not None:
-			stripe_customer = stripe_customer.last_response.data
-			entity_id = stripe_customer['metadata']['entity_id']
-			created = stripe_customer['created']
-		else:
-			entity_id = stripe_customer.metadata.entity_id
-			created = stripe_customer.created
-
-		return cutils.call(PaymentCustomer, **{
-			**stripe_customer,
-			'entity_id': entity_id,
-			'created': datetime.utcfromtimestamp(created)
-		})
-
-
-@traced
-class PaymentStripe(PaymentService, StripeResParser):
+class PaymentStripe(PaymentService):
 
 	def __init__(self, api_key: str):
 		stripe.api_key = api_key
@@ -36,22 +79,20 @@ class PaymentStripe(PaymentService, StripeResParser):
 		self.tries_before_fail = 30
 		self.sleep_before_next_trie = 2
 
-	def create_customer(self, customer: PaymentCustomer) -> PaymentCustomer | None:
-		"""If customer allready exists do not create it but joust return..."""
+	""" CUSTOMER """
+
+	def create_customer(self, customer: StripeCustomer) -> Customer | None:
 		old_customer = self.get_customer(customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
 			return old_customer
 
 		try:
-			return self.parse_customer(stripe.Customer.create(
-				name=customer.name, description=customer.description,
-				phone=customer.phone, email=customer.email,
-				metadata={'entity_id': customer.entity_id}))
+			return StripeCustomer.create(customer)
 		except stripe.error.InvalidRequestError as err:
 			return None
 
-	def list_customers(self) -> list[PaymentCustomer]:
+	def list_customers(self) -> list[Customer]:
 		all_customers = []
 
 		starting_after = None
@@ -63,9 +104,9 @@ class PaymentStripe(PaymentService, StripeResParser):
 			else:
 				break
 
-		return [self.parse_customer(c) for c in all_customers]
+		return [StripeCustomer.parse(**dict(c)) for c in all_customers]
 
-	def get_customer(self, entity_id: str, with_tries: bool = True) -> PaymentCustomer | None:
+	def get_customer(self, entity_id: str, with_tries: bool = True) -> Customer | None:
 		tries = self.tries_before_fail if with_tries else 1
 
 		while True:
@@ -81,8 +122,8 @@ class PaymentStripe(PaymentService, StripeResParser):
 
 			time.sleep(self.sleep_before_next_trie)
 
-	def search_customers(self, query: str) -> list[PaymentCustomer]:
-		return [self.parse_customer(c) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
+	def search_customers(self, query: str) -> list[Customer]:
+		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
 
 	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
 		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
@@ -93,7 +134,6 @@ class PaymentStripe(PaymentService, StripeResParser):
 		tries = self.tries_before_fail
 
 		while True:
-
 			try:
 				return stripe.Customer.delete(sid=customer.id).deleted
 			except stripe.error.InvalidRequestError as err:
@@ -103,3 +143,29 @@ class PaymentStripe(PaymentService, StripeResParser):
 			if tries == 0:
 				return False
 			time.sleep(1)
+
+	""" SUBSCRIPTION """
+
+	def get_subscription(self, entity_id: str) -> Subscription | None:
+		subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")
+		if len(subscriptions) == 0:
+			return None
+		elif len(subscriptions) == 1:
+			return subscriptions[0]
+		elif len(subscriptions) > 1:
+			raise Exception(f"Customers with duplicated entity_id: {subscriptions}")
+
+	def search_subscription(self, query: str) -> list[Subscription]:
+		return [StripeSubscription.parse(**dict(s)) for s in stripe.Subscription.search(query=query, limit=self.page_limit).data]
+
+	def create_subscription(self, subscription: Subscription):
+		old_subscription = self.get_subscription(subscription.entity_id)
+
+		if old_subscription is not None:
+			return old_subscription
+
+		try:
+			return StripeSubscription.create(subscription)
+		except stripe.error.InvalidRequestError as err:
+			print(err)
+			return None
