@@ -1,7 +1,7 @@
-import datetime
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 
 import stripe
 from autologging import traced
@@ -37,14 +37,22 @@ class StripeCustomer(Customer, StripeObj):
 		return cutils.call(StripeCustomer, **{
 			**kwargs,
 			'entity_id': kwargs['metadata']['entity_id'],
-			'created': datetime.datetime.utcfromtimestamp(kwargs['created'])})
+			'created': datetime.fromtimestamp(kwargs['created'])})
 
 	@staticmethod
 	def create(obj: Customer):
-		return stripe.Customer.create(
+		kwargs = dict(stripe.Customer.create(
 			name=obj.name, description=obj.description,
 			phone=obj.phone, email=obj.email,
-			metadata={'entity_id': obj.entity_id})
+			metadata={'entity_id': obj.entity_id}))
+
+		created = datetime.fromtimestamp(kwargs.pop('created'))
+
+		return cutils.call(StripeCustomer, **{
+			**kwargs,
+			'created': created,
+			'entity_id': kwargs['metadata']['entity_id']
+		})
 
 
 class StripeSubscription(Subscription, StripeObj):
@@ -145,6 +153,18 @@ class PaymentStripe(PaymentService):
 			time.sleep(1)
 
 	""" SUBSCRIPTION """
+
+	def update_subscription(self) -> Subscription | None:
+		pass
+
+	def cancel_subscription(self) -> Subscription | None:
+		pass
+
+	def list_subscription(self) -> list[Subscription]:
+		pass
+
+	def delete_subscription(self) -> bool:
+		pass
 
 	def get_subscription(self, entity_id: str) -> Subscription | None:
 		subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")

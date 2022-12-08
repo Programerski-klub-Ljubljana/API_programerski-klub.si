@@ -15,7 +15,7 @@ class test_validate(unittest.TestCase):
 		self.assertEqual(result, test)
 
 	def test_age(self):
-		today = datetime.utcnow()
+		today = datetime.now()
 		self.assertEqual(12.0, round(cutils.age(today.year - 12, today.month, today.day), 2))
 		self.assertEqual(-12.0, round(cutils.age(today.year + 12, today.month, today.day), 2))
 

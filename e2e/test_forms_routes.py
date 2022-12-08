@@ -23,7 +23,7 @@ class test_forms(unittest.IsolatedAsyncioTestCase):
 
 	def vpis_data(self, mladoletnik: bool = False, **kwargs):
 		starost = 12 if mladoletnik else 25
-		rojstvo = datetime.utcnow() - timedelta(days=365 * starost)
+		rojstvo = datetime.now() - timedelta(days=365 * starost)
 		data = {
 			'ime': fake.first_name(),
 			'priimek': fake.last_name(),

@@ -18,7 +18,7 @@ class test_email(IsolatedAsyncioTestCase):
 	async def test_send(self):
 		await self.service.send(
 			[CONST.alt_email],
-			f'TESTING: {datetime.utcnow()}',
+			f'TESTING: {datetime.now()}',
 			f'<h3><b>__file__</b> = {__file__}<br><b>__name__</b> = {__name__}</h3>')
 
 

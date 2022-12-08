@@ -158,7 +158,7 @@ class test_oseba(unittest.TestCase):
 
 	def test_nov_vpis(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
-		t = datetime.utcnow()
+		t = datetime.now()
 		self.assertEqual(len(o.vpisi), 0)
 		o.nov_vpis()
 		self.assertEqual(len(o.vpisi), 1)
@@ -168,7 +168,7 @@ class test_oseba(unittest.TestCase):
 
 	def test_nov_izpis(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
-		t = datetime.utcnow()
+		t = datetime.now()
 		self.assertEqual(len(o.izpisi), 0)
 		o.nov_izpis()
 		self.assertEqual(len(o.izpisi), 1)
@@ -177,32 +177,32 @@ class test_oseba(unittest.TestCase):
 		self.assertGreater(o.izpisi[-1], t)
 
 	def test_starost(self):
-		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=12 * 365 + 6 * 31 + 10))
+		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.now() - timedelta(days=12 * 365 + 6 * 31 + 10))
 		self.assertEqual(round(o.starost, 1), 12.5)
 
 	def test_mladoletnik(self):
-		o0 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 + 30))
-		o1 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.utcnow() - timedelta(days=18 * 365 - 30))
+		o0 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.now() - timedelta(days=18 * 365 + 30))
+		o1 = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=datetime.now() - timedelta(days=18 * 365 - 30))
 		self.assertFalse(o0.mladoletnik)
 		self.assertTrue(o1.mladoletnik)
 
 	def test_vpisan(self):
 		o2 = Oseba(ime='Janez', priimek='Novak', rojen=None, tip_osebe=TipOsebe.CLAN)
 		self.assertFalse(o2.vpisan)
-		o2.vpisi.append(datetime.utcnow() + timedelta(days=5))
+		o2.vpisi.append(datetime.now() + timedelta(days=5))
 		self.assertTrue(o2.vpisan)
 
-		o2.vpisi.append(datetime.utcnow() + timedelta(days=5))
-		o2.izpisi.append(datetime.utcnow() + timedelta(days=10))
+		o2.vpisi.append(datetime.now() + timedelta(days=5))
+		o2.izpisi.append(datetime.now() + timedelta(days=10))
 		self.assertFalse(o2.vpisan)
 
-		o2.vpisi.append(datetime.utcnow() + timedelta(days=10))
-		o2.izpisi.append(datetime.utcnow() + timedelta(days=5))
+		o2.vpisi.append(datetime.now() + timedelta(days=10))
+		o2.izpisi.append(datetime.now() + timedelta(days=5))
 		self.assertTrue(o2.vpisan)
 
 	def test_merge_vpisi_izpisi(self):
-		vpisi = [datetime.utcnow() - timedelta(days=i * 10) for i in range(4)]
-		izpisi = [datetime.utcnow() - timedelta(days=i * 5) for i in range(4)]
+		vpisi = [datetime.now() - timedelta(days=i * 10) for i in range(4)]
+		izpisi = [datetime.now() - timedelta(days=i * 5) for i in range(4)]
 
 		empty_oseba0 = Oseba(ime='ime', priimek='priimek', rojen=date.today(), geslo=None, tip_osebe=[], kontakti=[], vpisi=[], izpisi=[])
 		empty_oseba1 = copy.deepcopy(empty_oseba0)

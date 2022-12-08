@@ -135,10 +135,10 @@ class Oseba(Entity):
 		return unidecode(f'{self.ime}{self.priimek}_{id}'.replace(' ', '').lower())
 
 	def nov_vpis(self):
-		self.vpisi.append(datetime.utcnow())
+		self.vpisi.append(datetime.now())
 
 	def nov_izpis(self):
-		self.izpisi.append(datetime.utcnow())
+		self.izpisi.append(datetime.now())
 
 	@property
 	def starost(self) -> float:

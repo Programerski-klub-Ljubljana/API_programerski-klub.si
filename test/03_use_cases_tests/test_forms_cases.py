@@ -126,8 +126,8 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 	def assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
 		# MORA IMETI VPIS.
 		if vpis:
-			before = datetime.utcnow()
-			self.assertAlmostEqual(before.timestamp() / 10000, status_oseba.vpisi[0].timestamp() / 10000, places=0)
+			before = datetime.now()
+			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=0)
 			self.assertEqual(len(status_oseba.vpisi), 1)
 
 		# MORA IMETI ENAKE INFORMACIJE

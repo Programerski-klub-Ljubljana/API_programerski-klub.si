@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 async def vpis(
 		ime: str = Form(min_length=2), priimek: str = Form(min_length=2),
 		dan_rojstva: int = Form(ge=1, le=31), mesec_rojstva: int = Form(ge=1, le=12),
-		leto_rojstva: int = Form(ge=datetime.utcnow().year - 120, le=datetime.utcnow().year),
+		leto_rojstva: int = Form(ge=datetime.now().year - 120, le=datetime.now().year),
 		email: str = Form(min_length=3), telefon: str = Form(min_length=4),
 		ime_skrbnika: str | None = Form(None, min_length=2), priimek_skrbnika: str | None = Form(None, min_length=2),
 		email_skrbnika: str | None = Form(None, min_length=3), telefon_skrbnika: str | None = Form(None, min_length=3)):

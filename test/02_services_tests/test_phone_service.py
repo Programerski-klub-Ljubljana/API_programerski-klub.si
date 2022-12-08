@@ -15,7 +15,7 @@ class test_phone(unittest.TestCase):
 		self.assertTrue(self.service.check_existance('051240885'))
 
 	def test_send_sms(self):
-		text = f"TESTING: {datetime.utcnow()}"
+		text = f"TESTING: {datetime.now()}"
 		self.assertTrue(self.service.send_sms('+38651240885', text))
 
 	def test_format(self):

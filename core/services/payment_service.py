@@ -13,7 +13,7 @@ class Customer:
 	description: str
 	phone: str
 	email: str
-	default_source: str
+	# default_source: str
 
 	id: str = None
 	balance: int = None

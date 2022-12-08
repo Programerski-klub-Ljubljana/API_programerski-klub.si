@@ -123,7 +123,7 @@ class test_vclani_osebo(unittest.TestCase):
 		self.oseba = Oseba(ime='ime0', priimek='priimek0', rojen=None, kontakti=[
 			Kontakt(data='data0', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
-		self.ze_vpisana_oseba = Oseba(ime='ime', priimek='priimek', vpisi=[datetime.utcnow()], rojen=None, kontakti=[
+		self.ze_vpisana_oseba = Oseba(ime='ime', priimek='priimek', vpisi=[datetime.now()], rojen=None, kontakti=[
 			Kontakt(data='data1', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
 		with self.case.db.transaction() as root:
@@ -137,9 +137,9 @@ class test_vclani_osebo(unittest.TestCase):
 
 	def test_vclanitev(self):
 		self.assertFalse(self.oseba.vpisan)
-		before = datetime.utcnow()
+		before = datetime.now()
 		self.assertTrue(self.case.exe(self.oseba._id))
-		after = datetime.utcnow()
+		after = datetime.now()
 
 		with self.case.db.transaction() as root:
 			vpisi = root.oseba[0].vpisi
@@ -164,10 +164,10 @@ class test_izpisi_osebo(unittest.TestCase):
 		APP.init(seed=False)
 		self.case: Izpisi_osebo = APP.cases.izpisi_osebo()
 
-		self.oseba = Oseba(ime='ime0', priimek='priimek0', rojen=None, vpisi=[datetime.utcnow()], kontakti=[
+		self.oseba = Oseba(ime='ime0', priimek='priimek0', rojen=None, vpisi=[datetime.now()], kontakti=[
 			Kontakt(data='data0', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
-		self.ze_izpisana_oseba = Oseba(ime='ime', priimek='priimek', izpisi=[datetime.utcnow()], rojen=None, kontakti=[
+		self.ze_izpisana_oseba = Oseba(ime='ime', priimek='priimek', izpisi=[datetime.now()], rojen=None, kontakti=[
 			Kontakt(data='data1', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
 
 		with self.case.db.transaction() as root:
@@ -181,9 +181,9 @@ class test_izpisi_osebo(unittest.TestCase):
 
 	def test_izpis(self):
 		self.assertTrue(self.oseba.vpisan)
-		before = datetime.utcnow()
+		before = datetime.now()
 		self.assertTrue(self.case.exe(self.oseba._id))
-		after = datetime.utcnow()
+		after = datetime.now()
 
 		with self.case.db.transaction() as root:
 			izpisi = root.oseba[0].izpisi

@@ -79,8 +79,8 @@ class Entity(Persistent):
 		attr = {
 			'_id': shortuuid.uuid(),
 			'_type': self.type.upper(),
-			'_created': datetime.utcnow(),
-			'_updated': datetime.utcnow(),
+			'_created': datetime.now(),
+			'_updated': datetime.now(),
 			'_logs': Elist(),
 			'_connections': Elist(),
 		}
