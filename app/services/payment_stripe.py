@@ -46,11 +46,9 @@ class StripeCustomer(Customer, StripeObj):
 			phone=obj.phone, email=obj.email,
 			metadata={'entity_id': obj.entity_id}))
 
-		created = datetime.fromtimestamp(kwargs.pop('created'))
-
 		return cutils.call(StripeCustomer, **{
 			**kwargs,
-			'created': created,
+			'created': datetime.fromtimestamp(kwargs.pop('created')),
 			'entity_id': kwargs['metadata']['entity_id']
 		})
 
@@ -59,14 +57,29 @@ class StripeSubscription(Subscription, StripeObj):
 
 	@staticmethod
 	def create(obj: Subscription):
-		return stripe.Subscription.create(
+		kwargs = dict(stripe.Subscription.create(
 			description=obj.description,
-			items=obj.items,
+			items=[{'price': price_id} for price_id in obj.prices],
 			customer=obj.customer.id,
 			collection_method=obj.collection_method.value,
 			days_until_due=obj.days_until_due,
 			trial_period_days=obj.trial_period_days,
-			metadata={'entity_id': obj.customer.entity_id})
+			metadata={'entity_id': obj.entity_id}))
+
+		trial_start = datetime.fromtimestamp(kwargs.pop('trial_start'))
+		trial_end = datetime.fromtimestamp(kwargs.pop('trial_end'))
+
+		trial_period_days = (trial_end - trial_start).days
+
+		return cutils.call(StripeSubscription, **{
+			**kwargs,
+			'trial_period_days': trial_period_days,
+			'created': datetime.fromtimestamp(kwargs.pop('created')),
+			'start_date': datetime.fromtimestamp(kwargs.pop('start_date')),
+			'trial_start': trial_start,
+			'trial_end': trial_end,
+			'entity_id': kwargs['metadata']['entity_id']
+		})
 
 	def json(self) -> dict[str, any]:
 		_dict = self.__dict__.copy()
@@ -154,17 +167,33 @@ class PaymentStripe(PaymentService):
 
 	""" SUBSCRIPTION """
 
+	def cancel_subscription(self, entity_id: str) -> bool:
+		subscription = self.get_subscription(entity_id=entity_id)
+
+		if subscription is None:
+			return False
+
+		try:
+			return stripe.Subscription.delete(sid=subscription.id).deleted
+		except stripe.error.InvalidRequestError as err:
+			return False
+
 	def update_subscription(self) -> Subscription | None:
 		pass
 
-	def cancel_subscription(self) -> Subscription | None:
-		pass
-
 	def list_subscription(self) -> list[Subscription]:
-		pass
+		all_subscriptions = []
 
-	def delete_subscription(self) -> bool:
-		pass
+		starting_after = None
+		while True:
+			subscriptions: stripe.Subscription = stripe.Subscription.list(limit=self.page_limit, starting_after=starting_after)
+			all_subscriptions += subscriptions.data
+			if subscriptions.has_more:
+				starting_after = subscriptions[-1].id
+			else:
+				break
+
+		return [StripeSubscription.parse(**dict(c)) for c in all_subscriptions]
 
 	def get_subscription(self, entity_id: str) -> Subscription | None:
 		subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")

@@ -39,22 +39,23 @@ class CollectionMethod(EntityEnum):
 
 @dataclass
 class Subscription:
-	entity_id: str
 	description: str
-	items: list[str]
+	prices: list[str]
 	customer: Customer
 	collection_method: CollectionMethod
 	days_until_due: int
 	trial_period_days: int
 
+	entity_id: str = None
 	id: str = None
 	status: SubscriptionStatus = None
 	currency: str = None
 
-	start: datetime = None
+	start_date: datetime = None
 	created: datetime = None
 	trial_start: datetime = None
 	trial_end: datetime = None
+
 
 # add_invoice_items
 # pending_invoice_item_interval
@@ -90,11 +91,11 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def update_subscription(self) -> Subscription | None:
+	def get_subscription(self, entity_id: str) -> Subscription | None:
 		pass
 
 	@abstractmethod
-	def cancel_subscription(self) -> Subscription | None:
+	def update_subscription(self) -> Subscription | None:
 		pass
 
 	@abstractmethod
@@ -106,5 +107,5 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def delete_subscription(self) -> bool:
+	def cancel_subscription(self, entity_id: str) -> bool:
 		pass

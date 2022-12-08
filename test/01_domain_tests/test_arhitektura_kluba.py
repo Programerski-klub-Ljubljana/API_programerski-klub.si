@@ -12,7 +12,7 @@ class test_tip_osebe(unittest.TestCase):
 		dovoljenja = TipOsebe.dovoljenja()
 		self.assertGreater(len(values), 0)
 		self.assertEqual(len(dovoljenja.values()), len(dovoljenja.keys()))
-		for sk, sv in dovoljenja.items():
+		for sk, sv in dovoljenja.prices():
 			self.assertIn(sk, sv)
 
 

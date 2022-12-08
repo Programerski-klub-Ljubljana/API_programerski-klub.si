@@ -120,7 +120,7 @@ def vaje_naloge(root, **kwargs):
 
 @traced
 def logs(root, **kwargs):
-	for name, table in root.__dict__.items():
+	for name, table in root.__dict__.prices():
 		for entity in table:
 			for _ in range(randint(0, kwargs['logs'])):
 				log = Log(

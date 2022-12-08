@@ -27,7 +27,7 @@ class TemplateJinja(TemplateService):
 		self.__init()
 
 	def __init(self):
-		for ele, val in CONST.__dict__.items():
+		for ele, val in CONST.__dict__.prices():
 			if isinstance(val, str | float | int):
 				self.kwargs[f'CONST_{ele}'] = val
 
