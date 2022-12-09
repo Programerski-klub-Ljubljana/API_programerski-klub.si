@@ -91,15 +91,11 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def get_subscription(self, entity_id: str) -> Subscription | None:
+	def get_subscription(self, entity_id: str, with_tries: bool = True) -> Subscription | None:
 		pass
 
 	@abstractmethod
-	def update_subscription(self) -> Subscription | None:
-		pass
-
-	@abstractmethod
-	def list_subscription(self) -> list[Subscription]:
+	def list_subscriptions(self) -> list[Subscription]:
 		pass
 
 	@abstractmethod
@@ -107,5 +103,5 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def cancel_subscription(self, entity_id: str) -> bool:
+	def cancel_subscription(self, entity_id: str, with_tries: bool = True) -> bool:
 		pass
