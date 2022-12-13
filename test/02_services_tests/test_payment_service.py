@@ -1,20 +1,29 @@
 import unittest
 from datetime import datetime, timedelta
+from random import randint
 
 from app import APP
-from core.services.payment_service import PaymentService, Customer, Subscription, CollectionMethod
+from core.services.payment_service import PaymentService, Customer, Subscription, CollectionMethod, SubscriptionStatus
 
 
 class test_customer(unittest.TestCase):
+	prices = None
+	customer = None
+	subscription = None
 
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
 		cls.service: PaymentService = APP.services.payment()
 		cls.prices = ["klubska_clanarina"]
-		cls.customer = Customer(entity_id="entity_id0", name='name', description='desciption', phone='phone', email='jar.fmf@gmail.com')
+		cls.customer = Customer(entity_id=f"entity_id{randint(0, 10000)}", name='name', description='desciption', phone='phone', email='jar.fmf@gmail.com')
 		cls.customer_fail = Customer(entity_id="entity_id1", name='name', description='desciption', phone='phone', email='xxx')
-		cls.subscription = None
+		cls.subscription = Subscription(
+			entity_id=cls.customer.entity_id,
+			description='desciption',
+			prices=cls.prices,
+			customer=cls.customer, collection_method=CollectionMethod.SEND_INVOICE,
+			days_until_due=7, trial_period_days=0)
 
 	def assertEqualCustomer(self, res_c, original):
 		self.assertEqual(original.entity_id, res_c.entity_id)
@@ -78,23 +87,20 @@ class test_customer(unittest.TestCase):
 
 	def test_06_create_subscription(self):
 		customer = self.service.get_customer(entity_id=self.customer.entity_id)
-		self.subscription = Subscription(
-			entity_id=customer.entity_id,
-			description='desciption',
-			prices=self.prices,
-			customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
-			days_until_due=7, trial_period_days=0)
+		self.subscription.customer = customer
 		sub = self.service.create_subscription(subscription=self.subscription)
 		self.assertEqualSubscription(sub, self.subscription)
 
-	def test_07_list_subscription(self):
-		subscriptions = self.service.list_subscriptions()
-		self.assertEqual(subscriptions, [self.subscription])
-
-	def test_08_get_subscriptions(self):
+	def test_07_get_subscriptions(self):
 		subscription = self.service.get_subscription(entity_id=self.customer.entity_id, with_tries=True)
+		self.assertNotEqual(subscription.status, SubscriptionStatus.CANCELED)
 		self.assertIsNotNone(subscription)
 		self.assertEqualSubscription(subscription, self.subscription)
+
+	def test_08_list_subscription(self):
+		subscriptions = self.service.list_subscriptions()
+		self.assertEqual(len(subscriptions), 1)
+		self.assertEqualSubscription(subscriptions[0], self.subscription)
 
 	def test_09_create_subscription_unknown_customer(self):
 		customer = self.customer_fail
@@ -122,7 +128,7 @@ class test_customer(unittest.TestCase):
 		self.assertFalse(self.service.cancel_subscription(entity_id='xxx', with_tries=False))
 
 	def test_13_cancel_subscription(self):
-		self.assertTrue(self.service.cancel_subscription(entity_id=self.customer.entity_id, with_tries=True))
+		self.assertTrue(self.service.cancel_subscription(entity_id=self.customer.entity_id, with_tries=False))
 
 	def test_99_delete_customer(self):
 		deleted = self.service.delete_customer(entity_id=self.customer.entity_id, with_tries=True)

@@ -7,7 +7,7 @@ import stripe
 from autologging import traced
 
 from core import cutils
-from core.services.payment_service import PaymentService, Customer, Subscription
+from core.services.payment_service import PaymentService, Customer, Subscription, SubscriptionStatus
 
 
 @dataclass
@@ -102,6 +102,7 @@ class PaymentStripe(PaymentService):
 		old_customer = self.get_customer(customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
+			print("Customer allready exists")
 			return old_customer
 
 		try:
@@ -146,9 +147,10 @@ class PaymentStripe(PaymentService):
 		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
 
 		if customer is None:
+			print("Customer allready exists")
 			return False
 
-		tries = self.tries_before_fail
+		tries = self.tries_before_fail if with_tries else 1
 
 		while True:
 			try:
@@ -157,7 +159,7 @@ class PaymentStripe(PaymentService):
 				pass
 
 			tries -= 1
-			if tries == 0:
+			if tries <= 0:
 				return False
 			time.sleep(1)
 
@@ -167,7 +169,7 @@ class PaymentStripe(PaymentService):
 		old_subscription = self.get_subscription(subscription.entity_id, with_tries=False)
 
 		if old_subscription is not None:
-			print('allready created')
+			print("Subscription allready exists")
 			return old_subscription
 
 		try:
@@ -213,20 +215,20 @@ class PaymentStripe(PaymentService):
 		subscription = self.get_subscription(entity_id=entity_id, with_tries=with_tries)
 
 		if subscription is None:
+			print("Subscription does not exists")
 			return False
 
-		tries = self.tries_before_fail
+		tries = self.tries_before_fail if with_tries else 1
 
 		while True:
 			try:
 				sub = stripe.Subscription.delete(sid=subscription.id)
-				print(sub)
-				return sub.deleted
+				return sub.status == SubscriptionStatus.CANCELED.value
 			except stripe.error.InvalidRequestError as err:
 				print(err)
 				pass
 
 			tries -= 1
-			if tries == 0:
+			if tries <= 0:
 				return False
 			time.sleep(1)

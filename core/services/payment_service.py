@@ -23,13 +23,13 @@ class Customer:
 
 
 class SubscriptionStatus(EntityEnum):
-	incomplete = auto()
-	incomplete_expired = auto()
-	trialing = auto()
-	active = auto()
-	past_due = auto()
-	canceled = auto()
-	unpaid = auto()
+	INCOMPLETE = 'incomplete'
+	INCOMPLETE_EXPIRED = 'incomplete_expired'
+	TRIALING = 'trialing'
+	ACTIVE = 'active'
+	PAST_DUE = 'past_due'
+	CANCELED = 'canceled'
+	UNPAID = 'unpaid'
 
 
 class CollectionMethod(EntityEnum):
