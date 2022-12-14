@@ -94,7 +94,7 @@ class PaymentStripe(PaymentService):
 		stripe.api_key = api_key
 		self.page_limit = 100
 		self.tries_before_fail = 30
-		self.sleep_before_next_trie = 2
+		self.sleep_before_next_try = 2
 
 	""" CUSTOMER """
 
@@ -103,7 +103,7 @@ class PaymentStripe(PaymentService):
 
 		if old_customer is not None:
 			print("Customer allready exists")
-			return old_customer
+			return None
 
 		try:
 			return StripeCustomer.create(customer)
@@ -117,14 +117,14 @@ class PaymentStripe(PaymentService):
 			customers = self.search_customers(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
 
-			if len(customers) == 0 and tries <= 0:
+			if len(customers) == 0 and tries < 0:
 				return None
 			elif len(customers) == 1:
 				return customers[0]
 			elif len(customers) > 1:
 				raise Exception(f"Customers with duplicated entity_id: {customers}")
 
-			time.sleep(self.sleep_before_next_trie)
+			time.sleep(self.sleep_before_next_try)
 
 	def list_customers(self) -> list[Customer]:
 		all_customers = []
@@ -147,7 +147,7 @@ class PaymentStripe(PaymentService):
 		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
 
 		if customer is None:
-			print("Customer allready exists")
+			print("Customer does not exists")
 			return False
 
 		tries = self.tries_before_fail if with_tries else 1
@@ -170,7 +170,7 @@ class PaymentStripe(PaymentService):
 
 		if old_subscription is not None:
 			print("Subscription allready exists")
-			return old_subscription
+			return None
 
 		try:
 			return StripeSubscription.create(subscription)
@@ -185,14 +185,14 @@ class PaymentStripe(PaymentService):
 			subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
 
-			if len(subscriptions) == 0 and tries <= 0:
+			if len(subscriptions) == 0 and tries < 0:
 				return None
 			elif len(subscriptions) == 1:
 				return subscriptions[0]
 			elif len(subscriptions) > 1:
 				raise Exception(f"Customers with duplicated entity_id: {subscriptions}")
 
-			time.sleep(self.sleep_before_next_trie)
+			time.sleep(self.sleep_before_next_try)
 
 	def list_subscriptions(self) -> list[Subscription]:
 		all_subscriptions = []
