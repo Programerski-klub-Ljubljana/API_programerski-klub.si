@@ -131,7 +131,7 @@ class test_payment_service(unittest.TestCase):
 	def test_11_cancel_subscription_not_exists(self):
 		self.assertFalse(self.service.cancel_subscription(entity_id='xxx', with_tries=False))
 
-	def test_12_get_subscriptions(self):
+	def test_12_get_subscription(self):
 		subscription = self.service.get_subscription(entity_id=self.customer.entity_id, with_tries=True)
 		self.assertNotEqual(subscription.status, SubscriptionStatus.CANCELED)
 		self.assertIsNotNone(subscription)
@@ -144,6 +144,19 @@ class test_payment_service(unittest.TestCase):
 	def test_14_list_subscription(self):
 		subscriptions = self.service.list_subscriptions()
 		self.assertSubscriptionIn(subscriptions, self.subscription)
+
+	""" SEARCHING SUBSCRIPTION """
+
+	def test_12_search_subscription(self):
+		raise Exception("Search subscription")
+
+	def test_12_search_subscription_email(self):
+		raise Exception("Search subscription")
+
+	""" SEARCHING CUSTOMER """
+
+	def test_04_search_customer(self):
+		raise Exception("Test search customer")
 
 	def test_15_cancel_subscription(self):
 		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
@@ -168,6 +181,7 @@ class test_payment_service(unittest.TestCase):
 			time.sleep(1)
 
 		raise Exception("Is not really deleted!")
+
 
 if __name__ == '__main__':
 	unittest.main()
