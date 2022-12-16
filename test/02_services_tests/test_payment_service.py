@@ -132,24 +132,23 @@ class test_payment_service(unittest.TestCase):
 		self.assertFalse(self.service.cancel_subscription(entity_id='xxx', with_tries=False))
 
 	def test_060_get_subscription(self):
-		subscription = self.service.get_subscription(entity_id=self.customer.entity_id, with_tries=True)
+		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=True)
 		self.assertNotEqual(subscription.status, SubscriptionStatus.CANCELED)
 		self.assertIsNotNone(subscription)
 		self.assertEqualSubscription(subscription, self.subscription)
 
-	def test_065_create_subscription_already_exists(self):
-		sub = self.service.create_subscription(subscription=self.subscription)
-		self.assertIsNone(sub)
-
-	def test_070_list_subscription(self):
+	def test_065_list_subscription(self):
 		subscriptions = self.service.list_subscriptions()
 		self.assertSubscriptionIn(subscriptions, self.subscription)
+
+	def test_070_create_subscription_already_exists(self):
+		sub = self.service.create_subscription(subscription=self.subscription)
+		self.assertIsNone(sub)
 
 	""" SEARCHING SUBSCRIPTION """
 
 	def test_075_search_subscription(self):
-		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}'")
-		print(subscriptions)
+		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}' AND -status:'canceled'")
 		self.assertEqual(len(subscriptions), 1)
 		self.assertEqualSubscription(subscriptions[0], self.subscription)
 
@@ -192,6 +191,13 @@ class test_payment_service(unittest.TestCase):
 
 		raise Exception("Is not really deleted!")
 
+	def test_105_get_canceled_subscription(self):
+		sub = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
+		self.assertIsNone(sub)
+
+	def test_110_get_celeted_customer(self):
+		sub = self.service.get_customer(entity_id=self.customer.entity_id, with_tries=False)
+		self.assertIsNone(sub)
 
 if __name__ == '__main__':
 	unittest.main()
