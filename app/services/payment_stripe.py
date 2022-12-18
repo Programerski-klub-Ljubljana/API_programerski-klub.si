@@ -182,7 +182,7 @@ class PaymentStripe(PaymentService):
 		tries = self.tries_before_fail if with_tries else 1
 
 		while True:
-			subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}' AND -status:'canceled'")
+			subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
 
 			if len(subscriptions) == 0 and tries < 0:

@@ -148,7 +148,7 @@ class test_payment_service(unittest.TestCase):
 	""" SEARCHING SUBSCRIPTION """
 
 	def test_075_search_subscription(self):
-		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}' AND -status:'canceled'")
+		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}'")
 		self.assertEqual(len(subscriptions), 1)
 		self.assertEqualSubscription(subscriptions[0], self.subscription)
 
@@ -193,9 +193,10 @@ class test_payment_service(unittest.TestCase):
 
 	def test_105_get_canceled_subscription(self):
 		sub = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
-		self.assertIsNone(sub)
+		self.assertIsNotNone(sub)
+		self.assertEqual(sub.status, SubscriptionStatus.CANCELED)
 
-	def test_110_get_celeted_customer(self):
+	def test_110_get_deleted_customer(self):
 		sub = self.service.get_customer(entity_id=self.customer.entity_id, with_tries=False)
 		self.assertIsNone(sub)
 
