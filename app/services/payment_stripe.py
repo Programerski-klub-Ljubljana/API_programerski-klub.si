@@ -99,7 +99,7 @@ class PaymentStripe(PaymentService):
 	""" CUSTOMER """
 
 	def create_customer(self, customer: StripeCustomer) -> Customer | None:
-		old_customer = self.get_customer(customer.entity_id, with_tries=False)
+		old_customer = self.get_customer(entity_id=customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
 			print("Customer allready exists")
@@ -166,7 +166,7 @@ class PaymentStripe(PaymentService):
 	""" SUBSCRIPTION """
 
 	def create_subscription(self, subscription: Subscription):
-		old_subscription = self.get_subscription(subscription.entity_id, with_tries=False)
+		old_subscription = self.get_subscription(entity_id=subscription.entity_id, with_tries=False)
 
 		if old_subscription is not None:
 			print("Subscription allready exists")
@@ -190,7 +190,7 @@ class PaymentStripe(PaymentService):
 			elif len(subscriptions) == 1:
 				return subscriptions[0]
 			elif len(subscriptions) > 1:
-				raise Exception(f"Customers with duplicated entity_id: {subscriptions}")
+				raise Exception(f"Subscription with duplicated entity_id: {subscriptions}")
 
 			time.sleep(self.sleep_before_next_try)
 

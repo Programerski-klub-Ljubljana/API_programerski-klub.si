@@ -1,3 +1,4 @@
+import logging
 import time
 import unittest
 from datetime import datetime, timedelta
@@ -16,6 +17,7 @@ class test_payment_service(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		APP.init(seed=False)
+		logging.basicConfig(level="ERROR")
 		cls.service: PaymentService = APP.services.payment()
 		cls.prices = ["klubska_clanarina"]
 
@@ -96,7 +98,8 @@ class test_payment_service(unittest.TestCase):
 		self.assertCustomerIn(customers, self.customer)
 
 	def test_030_create_customer_already_exists(self):
-		self.assertIsNone(self.service.create_customer(self.customer))
+		for i in range(10):
+			self.assertIsNone(self.service.create_customer(self.customer))
 
 	""" SUBSCRIPTIONS """
 
@@ -142,12 +145,13 @@ class test_payment_service(unittest.TestCase):
 		self.assertSubscriptionIn(subscriptions, self.subscription)
 
 	def test_070_create_subscription_already_exists(self):
-		sub = self.service.create_subscription(subscription=self.subscription)
-		self.assertIsNone(sub)
+		for i in range(10):
+			self.assertIsNone(self.service.create_subscription(subscription=self.subscription), msg=i)
 
 	""" SEARCHING SUBSCRIPTION """
 
 	def test_075_search_subscription(self):
+		assert self.subscription.entity_id != 'xxx'
 		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}'")
 		self.assertEqual(len(subscriptions), 1)
 		self.assertEqualSubscription(subscriptions[0], self.subscription)
@@ -199,6 +203,7 @@ class test_payment_service(unittest.TestCase):
 	def test_110_get_deleted_customer(self):
 		sub = self.service.get_customer(entity_id=self.customer.entity_id, with_tries=False)
 		self.assertIsNone(sub)
+
 
 if __name__ == '__main__':
 	unittest.main()
