@@ -13,6 +13,9 @@ from core.services.payment_service import PaymentService, Customer, Subscription
 log = logging.getLogger(__name__)
 
 
+# TODO: Fix problems with duplications!!!
+
+
 @dataclass
 class StripeObj(ABC):
 
@@ -92,17 +95,19 @@ class StripeSubscription(Subscription, StripeObj):
 
 @traced
 class PaymentStripe(PaymentService):
+	tries_before_fail = 30
+	tries_before_create = 3
+	tries_before_delete = 3
+	page_limit = 100
+	sleep_before_next_try = 2
 
 	def __init__(self, api_key: str):
 		stripe.api_key = api_key
-		self.page_limit = 100
-		self.tries_before_fail = 30
-		self.sleep_before_next_try = 2
 
 	""" CUSTOMER """
 
 	def create_customer(self, customer: StripeCustomer) -> Customer | None:
-		old_customer = self.get_customer(entity_id=customer.entity_id, with_tries=False)
+		old_customer = self.get_customer(entity_id=customer.entity_id, delay=False, tries=self.tries_before_create)
 
 		if old_customer is not None:
 			log.warning("Customer allready exists")
@@ -113,9 +118,7 @@ class PaymentStripe(PaymentService):
 		except stripe.error.InvalidRequestError as err:
 			return None
 
-	def get_customer(self, entity_id: str, with_tries: bool = True) -> Customer | None:
-		tries = self.tries_before_fail if with_tries else 1
-
+	def get_customer(self, entity_id: str, delay: bool = False, tries: int = tries_before_fail) -> Customer | None:
 		while True:
 			customers = self.search_customers(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
@@ -127,7 +130,8 @@ class PaymentStripe(PaymentService):
 			elif len(customers) > 1:
 				raise Exception(f"Customers with duplicated entity_id: {customers}")
 
-			time.sleep(self.sleep_before_next_try)
+			if delay:
+				time.sleep(self.sleep_before_next_try)
 
 	def list_customers(self) -> list[Customer]:
 		all_customers = []
@@ -146,15 +150,14 @@ class PaymentStripe(PaymentService):
 	def search_customers(self, query: str) -> list[Customer]:
 		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
 
-	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
-		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
+	def delete_customer(self, entity_id: str) -> bool:
+		customer = self.get_customer(entity_id=entity_id, delay=False, tries=self.tries_before_delete)
 
 		if customer is None:
 			log.warning("Customer does not exists!")
 			return False
 
-		tries = self.tries_before_fail if with_tries else 1
-
+		tries = self.tries_before_fail
 		while True:
 			try:
 				return stripe.Customer.delete(sid=customer.id).deleted
@@ -164,12 +167,12 @@ class PaymentStripe(PaymentService):
 			tries -= 1
 			if tries <= 0:
 				return False
-			time.sleep(1)
+			time.sleep(self.sleep_before_next_try)
 
 	""" SUBSCRIPTION """
 
 	def create_subscription(self, subscription: Subscription):
-		old_subscription = self.get_subscription(entity_id=subscription.entity_id, with_tries=False)
+		old_subscription = self.get_subscription(entity_id=subscription.entity_id, delay=False, tries=self.tries_before_create)
 
 		if old_subscription is not None:
 			log.error("Subscription allready exists")
@@ -181,9 +184,7 @@ class PaymentStripe(PaymentService):
 			log.error(err)
 			return None
 
-	def get_subscription(self, entity_id: str, with_tries: bool = True) -> Subscription | None:
-		tries = self.tries_before_fail if with_tries else 1
-
+	def get_subscription(self, entity_id: str, delay: bool = False, tries=tries_before_fail) -> Subscription | None:
 		while True:
 			subscriptions = self.search_subscription(f"metadata['entity_id']:'{entity_id}'")
 			tries -= 1
@@ -195,7 +196,8 @@ class PaymentStripe(PaymentService):
 			elif len(subscriptions) > 1:
 				raise Exception(f"Subscription with duplicated entity_id: {subscriptions}")
 
-			time.sleep(self.sleep_before_next_try)
+			if delay:
+				time.sleep(self.sleep_before_next_try)
 
 	def list_subscriptions(self) -> list[Subscription]:
 		all_subscriptions = []
@@ -214,15 +216,14 @@ class PaymentStripe(PaymentService):
 	def search_subscription(self, query: str) -> list[Subscription]:
 		return [StripeSubscription.parse(**dict(s)) for s in stripe.Subscription.search(query=query, limit=self.page_limit).data]
 
-	def cancel_subscription(self, entity_id: str, with_tries: bool = True) -> bool:
-		subscription = self.get_subscription(entity_id=entity_id, with_tries=with_tries)
+	def cancel_subscription(self, entity_id: str) -> bool:
+		subscription = self.get_subscription(entity_id=entity_id, delay=False, tries=self.tries_before_delete)
 
 		if subscription is None:
 			log.warning("Subscription does not exists")
 			return False
 
-		tries = self.tries_before_fail if with_tries else 1
-
+		tries = self.tries_before_fail
 		while True:
 			try:
 				sub = stripe.Subscription.delete(sid=subscription.id)
@@ -234,4 +235,4 @@ class PaymentStripe(PaymentService):
 			tries -= 1
 			if tries <= 0:
 				return False
-			time.sleep(1)
+			time.sleep(self.sleep_before_next_try)

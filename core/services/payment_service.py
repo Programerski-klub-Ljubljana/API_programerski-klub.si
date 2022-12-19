@@ -1,7 +1,6 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
-from enum import auto
 
 from core.domain._enums import EntityEnum
 
@@ -73,7 +72,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def get_customer(self, entity_id: str, with_tries: bool = True) -> Customer | None:
+	def get_customer(self, entity_id: str, delay: bool = False, tries: int = None) -> Customer | None:
 		pass
 
 	@abstractmethod
@@ -81,7 +80,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def delete_customer(self, entity_id: str, with_tries: bool = True) -> bool:
+	def delete_customer(self, entity_id: str) -> bool:
 		pass
 
 	""" SUBSCRIPTION """
@@ -91,7 +90,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def get_subscription(self, entity_id: str, with_tries: bool = True) -> Subscription | None:
+	def get_subscription(self, entity_id: str, delay: bool = False, tries: int = None) -> Subscription | None:
 		pass
 
 	@abstractmethod
@@ -103,5 +102,5 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def cancel_subscription(self, entity_id: str, with_tries: bool = True) -> bool:
+	def cancel_subscription(self, entity_id: str) -> bool:
 		pass

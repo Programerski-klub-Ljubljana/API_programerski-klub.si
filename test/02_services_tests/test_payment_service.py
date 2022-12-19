@@ -78,38 +78,46 @@ class test_payment_service(unittest.TestCase):
 		self.assertEqualCustomer(customer, self.customer)
 
 	def test_005_get_customer_not_exists(self):
-		customer = self.service.get_customer(entity_id='xxx', with_tries=False)
+		customer = self.service.get_customer(entity_id='xxx', tries=3)
 		self.assertIsNone(customer)
 
 	def test_010_delete_customer_not_exists(self):
-		deleted = self.service.delete_customer(entity_id='xxx', with_tries=False)
+		deleted = self.service.delete_customer(entity_id='xxx')
 		self.assertFalse(deleted)
 
-	def test_015_create_customer_wrong_email(self):
+	def test_015_search_customer_not_found(self):
+		customers = self.service.search_customers(query=f"metadata['entity_id']:'xxx'")
+		self.assertEqual(len(customers), 0)
+
+	def test_020_create_customer_wrong_email(self):
 		customer = self.service.create_customer(self.customer_fail)
 		self.assertIsNone(customer)
 
-	def test_020_get_customer(self):
-		customer = self.service.get_customer(entity_id=self.customer.entity_id)
+	def test_025_get_customer(self):
+		customer = self.service.get_customer(entity_id=self.customer.entity_id,delay=True)
 		self.assertEqualCustomer(customer, self.customer)
 
-	def test_025_list_customers(self):
+	def test_030_list_customers(self):
 		customers = self.service.list_customers()
 		self.assertCustomerIn(customers, self.customer)
 
-	def test_030_create_customer_already_exists(self):
-		for i in range(10):
-			self.assertIsNone(self.service.create_customer(self.customer))
+	def test_035_search_customer(self):
+		customers = self.service.search_customers(query=f"metadata['entity_id']:'{self.customer.entity_id}'")
+		self.assertEqual(len(customers), 1)
+		self.assertEqualCustomer(customers[0], self.customer)
+
+	def test_040_create_customer_already_exists(self):
+		self.assertIsNone(self.service.create_customer(self.customer))
 
 	""" SUBSCRIPTIONS """
 
-	def test_035_create_subscription(self):
+	def test_045_create_subscription(self):
 		customer = self.service.get_customer(entity_id=self.customer.entity_id)
 		self.subscription.customer = customer
 		sub = self.service.create_subscription(subscription=self.subscription)
 		self.assertEqualSubscription(sub, self.subscription)
 
-	def test_040_create_subscription_unknown_customer(self):
+	def test_050_create_subscription_unknown_customer(self):
 		customer = self.customer_fail
 		customer.id = 'xxx'
 		self.assertIsNone(self.service.create_subscription(
@@ -119,7 +127,7 @@ class test_payment_service(unittest.TestCase):
 				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
 				days_until_due=7, trial_period_days=7)))
 
-	def test_045_create_subscription_unknown_price(self):
+	def test_055_create_subscription_unknown_price(self):
 		customer = self.service.get_customer(entity_id=self.customer.entity_id)
 		self.assertIsNone(self.service.create_subscription(
 			subscription=Subscription(
@@ -128,80 +136,70 @@ class test_payment_service(unittest.TestCase):
 				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
 				days_until_due=7, trial_period_days=7)))
 
-	def test_050_get_subscription_not_exists(self):
-		self.assertIsNone(self.service.get_subscription(entity_id='xxx', with_tries=False))
+	def test_060_get_subscription_not_exists(self):
+		self.assertIsNone(self.service.get_subscription(entity_id='xxx', tries=3))
 
-	def test_055_cancel_subscription_not_exists(self):
-		self.assertFalse(self.service.cancel_subscription(entity_id='xxx', with_tries=False))
+	def test_065_cancel_subscription_not_exists(self):
+		self.assertFalse(self.service.cancel_subscription(entity_id='xxx'))
 
-	def test_060_get_subscription(self):
-		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=True)
+	def test_070_search_subscription_not_found(self):
+		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'xxx'")
+		self.assertEqual(len(subscriptions), 0)
+
+	def test_075_get_subscription(self):
+		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, delay=True)
 		self.assertNotEqual(subscription.status, SubscriptionStatus.CANCELED)
 		self.assertIsNotNone(subscription)
 		self.assertEqualSubscription(subscription, self.subscription)
 
-	def test_065_list_subscription(self):
+	def test_080_list_subscription(self):
 		subscriptions = self.service.list_subscriptions()
 		self.assertSubscriptionIn(subscriptions, self.subscription)
 
-	def test_070_create_subscription_already_exists(self):
-		for i in range(10):
-			self.assertIsNone(self.service.create_subscription(subscription=self.subscription), msg=i)
-
-	""" SEARCHING SUBSCRIPTION """
-
-	def test_075_search_subscription(self):
+	def test_085_search_subscription(self):
 		assert self.subscription.entity_id != 'xxx'
 		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'{self.subscription.entity_id}'")
 		self.assertEqual(len(subscriptions), 1)
 		self.assertEqualSubscription(subscriptions[0], self.subscription)
 
-	def test_080_search_subscription_not_found(self):
-		subscriptions = self.service.search_subscription(query=f"metadata['entity_id']:'xxx'")
-		self.assertEqual(len(subscriptions), 0)
+	def test_090_create_subscription_already_exists(self):
+		self.assertIsNone(self.service.create_subscription(subscription=self.subscription))
 
-	""" SEARCHING CUSTOMER """
+	""" DELETING EVERYTHING """
 
-	def test_085_search_customer(self):
-		customers = self.service.search_customers(query=f"metadata['entity_id']:'{self.customer.entity_id}'")
-		self.assertEqual(len(customers), 1)
-		self.assertEqualCustomer(customers[0], self.customer)
-
-	def test_090_search_customer_not_found(self):
-		customers = self.service.search_customers(query=f"metadata['entity_id']:'xxx'")
-		self.assertEqual(len(customers), 0)
-
-	def test_095_cancel_subscription(self):
-		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
+	def test_100_cancel_subscription(self):
+		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id)
 		self.assertEqual(subscription.status, SubscriptionStatus.ACTIVE)
 
-		deleted = self.service.cancel_subscription(entity_id=self.subscription.entity_id, with_tries=False)
+		deleted = self.service.cancel_subscription(entity_id=self.subscription.entity_id)
 		self.assertTrue(deleted)
 
-		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
+		subscription = self.service.get_subscription(entity_id=self.subscription.entity_id)
 		self.assertEqual(subscription.status, SubscriptionStatus.CANCELED)
 
-	def test_100_delete_customer(self):
-		deleted = self.service.delete_customer(entity_id=self.customer.entity_id, with_tries=True)
+	def test_105_delete_customer(self):
+		deleted = self.service.delete_customer(entity_id=self.customer.entity_id)
 		self.assertTrue(deleted)
 
 		c = 20
 		while c > 0:
-			customer = self.service.get_customer(entity_id=self.customer.entity_id, with_tries=False)
+			customer = self.service.get_customer(entity_id=self.customer.entity_id, tries=3)
 			c -= 1
 			if customer is None:
 				return None
-			time.sleep(1)
+			time.sleep(2)
 
 		raise Exception("Is not really deleted!")
 
-	def test_105_get_canceled_subscription(self):
-		sub = self.service.get_subscription(entity_id=self.subscription.entity_id, with_tries=False)
+	""" CHECK DELETION PROCESS"""
+
+	def test_110_get_canceled_subscription(self):
+		sub = self.service.get_subscription(entity_id=self.subscription.entity_id, tries=3)
 		self.assertIsNotNone(sub)
 		self.assertEqual(sub.status, SubscriptionStatus.CANCELED)
 
-	def test_110_get_deleted_customer(self):
-		sub = self.service.get_customer(entity_id=self.customer.entity_id, with_tries=False)
+	def test_115_get_deleted_customer(self):
+		sub = self.service.get_customer(entity_id=self.customer.entity_id, tries=3)
 		self.assertIsNone(sub)
 
 

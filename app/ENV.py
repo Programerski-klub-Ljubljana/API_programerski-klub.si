@@ -22,3 +22,5 @@ STRIPE_API_KEY = os.environ['STRIPE_API_KEY']
 
 GITHUB_PRIVATE_KEY_PATH = os.environ['GITHUB_PRIVATE_KEY_PATH']
 GITHUB_APP_ID = os.environ['GITHUB_APP_ID']
+
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'TRACE')

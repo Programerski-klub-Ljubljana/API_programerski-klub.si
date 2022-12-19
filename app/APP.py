@@ -86,7 +86,7 @@ services: Services
 cases: UseCases
 
 logging.basicConfig(
-	level=logging.INFO if False else autologging.TRACE,
+	level=ENV.LOG_LEVEL,
 	format="%(filename)+20s ┃ %(funcName)-30s ┃ %(levelname)+8s ┃ %(message)s",
 	handlers=[
 		logging.FileHandler(cutils.root_path("logging.log"), mode='w'),
