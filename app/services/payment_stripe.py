@@ -1,3 +1,4 @@
+import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -8,6 +9,8 @@ from autologging import traced
 
 from core import cutils
 from core.services.payment_service import PaymentService, Customer, Subscription, SubscriptionStatus
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -102,7 +105,7 @@ class PaymentStripe(PaymentService):
 		old_customer = self.get_customer(entity_id=customer.entity_id, with_tries=False)
 
 		if old_customer is not None:
-			print("Customer allready exists")
+			log.warning("Customer allready exists")
 			return None
 
 		try:
@@ -147,7 +150,7 @@ class PaymentStripe(PaymentService):
 		customer = self.get_customer(entity_id=entity_id, with_tries=with_tries)
 
 		if customer is None:
-			print("Customer does not exists")
+			log.warning("Customer does not exists!")
 			return False
 
 		tries = self.tries_before_fail if with_tries else 1
@@ -169,13 +172,13 @@ class PaymentStripe(PaymentService):
 		old_subscription = self.get_subscription(entity_id=subscription.entity_id, with_tries=False)
 
 		if old_subscription is not None:
-			print("Subscription allready exists")
+			log.error("Subscription allready exists")
 			return None
 
 		try:
 			return StripeSubscription.create(subscription)
 		except stripe.error.InvalidRequestError as err:
-			print(err)
+			log.error(err)
 			return None
 
 	def get_subscription(self, entity_id: str, with_tries: bool = True) -> Subscription | None:
@@ -215,7 +218,7 @@ class PaymentStripe(PaymentService):
 		subscription = self.get_subscription(entity_id=entity_id, with_tries=with_tries)
 
 		if subscription is None:
-			print("Subscription does not exists")
+			log.warning("Subscription does not exists")
 			return False
 
 		tries = self.tries_before_fail if with_tries else 1
@@ -225,7 +228,7 @@ class PaymentStripe(PaymentService):
 				sub = stripe.Subscription.delete(sid=subscription.id)
 				return sub.status == SubscriptionStatus.CANCELED.value
 			except stripe.error.InvalidRequestError as err:
-				print(err)
+				log.error(err)
 				pass
 
 			tries -= 1
