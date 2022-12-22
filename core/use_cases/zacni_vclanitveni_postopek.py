@@ -162,13 +162,14 @@ class Zacni_vclanitveni_postopek(UseCase):
 				languages=phone_origin.languages, timezone=phone_origin.timezone,
 				billing_emails=[email_skrbnika if vpis.clan.mladoletnik else email]))
 
-			self.payment.create_subscription(subscription=Subscription(
-				prices=[CONST.payment_prices.klubska_clanarina],
-				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
-				days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days
-			))
-
 			if customer is not None:
 				vpis.clan._id = customer.id
+
+				subscription = self.payment.create_subscription(subscription=Subscription(
+					prices=[CONST.payment_prices.klubska_clanarina],
+					customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
+					days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days
+				))
+				# TODO: You stayed here!
 
 		return vpis
