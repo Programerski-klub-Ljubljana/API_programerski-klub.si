@@ -39,7 +39,8 @@ class StripeCustomer(Customer, StripeObj):
 	def create(obj: Customer):
 		return StripeCustomer.parse(**dict(stripe.Customer.create(
 			name=obj.name, description=obj.description,
-			phone=obj.phone, email=obj.email
+			phone=obj.phone, email=obj.email,
+			invoicing={"email_to": obj.billing_emails}
 		)))
 
 	@staticmethod
@@ -47,7 +48,8 @@ class StripeCustomer(Customer, StripeObj):
 		return cutils.call(StripeCustomer, **{
 			**kwargs,
 			'deleted': kwargs.get('deleted', False),
-			'created': datetime.fromtimestamp(kwargs.get('created', None))
+			'created': datetime.fromtimestamp(kwargs.get('created', None)),
+			'billing_emails': kwargs['invoicing']['billing_emails'],
 		})
 
 
@@ -69,7 +71,7 @@ class StripeSubscription(Subscription, StripeObj):
 			collection_method=obj.collection_method.value,
 			days_until_due=obj.days_until_due,
 			trial_period_days=obj.trial_period_days,
-			expand=['customer']
+			expand=['customer'],
 		)))
 
 	@staticmethod
@@ -108,14 +110,10 @@ def stripe_request(default_value):
 
 @traced
 class PaymentStripe(PaymentService):
-	tries_before_fail = 30
-	tries_before_create = 3
-	tries_before_delete = 3
-	page_limit = 100
-	sleep_before_next_try = 2
 
 	def __init__(self, api_key: str):
 		stripe.api_key = api_key
+		self.page_limit = 100
 
 	""" CUSTOMER """
 

@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum, auto
 
+from app import CONST
 from core.cutils import list_field
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, NivoValidiranosti, TipOsebe
 from core.services.db_service import DbService
+from core.services.payment_service import Customer, PaymentService, Subscription, CollectionMethod
 from core.services.phone_service import PhoneService
 from core.use_cases._usecase import UseCase
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta
@@ -22,6 +24,7 @@ class TipPrekinitveVpisa(str, Enum):
 	# ---- The day after Chuck Norris was born he drove his mother home, he wanted her to get some rest.
 	# ---- Chuck Norris built the hospital that he was born in.
 	HACKER = auto()  # UPORABNIK JE VNESEL VSE NAPACNE PODATKE.
+	NAROCNINA = auto()
 
 
 @dataclass
@@ -70,6 +73,7 @@ class StatusVpisa:
 class Zacni_vclanitveni_postopek(UseCase):
 	db: DbService
 	phone: PhoneService
+	payment: PaymentService
 	validate_kontakts_existances: Preveri_obstoj_kontakta
 	validate_kontakts_ownerships: Poslji_test_ki_preveri_lastnistvo_kontakta
 
@@ -96,7 +100,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# VPISI SAMO IN SAMO CLANA! SKRBNIK SE NE STEJE KOT VPISAN ELEMENT!
 		vpis.clan.nov_vpis()
 
-		# MERGE CLAN
+		# MERGE CLAN IN DB
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=vpis.clan):
 			# CE JE CLAN ZE VPISAN POTEM PREKINI CELOTEN PROCES!
@@ -138,10 +142,10 @@ class Zacni_vclanitveni_postopek(UseCase):
 			if vpis.stevilo_napacnih_podatkov == ST_VALIDACIJ:
 				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
 
-		# CE NI BILO NAPAK...
+		# SE NI VPISAL IN NI BILO NAPAK
 		if len(vpis.razlogi_prekinitve) == 0:
 
-			# SHRANI CLANA IN SKRBNIKA
+			# SHRANI CLANA IN SKRBNIKA V BAZI
 			with self.db.transaction(note=f'Shrani {vpis.clan}') as root:
 				root.save(vpis.clan, unique=True)
 				if vpis.clan.mladoletnik:
@@ -149,5 +153,22 @@ class Zacni_vclanitveni_postopek(UseCase):
 					root.save(vpis.skrbnik, unique=True)
 					await self.validate_kontakts_ownerships.exe(oseba=vpis.skrbnik)
 				await self.validate_kontakts_ownerships.exe(oseba=vpis.clan)
+
+			phone_origin = self.phone.origin(telefon)
+			# SELE KO JE CLAN IN SKRBNIK SHRANJEN NA VARNO V MOJI BAZI USTVARIM PAYMENT FLOW ZA NJEGA
+			# CE GRE PAYMENT V MALORO GA SE VEDNO LAHKO NA ROKE VPISEM
+			customer = self.payment.create_customer(customer=Customer(
+				name=f'{vpis.clan.ime} {vpis.clan.priimek}', phone=telefon, email=email,
+				languages=phone_origin.languages, timezone=phone_origin.timezone,
+				billing_emails=[email_skrbnika if vpis.clan.mladoletnik else email]))
+
+			self.payment.create_subscription(subscription=Subscription(
+				prices=[CONST.payment_prices.klubska_clanarina],
+				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
+				days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days
+			))
+
+			if customer is not None:
+				vpis.clan._id = customer.id
 
 		return vpis

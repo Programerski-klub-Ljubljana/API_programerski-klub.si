@@ -32,7 +32,7 @@ class Services(DeclarativeContainer):
 	vcs: Provider[GithubVcs] = Singleton(
 		GithubVcs, app_id=ENV.GITHUB_APP_ID, private_key_path=ENV.GITHUB_PRIVATE_KEY_PATH, organization=CONST.github_org)
 	phone: Provider[PhoneTwilio] = Singleton(
-		PhoneTwilio, default_country_code=CONST.phone_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
+		PhoneTwilio, default_country_code=CONST.phone_default_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
 		EmailSmtp, name=CONST.org_name, email=CONST.email,
@@ -70,7 +70,7 @@ class UseCases(DeclarativeContainer):
 
 	# FORMS
 	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
-		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone,
+		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment,
 		validate_kontakts_existances=preveri_obstoj_kontakta,
 		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
 	zacni_izclanitveni_postopek: Provider[Zacni_izclanitveni_postopek] = Factory(Zacni_izclanitveni_postopek, db=d.db,

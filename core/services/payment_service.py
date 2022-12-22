@@ -8,15 +8,18 @@ from core.domain._enums import EntityEnum
 @dataclass
 class Customer:
 	name: str
-	description: str
 	phone: str
 	email: str
+	billing_emails: list[str]
 
+	description: str = None
 	id: str = None
 	balance: int = None
 	discount: str = None
 	delinquent: bool = None
 	created: datetime = None
+	languages: list[str] = None
+	timezone: str = None
 
 	deleted: bool = False
 
@@ -38,13 +41,13 @@ class CollectionMethod(EntityEnum):
 
 @dataclass
 class Subscription:
-	description: str
 	prices: list[str]
 	customer: Customer
 	collection_method: CollectionMethod
 	days_until_due: int
 	trial_period_days: int
 
+	description: str = None
 	id: str = None
 	status: SubscriptionStatus = None
 	currency: str = None
