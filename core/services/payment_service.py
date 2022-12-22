@@ -7,18 +7,18 @@ from core.domain._enums import EntityEnum
 
 @dataclass
 class Customer:
-	entity_id: str
 	name: str
 	description: str
 	phone: str
 	email: str
-	# default_source: str
 
 	id: str = None
 	balance: int = None
 	discount: str = None
 	delinquent: bool = None
 	created: datetime = None
+
+	deleted: bool = False
 
 
 class SubscriptionStatus(EntityEnum):
@@ -45,7 +45,6 @@ class Subscription:
 	days_until_due: int
 	trial_period_days: int
 
-	entity_id: str = None
 	id: str = None
 	status: SubscriptionStatus = None
 	currency: str = None
@@ -54,6 +53,7 @@ class Subscription:
 	created: datetime = None
 	trial_start: datetime = None
 	trial_end: datetime = None
+	canceled_at: datetime = None
 
 
 # add_invoice_items
@@ -72,7 +72,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def get_customer(self, entity_id: str, delay: bool = False, tries: int = None) -> Customer | None:
+	def get_customer(self, id: str) -> Customer | None:
 		pass
 
 	@abstractmethod
@@ -80,7 +80,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def delete_customer(self, entity_id: str) -> bool:
+	def delete_customer(self, id: str) -> bool:
 		pass
 
 	""" SUBSCRIPTION """
@@ -90,7 +90,7 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def get_subscription(self, entity_id: str, delay: bool = False, tries: int = None) -> Subscription | None:
+	def get_subscription(self, id: str) -> Subscription | None:
 		pass
 
 	@abstractmethod
@@ -102,5 +102,5 @@ class PaymentService(ABC):
 		pass
 
 	@abstractmethod
-	def cancel_subscription(self, entity_id: str) -> bool:
+	def cancel_subscription(self, id: str) -> bool:
 		pass
