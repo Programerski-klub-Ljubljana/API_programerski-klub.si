@@ -24,7 +24,6 @@ class TipPrekinitveVpisa(str, Enum):
 	# ---- The day after Chuck Norris was born he drove his mother home, he wanted her to get some rest.
 	# ---- Chuck Norris built the hospital that he was born in.
 	HACKER = auto()  # UPORABNIK JE VNESEL VSE NAPACNE PODATKE.
-	NAROCNINA = auto()
 
 
 @dataclass
@@ -131,7 +130,6 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
 		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
-		# TODO: Ce se validacija zgodi... sli se spremembe na kontaktih shranijo v podatkovni bazi???
 		vpis.validirani_podatki_clana = self.validate_kontakts_existances.exe(*vpis.clan.kontakti)
 		if vpis.clan.mladoletnik:
 			vpis.validirani_podatki_skrbnika = self.validate_kontakts_existances.exe(*vpis.skrbnik.kontakti)
@@ -154,22 +152,24 @@ class Zacni_vclanitveni_postopek(UseCase):
 					await self.validate_kontakts_ownerships.exe(oseba=vpis.skrbnik)
 				await self.validate_kontakts_ownerships.exe(oseba=vpis.clan)
 
+			# POISCI IZ KATERE DRŽAVE JE TELEFONSKA
 			phone_origin = self.phone.origin(telefon)
+			print(phone_origin)
+
 			# SELE KO JE CLAN IN SKRBNIK SHRANJEN NA VARNO V MOJI BAZI USTVARIM PAYMENT FLOW ZA NJEGA
-			# CE GRE PAYMENT V MALORO GA SE VEDNO LAHKO NA ROKE VPISEM
+			# CE GRE PAYMENT V MALORO SE PROCES NE SME PREKINITI! SAJ SE GA LAHKO DODA NA ROKO NOTRI.
 			customer = self.payment.create_customer(customer=Customer(
-				name=f'{vpis.clan.ime} {vpis.clan.priimek}', phone=telefon, email=email,
-				languages=phone_origin.languages, timezone=phone_origin.timezone,
-				billing_emails=[email_skrbnika if vpis.clan.mladoletnik else email]))
+				name=f'{vpis.clan.ime} {vpis.clan.priimek}',
+				billing_email=email_skrbnika if vpis.clan.mladoletnik else email,
+				languages=phone_origin.languages))
 
 			if customer is not None:
+				# OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
 				vpis.clan._id = customer.id
 
-				subscription = self.payment.create_subscription(subscription=Subscription(
+				self.payment.create_subscription(subscription=Subscription(
 					prices=[CONST.payment_prices.klubska_clanarina],
 					customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
-					days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days
-				))
-				# TODO: You stayed here!
+					days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days))
 
 		return vpis

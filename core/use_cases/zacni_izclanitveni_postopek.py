@@ -28,9 +28,6 @@ class Zacni_izclanitveni_postopek(UseCase):
 	validate_izpis_request: Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
 	async def exe(self, ime: str, priimek: str, email: str, razlog: str) -> StatusIzpisa:
-		kwargs = locals()
-		del kwargs['self']
-
 		# TUKAJ NIC NE SPREMINJAJ V BAZI SPREMENI SELE KO UPORABNIK POTRDI NA EMAILU DA JE UPORABNIK!
 		izpis = StatusIzpisa()
 

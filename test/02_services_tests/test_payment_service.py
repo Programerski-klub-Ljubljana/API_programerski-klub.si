@@ -16,8 +16,8 @@ class test_payment_service(unittest.TestCase):
 		cls.service: PaymentService = APP.services.payment()
 		cls.prices = ["klubska_clanarina"]
 
-		cls.customer = Customer(name='name', description='description', phone='phone', email='jar.fmf@gmail.com')
-		cls.customer_fail = Customer(id='xxx', name='name', description='description', phone='phone', email='xxx')
+		cls.customer = Customer(name='name', description='description', billing_email='jar.fmf@gmail.com', languages=['si-SI'])
+		cls.customer_fail = Customer(id='xxx', name='name', description='description', billing_email='xxx', languages=['si-SI'])
 		cls.subscription = Subscription(
 			description='description', prices=cls.prices,
 			customer=cls.customer, collection_method=CollectionMethod.SEND_INVOICE,
@@ -29,9 +29,9 @@ class test_payment_service(unittest.TestCase):
 
 		for k, v in original.__dict__.items():
 			if v is not None:
-				self.assertEqual(v, res_c.__dict__[k])
+				self.assertEqual(v, res_c.__dict__[k], k)
 			elif k not in ['discount']:
-				self.assertIsNotNone(res_c.__dict__[k])
+				self.assertIsNotNone(res_c.__dict__[k], k)
 
 		return True
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call, AsyncMock
 
 from app import APP
 from core.domain.arhitektura_kluba import TipKontakta, NivoValidiranosti, TipOsebe, Kontakt, Oseba
-from core.services.phone_service import PhoneService
+from core.services.phone_service import PhoneService, PhoneOrigin
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
 	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek, StatusIzpisa, TipPrekinitveIzpisa
@@ -80,6 +80,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 		# MOCKS LOGIC
 		self.phone_service.format.side_effect = lambda phone: phone
+		self.phone_service.origin.side_effect = lambda phone: PhoneOrigin(timezone='timezone', languages=['si-SI'], country='SI', name='Slovenija')
 
 		# SETUP
 		self.case = APP.cases.zacni_vclanitveni_postopek(
@@ -127,7 +128,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		# MORA IMETI VPIS.
 		if vpis:
 			before = datetime.now()
-			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=0)
+			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=-1)
 			self.assertEqual(len(status_oseba.vpisi), 1)
 
 		# MORA IMETI ENAKE INFORMACIJE
@@ -215,6 +216,12 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 					self.assertEqual(root.oseba[1]._connections, [status.clan])
 			else:
 				self.assertEqual(len(root.oseba), 0)
+
+		# PREVERI ALI SE JE CUSTOMER V PAYMENT DODAL IN AKTIVIRAL SUBSCRIPTION NA NJEMU.
+		if db_saved:
+			customer = self.case.payment.get_customer(id=status.clan._id)
+			raise Exception("You stayed here!")
+			print(customer)
 
 		# PREVERI ALI SO SE PRAVILNE FUNKCIJE KLICALE KI PREVERIJO KONTAKTS OWNERSHIPS
 		validate_ownerships_call_args_list = [call(oseba=status.clan)]

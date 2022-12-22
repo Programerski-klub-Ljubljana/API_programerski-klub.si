@@ -1,6 +1,5 @@
 import unittest
 from random import randint
-from types import NoneType
 
 from persistent.list import PersistentList
 
@@ -118,7 +117,6 @@ class test_db(unittest.TestCase):
 			self.assertTrue(db_oseba.equal(oseba))
 		for db_oseba in self.service.oseba_find(oseba._id):
 			self.assertTrue(db_oseba.equal(oseba))
-
 
 	def test_oseba_find_fail(self):
 		count = 0

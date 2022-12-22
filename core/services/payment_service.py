@@ -8,9 +8,7 @@ from core.domain._enums import EntityEnum
 @dataclass
 class Customer:
 	name: str
-	phone: str
-	email: str
-	billing_emails: list[str]
+	billing_email: str
 
 	description: str = None
 	id: str = None
@@ -19,7 +17,6 @@ class Customer:
 	delinquent: bool = None
 	created: datetime = None
 	languages: list[str] = None
-	timezone: str = None
 
 	deleted: bool = False
 

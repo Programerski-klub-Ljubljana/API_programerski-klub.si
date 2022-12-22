@@ -33,4 +33,6 @@ class Db_check_consistency(UseCase):
 		# TODO: clean kontacts that are unvalidated for more than 2 days.
 		# TODO: ce je vpisan mora biti tudi clan
 		# TODO: Only one kontakt can have one number!
+		# TODO: Test if underage is finaly 18 (setup things in stripe)
+		# TODO: Check consistency with db and stripe api.
 		pass

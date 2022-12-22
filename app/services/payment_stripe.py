@@ -39,17 +39,18 @@ class StripeCustomer(Customer, StripeObj):
 	def create(obj: Customer):
 		return StripeCustomer.parse(**dict(stripe.Customer.create(
 			name=obj.name, description=obj.description,
-			phone=obj.phone, email=obj.email,
-			invoicing={"email_to": obj.billing_emails}
+			email=obj.billing_email,
+			preferred_locales=obj.languages,
 		)))
 
 	@staticmethod
 	def parse(**kwargs) -> Customer:
 		return cutils.call(StripeCustomer, **{
 			**kwargs,
+			'billing_email': kwargs['email'],
 			'deleted': kwargs.get('deleted', False),
 			'created': datetime.fromtimestamp(kwargs.get('created', None)),
-			'billing_emails': kwargs['invoicing']['billing_emails'],
+			'languages': kwargs.get('preferred_locales', [])
 		})
 
 
@@ -136,7 +137,7 @@ class PaymentStripe(PaymentService):
 			customers: stripe.Customer = stripe.Customer.list(limit=self.page_limit, starting_after=starting_after)
 			all_customers += customers.data
 			if customers.has_more:
-				starting_after = customers[-1].id
+				starting_after = list(customers)[-1].id
 			else:
 				break
 
