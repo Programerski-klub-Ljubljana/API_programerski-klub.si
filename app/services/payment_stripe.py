@@ -50,7 +50,8 @@ class StripeCustomer(Customer, StripeObj):
 			'billing_email': kwargs['email'],
 			'deleted': kwargs.get('deleted', False),
 			'created': datetime.fromtimestamp(kwargs.get('created', None)),
-			'languages': kwargs.get('preferred_locales', [])
+			'languages': kwargs.get('preferred_locales', []),
+			'subscriptions': [StripeSubscription.parse(**dict(sub)) for sub in kwargs.get('subscriptions', {}).get('data', [])]
 		})
 
 
@@ -83,9 +84,16 @@ class StripeSubscription(Subscription, StripeObj):
 			kwargs['trial_end'] = datetime.fromtimestamp(kwargs['trial_end'])
 			kwargs['trial_period_days'] = (kwargs['trial_end'] - kwargs['trial_start']).days
 		canceled_at = kwargs['canceled_at']
+		customer = kwargs['customer']
+
+		if not isinstance(customer, str):
+			customer = StripeCustomer.parse(**customer)
+		else:
+			customer = None
+
 		kwargs = {
 			**kwargs,
-			'customer': StripeCustomer.parse(**kwargs['customer']),
+			'customer': customer,
 			'prices': [item['id'] for item in kwargs['items']],
 			'created': datetime.fromtimestamp(kwargs['created']),
 			'start_date': datetime.fromtimestamp(kwargs['start_date']),
@@ -124,7 +132,7 @@ class PaymentStripe(PaymentService):
 
 	@stripe_request(default_value=None)
 	def get_customer(self, id: str) -> Customer | None:
-		c = stripe.Customer.retrieve(id=id)
+		c = stripe.Customer.retrieve(id=id, expand=['subscriptions'])
 		if c.get('deleted', False):
 			return None
 		return StripeCustomer.parse(**c)
@@ -134,7 +142,7 @@ class PaymentStripe(PaymentService):
 
 		starting_after = None
 		while True:
-			customers: stripe.Customer = stripe.Customer.list(limit=self.page_limit, starting_after=starting_after)
+			customers: stripe.Customer = stripe.Customer.list(limit=self.page_limit, starting_after=starting_after, expand=['data.subscriptions'])
 			all_customers += customers.data
 			if customers.has_more:
 				starting_after = list(customers)[-1].id
@@ -144,7 +152,7 @@ class PaymentStripe(PaymentService):
 		return [StripeCustomer.parse(**dict(c)) for c in all_customers]
 
 	def search_customers(self, query: str) -> list[Customer]:
-		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit).data]
+		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit, expand=['subscriptions']).data]
 
 	@stripe_request(default_value=False)
 	def delete_customer(self, id: str) -> bool:

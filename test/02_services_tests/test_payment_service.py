@@ -128,11 +128,15 @@ class test_subscription(test_payment_service):
 				collection_method=CollectionMethod.SEND_INVOICE,
 				days_until_due=7, trial_period_days=7)))
 
-	def test_03_create_subscription(self):
+	def test_030_create_subscription(self):
 		self.subscription.customer = self.service.create_customer(self.customer)
 		sub = self.service.create_subscription(subscription=self.subscription)
 		self.assertEqualSubscription(sub, self.subscription)
 		test_subscription.subscription = sub
+
+	def test_031_test_id(self):
+		self.assertIsNotNone(self.subscription.id)
+		self.assertIsNotNone(self.subscription.customer.id)
 
 	""" GET SUBSCRIPTION """
 
@@ -142,21 +146,33 @@ class test_subscription(test_payment_service):
 		self.assertIsNotNone(subscription)
 		self.assertEqualSubscription(subscription, self.subscription)
 
-	def test_05_get_subscription_not_exists(self):
+	def test_05_get_customer_subscriptions(self):
+		subscription = self.service.get_subscription(id=self.subscription.id)
+		customer = self.service.get_customer(id=self.subscription.customer.id)
+		self.assertEqual(customer.subscriptions, [subscription])
+
+	def test_06_check_if_customers_has_subscriptions(self):
+		subscription = self.service.get_subscription(id=self.subscription.id)
+		customers = self.service.list_customers()
+		for c in customers:
+			if c.id == self.customer.id:
+				self.assertEqual(c.subscriptions, [subscription])
+
+	def test_07_get_subscription_not_exists(self):
 		self.assertIsNone(self.service.get_subscription(id='xxx'))
 
-	def test_06_cancel_subscription_not_exists(self):
+	def test_08_cancel_subscription_not_exists(self):
 		self.assertFalse(self.service.cancel_subscription(id='xxx'))
 
 	""" LIST SUBSCRIPTIONS """
 
-	def test_07_list_subscription(self):
+	def test_09_list_subscription(self):
 		subscriptions = self.service.list_subscriptions()
 		self.assertSubscriptionIn(subscriptions, self.subscription)
 
 	""" CANCEL SUBSCRIPTION """
 
-	def test_08_cancel_subscription(self):
+	def test_10_cancel_subscription(self):
 		deleted = self.service.cancel_subscription(id=self.subscription.id)
 		self.assertTrue(deleted)
 
@@ -165,7 +181,7 @@ class test_subscription(test_payment_service):
 
 	""" CHECK IF SUBSCRIPTION IS REALLY IS DELETED """
 
-	def test_09_get_canceled_subscription(self):
+	def test_11_get_canceled_subscription(self):
 		now = datetime.today()
 		subscription = self.service.get_subscription(id=self.subscription.id)
 		self.assertIsNotNone(subscription)

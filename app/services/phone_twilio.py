@@ -41,14 +41,20 @@ class PhoneTwilio(PhoneService):
 		return False
 
 	def origin(self, phone: str) -> PhoneOrigin:
-		phone_obj = phonenumbers.parse(number=phone, region=self.default_country_code)
-		country = CountryInfo(phone_obj.country_code)
-		return PhoneOrigin(
-			timezone=country.timezones()[0],
-			languages=country.languages(),
-			country=country.iso(2),
-			name=country.native_name()
-		)
+		try:
+			phone_obj = phonenumbers.parse(number=phone, region=self.default_country_code)
+			country_code = phonenumbers.region_code_for_country_code(phone_obj.country_code)
+			country = CountryInfo(country_code)
+			return PhoneOrigin(
+				languages=country.languages(),
+				country=country.iso(2),
+				name=country.native_name())
+		except Exception as err:
+			log.warning(err)
+			return PhoneOrigin(
+				languages=[],
+				country=None,
+				name=None)
 
 	def format(self, phone: str) -> str:
 		try:

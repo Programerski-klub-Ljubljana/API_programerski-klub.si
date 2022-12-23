@@ -2,6 +2,7 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
 
+from core import cutils
 from core.domain._enums import EntityEnum
 
 
@@ -9,6 +10,7 @@ from core.domain._enums import EntityEnum
 class Customer:
 	name: str
 	billing_email: str
+	subscriptions: list['Subscription'] = cutils.list_field()
 
 	description: str = None
 	id: str = None
@@ -19,6 +21,7 @@ class Customer:
 	languages: list[str] = None
 
 	deleted: bool = False
+
 
 
 class SubscriptionStatus(EntityEnum):

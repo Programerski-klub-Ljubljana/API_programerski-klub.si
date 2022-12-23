@@ -3,17 +3,15 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass
 
 from autologging import traced
-from countryinfo import CountryInfo
 
 log = logging.getLogger(__name__)
 
 
 @dataclass
 class PhoneOrigin:
-	timezone: str
 	languages: list[str]
-	country: str
-	name: str
+	country: str | None
+	name: str | None
 
 
 @traced

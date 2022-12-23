@@ -24,6 +24,7 @@ class TipPrekinitveVpisa(str, Enum):
 	# ---- The day after Chuck Norris was born he drove his mother home, he wanted her to get some rest.
 	# ---- Chuck Norris built the hospital that he was born in.
 	HACKER = auto()  # UPORABNIK JE VNESEL VSE NAPACNE PODATKE.
+	NOTRANJA_NAPAKA = auto()  # ZGODILA SE JE NOTRANJA NAPAKA :(
 
 
 @dataclass
@@ -140,8 +141,21 @@ class Zacni_vclanitveni_postopek(UseCase):
 			if vpis.stevilo_napacnih_podatkov == ST_VALIDACIJ:
 				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
 
+		# SELE KO JE CLAN IN SKRBNIK SHRANJEN NA VARNO V MOJI BAZI USTVARIM PAYMENT FLOW ZA NJEGA
+		# CE GRE PAYMENT V MALORO SE PROCES NE SME PREKINITI! SAJ SE GA LAHKO DODA NA ROKO NOTRI.
+		izvor_telefona = self.phone.origin(phone=telefon)
+		customer = self.payment.create_customer(customer=Customer(
+			name=f'{vpis.clan.ime} {vpis.clan.priimek}',
+			billing_email=email_skrbnika if vpis.clan.mladoletnik else email,
+			languages=izvor_telefona.languages))
+
+		if customer is None:
+			vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.NOTRANJA_NAPAKA)
+
 		# SE NI VPISAL IN NI BILO NAPAK
 		if len(vpis.razlogi_prekinitve) == 0:
+			# OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
+			vpis.clan._id = customer.id
 
 			# SHRANI CLANA IN SKRBNIKA V BAZI
 			with self.db.transaction(note=f'Shrani {vpis.clan}') as root:
@@ -152,24 +166,10 @@ class Zacni_vclanitveni_postopek(UseCase):
 					await self.validate_kontakts_ownerships.exe(oseba=vpis.skrbnik)
 				await self.validate_kontakts_ownerships.exe(oseba=vpis.clan)
 
-			# POISCI IZ KATERE DRŽAVE JE TELEFONSKA
-			phone_origin = self.phone.origin(telefon)
-			print(phone_origin)
-
-			# SELE KO JE CLAN IN SKRBNIK SHRANJEN NA VARNO V MOJI BAZI USTVARIM PAYMENT FLOW ZA NJEGA
-			# CE GRE PAYMENT V MALORO SE PROCES NE SME PREKINITI! SAJ SE GA LAHKO DODA NA ROKO NOTRI.
-			customer = self.payment.create_customer(customer=Customer(
-				name=f'{vpis.clan.ime} {vpis.clan.priimek}',
-				billing_email=email_skrbnika if vpis.clan.mladoletnik else email,
-				languages=phone_origin.languages))
-
-			if customer is not None:
-				# OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
-				vpis.clan._id = customer.id
-
-				self.payment.create_subscription(subscription=Subscription(
-					prices=[CONST.payment_prices.klubska_clanarina],
-					customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
-					days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days))
+			# USTVARI NAROČNINO ZA ČLANA
+			self.payment.create_subscription(subscription=Subscription(
+				prices=[CONST.payment_prices.klubska_clanarina],
+				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
+				days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days))
 
 		return vpis

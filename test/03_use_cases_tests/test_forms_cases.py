@@ -1,10 +1,10 @@
 import unittest
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, call, AsyncMock
 
-from app import APP
+from app import APP, CONST
 from core.domain.arhitektura_kluba import TipKontakta, NivoValidiranosti, TipOsebe, Kontakt, Oseba
-from core.services.phone_service import PhoneService, PhoneOrigin
+from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
 	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek, StatusIzpisa, TipPrekinitveIzpisa
@@ -80,7 +80,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 		# MOCKS LOGIC
 		self.phone_service.format.side_effect = lambda phone: phone
-		self.phone_service.origin.side_effect = lambda phone: PhoneOrigin(timezone='timezone', languages=['si-SI'], country='SI', name='Slovenija')
+		self.phone_service.origin.side_effect = APP.services.phone().origin
 
 		# SETUP
 		self.case = APP.cases.zacni_vclanitveni_postopek(
@@ -101,13 +101,13 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		self.today = date.today()
 
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
-			Kontakt(data='email_skrbnika0', tip=TipKontakta.EMAIL), Kontakt(data='phone_skrbnika0', tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.alt_email, tip=TipKontakta.EMAIL), Kontakt(data='phone_skrbnika0', tip=TipKontakta.PHONE)])
 
 		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
-			Kontakt(data='email0', tip=TipKontakta.EMAIL), Kontakt(data='phone0', tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.email, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phone, tip=TipKontakta.PHONE)])
 
 		self.mladoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 10, month=1, day=1), kontakti=[
-			Kontakt(data='email0', tip=TipKontakta.EMAIL), Kontakt(data='phone0', tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.email, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phone, tip=TipKontakta.PHONE)])
 
 		# DB
 		with self.case.db.transaction() as root:
@@ -170,7 +170,9 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 				'email_skrbnika': skrbnik.kontakti[0].data, 'telefon_skrbnika': skrbnik.kontakti[1].data}
 
 		# INVOKE
+		before = datetime.now() - timedelta(seconds=1)
 		status: StatusVpisa = await self.case.exe(**kwargs)
+		after = datetime.now() + timedelta(seconds=1)
 
 		# PREVERI ALI SE JE FORMATIRANJE TELEFONA ZGODILO
 		phone_format_call_args_list = [call(phone=clan.kontakti[1].data)]
@@ -218,10 +220,22 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 				self.assertEqual(len(root.oseba), 0)
 
 		# PREVERI ALI SE JE CUSTOMER V PAYMENT DODAL IN AKTIVIRAL SUBSCRIPTION NA NJEMU.
+		customer = self.case.payment.get_customer(id=status.clan._id)
 		if db_saved:
-			customer = self.case.payment.get_customer(id=status.clan._id)
-			raise Exception("You stayed here!")
-			print(customer)
+			c = status.clan
+			s = status.skrbnik
+			self.assertEqual(customer.id, c._id)
+			self.assertEqual(customer.name, f'{c.ime} {c.priimek}')
+			self.assertEqual(customer.billing_email, [k.data for k in (s.kontakti if c.mladoletnik else c.kontakti) if k.tip == TipKontakta.EMAIL][0])
+			self.assertEqual(customer.description, None)
+			self.assertEqual(customer.balance, 0)
+			self.assertEqual(customer.discount, None)
+			self.assertEqual(customer.delinquent, False)
+			self.assertTrue(before < customer.created < after, f'{before} {customer.created} {after}')
+			self.assertEqual(customer.languages, ['sl'])
+			self.assertEqual(customer.deleted, False)
+		else:
+			self.assertIsNone(customer, msg=customer)
 
 		# PREVERI ALI SO SE PRAVILNE FUNKCIJE KLICALE KI PREVERIJO KONTAKTS OWNERSHIPS
 		validate_ownerships_call_args_list = [call(oseba=status.clan)]

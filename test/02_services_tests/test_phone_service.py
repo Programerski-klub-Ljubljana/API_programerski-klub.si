@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 
 from app import APP
-from core.services.phone_service import PhoneService
+from core.services.phone_service import PhoneService, PhoneOrigin
 
 
 class test_phone(unittest.TestCase):
@@ -24,6 +24,14 @@ class test_phone(unittest.TestCase):
 		self.assertEqual(self.service.format('051240885'), correct_form)
 		self.assertEqual(self.service.format('krneki'), 'krneki')
 		self.assertEqual(self.service.format('+386/051-240 885'), correct_form)
+
+	def test_origin(self):
+		expected = PhoneOrigin(languages=['sl'], country="SI", name="Slovenija")
+		empty = PhoneOrigin(languages=[], country=None, name=None)
+		self.assertEqual(self.service.origin('+386051240885'), expected)
+		self.assertEqual(self.service.origin('051240885'), expected)
+		self.assertEqual(self.service.origin('krneki'), empty)
+		self.assertEqual(self.service.origin('+386/051-240 885'), expected)
 
 
 if __name__ == '__main__':
