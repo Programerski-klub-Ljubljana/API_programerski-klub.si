@@ -42,7 +42,7 @@ class CollectionMethod(EntityEnum):
 @dataclass
 class Subscription:
 	prices: list[str]
-	customer: Customer
+	customer: Customer | str
 	collection_method: CollectionMethod
 	days_until_due: int
 	trial_period_days: int

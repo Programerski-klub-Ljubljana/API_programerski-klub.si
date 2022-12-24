@@ -12,8 +12,11 @@ class test_email(IsolatedAsyncioTestCase):
 		APP.init(seed=False)
 		cls.service = APP.services.email()
 
-	def test_check_existance(self):
+	def test_check_existance_of_alt_email(self):
 		self.assertTrue(self.service.check_existance(CONST.alt_email))
+
+	def test_check_existance_of_email(self):
+		self.assertTrue(self.service.check_existance(CONST.email))
 
 	async def test_send(self):
 		await self.service.send(

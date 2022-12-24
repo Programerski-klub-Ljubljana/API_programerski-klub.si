@@ -149,6 +149,7 @@ class test_subscription(test_payment_service):
 	def test_05_get_customer_subscriptions(self):
 		subscription = self.service.get_subscription(id=self.subscription.id)
 		customer = self.service.get_customer(id=self.subscription.customer.id)
+		subscription.customer = subscription.customer.id
 		self.assertEqual(customer.subscriptions, [subscription])
 
 	def test_06_check_if_customers_has_subscriptions(self):

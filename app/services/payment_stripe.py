@@ -88,8 +88,6 @@ class StripeSubscription(Subscription, StripeObj):
 
 		if not isinstance(customer, str):
 			customer = StripeCustomer.parse(**customer)
-		else:
-			customer = None
 
 		kwargs = {
 			**kwargs,
