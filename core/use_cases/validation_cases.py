@@ -1,7 +1,5 @@
 import logging
 from dataclasses import dataclass
-from enum import Enum
-from typing import Callable
 
 from autologging import traced
 
@@ -10,6 +8,7 @@ from core.domain.arhitektura_kluba import Kontakt, TipKontakta, NivoValidiranost
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.template_service import TemplateService, TemplateRenderer
+from core.services.vcs_service import VcsService
 from core.use_cases._usecase import UseCase
 from core.use_cases.auth_cases import Ustvari_osebni_zeton
 from core.use_cases.msg_cases import Poslji_sporocilo
@@ -22,23 +21,25 @@ log = logging.getLogger(__name__)
 class Preveri_obstoj_kontakta(UseCase):
 	email: EmailService
 	phone: PhoneService
+	vcs: VcsService
 
 	def exe(self, *kontakti: Kontakt) -> list[Kontakt]:
 		'''Vrne kontakte ki so bili validirani!'''
 
-		mapping: dict[Enum, Callable] = {  # TODO: Make this global somehow...
-			TipKontakta.EMAIL: self.email.check_existance,
-			TipKontakta.PHONE: self.phone.check_existance
-		}
-
 		val_kontakti = []
 		for kontakt in kontakti:
-			val_fun = mapping[kontakt.tip]
 			if kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN:
-				if val_fun(kontakt.data):
+				if self._kontakt_obstaja(kontakt=kontakt):
 					kontakt.nivo_validiranosti = NivoValidiranosti.VALIDIRAN
 				val_kontakti.append(kontakt)
 		return val_kontakti
+
+	def _kontakt_obstaja(self, kontakt: Kontakt):
+		match kontakt.tip:
+			case TipKontakta.EMAIL:
+				return self.vcs.user(email=kontakt.data) is not None or self.email.check_existance(email=kontakt.data)
+			case TipKontakta.PHONE:
+				return self.phone.check_existance(phone=kontakt.data)
 
 
 @traced

@@ -60,7 +60,7 @@ class UseCases(DeclarativeContainer):
 	vrni_vsebino_baze: Provider[Vrni_vsebino_baze] = Factory(Vrni_vsebino_baze, db=d.db)
 
 	# OSEBA
-	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, phone=d.phone)
+	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, vcs=d.vcs, phone=d.phone)
 	poslji_test_ki_preveri_lastnistvo_kontakta: Provider[Poslji_test_ki_preveri_lastnistvo_kontakta] = Factory(
 		Poslji_test_ki_preveri_lastnistvo_kontakta, template=d.template, msg_send=poslji_sporocilo, auth_verification_token=ustvari_osebni_zeton)
 	poslji_test_ki_preveri_zeljo_za_koncno_izclanitev: Provider[Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev] = Factory(
@@ -69,11 +69,11 @@ class UseCases(DeclarativeContainer):
 
 	# FORMS
 	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
-		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment,
+		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment, vcs=d.vcs,
 		validate_kontakts_existances=preveri_obstoj_kontakta,
 		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
-	zacni_izclanitveni_postopek: Provider[Zacni_izclanitveni_postopek] = Factory(Zacni_izclanitveni_postopek, db=d.db,
-	                                                                             validate_izpis_request=poslji_test_ki_preveri_zeljo_za_koncno_izclanitev)
+	zacni_izclanitveni_postopek: Provider[Zacni_izclanitveni_postopek] = Factory(
+		Zacni_izclanitveni_postopek, db=d.db, validate_izpis_request=poslji_test_ki_preveri_zeljo_za_koncno_izclanitev)
 
 
 log = logging.getLogger(__name__)

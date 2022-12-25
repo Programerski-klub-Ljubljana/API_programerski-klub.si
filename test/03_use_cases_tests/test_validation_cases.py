@@ -7,6 +7,7 @@ from app import APP, CONST
 from core.domain.arhitektura_kluba import Kontakt, NivoValidiranosti, TipKontakta, Oseba
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
+from core.services.vcs_service import VcsService
 from core.use_cases.msg_cases import Poslji_sporocilo
 from core.use_cases.validation_cases import Poslji_test_ki_preveri_lastnistvo_kontakta, Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
@@ -26,11 +27,13 @@ class test_preveri_obstoj_kontakta(unittest.TestCase):
 		APP.init(seed=False)
 		cls.case = APP.cases.preveri_obstoj_kontakta(
 			email=MagicMock(EmailService),
+			vcs=MagicMock(VcsService),
 			phone=MagicMock(PhoneService))
 
 	def test_vsi_obstajajo(self):
 		self.case.phone.check_existance.return_value = True
 		self.case.email.check_existance.return_value = True
+		self.case.vcs.user.return_value = object()
 
 		out_kontakti = self.case.exe(*copy(self.in_kontakti))
 
@@ -41,6 +44,7 @@ class test_preveri_obstoj_kontakta(unittest.TestCase):
 	def test_noben_ne_obstaja(self):
 		self.case.phone.check_existance.return_value = False
 		self.case.email.check_existance.return_value = False
+		self.case.vcs.user.return_value = None
 
 		out_kontakti = self.case.exe(*copy(self.in_kontakti))
 

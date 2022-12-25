@@ -1,8 +1,16 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 from autologging import traced
+
+
+@dataclass
+class VcsMemberRole(str, Enum):
+	ADMIN = 'admin'
+	DIRECT_MEMBER = 'direct_member'
+	BILLING_MANAGER = 'billing_manager'
 
 
 @dataclass
@@ -47,8 +55,40 @@ class VcsOrganization:
 	repos: list[VcsRepo]
 
 
+@dataclass
+class VcsUser:
+	instance: object = None
+	avatar_url: str = None
+	bio: str = None
+	blog: str = None
+	created_at: datetime = None
+	email: str = None
+	followers: int = None
+	following: int = None
+	html_url: str = None
+	id: int = None
+	location: str = None
+	login: str = None
+	name: str = None
+	type: str = None
+	updated_at: datetime = None
+	url: str = None
+
+
 @traced
 class VcsService(ABC):
 	@abstractmethod
 	def organization(self) -> VcsOrganization:
+		pass
+
+	@abstractmethod
+	def user(self, email: str) -> VcsUser | None:
+		pass
+
+	@abstractmethod
+	def user_invite(self, email: str, member_role: VcsMemberRole) -> bool:
+		pass
+
+	@abstractmethod
+	def user_remove(self, email: str):
 		pass

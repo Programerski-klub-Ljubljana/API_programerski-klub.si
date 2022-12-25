@@ -9,6 +9,7 @@ from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, NivoValid
 from core.services.db_service import DbService
 from core.services.payment_service import Customer, PaymentService, Subscription, CollectionMethod, SubscriptionHistoryStatus
 from core.services.phone_service import PhoneService
+from core.services.vcs_service import VcsService, VcsMemberRole
 from core.use_cases._usecase import UseCase
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta
 
@@ -27,8 +28,9 @@ class TipPrekinitveVpisa(str, Enum):
 
 
 class TipVpisnaInformacija(str, Enum):
+	NIMA_VCS_PROFILA = auto()
+	POVABLJEN_V_VCS_ORGANIZACIJO = auto()
 	NAROCEN_NA_KLUBSKO_CLANARINO = auto()
-	ZE_NAROCEN_NA_KLUBSKO_CLANARINO = auto()
 	POSKUSNO_OBDOBJE = auto()
 	SKRBNIK_SE_PONOVNO_VPISUJE = auto()
 	MLADOLETNIK = auto()
@@ -36,11 +38,10 @@ class TipVpisnaInformacija(str, Enum):
 
 
 class TipVpisnoOpozorilo(str, Enum):
+	VCS_INVITE_FAIL = auto()
 	PAYMENT_SUBSCRIPTION_FAIL = auto()
-	ZE_NAROCEN_NA_KLUBSKO_CLANARINO = auto()
 	PAYMENT_CUSTOMER_FAIL = auto()
 	IZVOR_TELEFONA_NI_NAJDEN = auto()
-	PAYMENT_SERVICE_FAIL = auto()  # ZGODILA SE JE NOTRANJA NAPAKA :(
 
 
 @dataclass
@@ -92,6 +93,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 	db: DbService
 	phone: PhoneService
 	payment: PaymentService
+	vcs: VcsService
 	validate_kontakts_existances: Preveri_obstoj_kontakta
 	validate_kontakts_ownerships: Poslji_test_ki_preveri_lastnistvo_kontakta
 
@@ -234,3 +236,13 @@ class Zacni_vclanitveni_postopek(UseCase):
 		await self.validate_kontakts_ownerships.exe(oseba=status.clan)
 		if status.clan.mladoletnik:
 			await self.validate_kontakts_ownerships.exe(oseba=status.skrbnik)
+
+	def _vcs_vabilo_v_organizacijo(self, status: StatusVpisa, email: str):
+		user = self.vcs.user(email=email)
+		if user is None:
+			return status.informacije.append(TipVpisnaInformacija.NIMA_VCS_PROFILA)
+
+		if self.vcs.user_invite(email=email, member_role=VcsMemberRole.DIRECT_MEMBER):
+			return status.informacije.append(TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO)
+
+		return status.napake.append(TipVpisnoOpozorilo.VCS_INVITE_FAIL)
