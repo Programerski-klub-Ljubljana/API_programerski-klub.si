@@ -8,7 +8,7 @@ from core.services.phone_service import PhoneService
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
 	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek, StatusIzpisa, TipPrekinitveIzpisa
-from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, TipPrekinitveVpisa
+from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, TipPrekinitveVpisa, TipVpisnaInformacija
 
 
 class Test_status_vpisa(unittest.TestCase):
@@ -101,7 +101,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		self.today = date.today()
 
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
-			Kontakt(data=CONST.alt_email, tip=TipKontakta.EMAIL), Kontakt(data='phone_skrbnika0', tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.alt_email, tip=TipKontakta.EMAIL), Kontakt(data='000-000-000', tip=TipKontakta.PHONE)])
 
 		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
 			Kontakt(data=CONST.email, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phone, tip=TipKontakta.PHONE)])
@@ -247,7 +247,10 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 	async def test_polnoletnik_se_vclani(self):
 		status = await self.exe(self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana'])
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije'])
+		self.assertEqual(status.informacije, [
+			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
+			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO])
 
 	async def test_polnoletnik_vnese_napacne_podatke(self):
 		self.polnoletna_oseba.kontakti[0].nivo_validiranosti = NivoValidiranosti.VALIDIRAN
@@ -267,40 +270,61 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 	async def test_polnoletnik_je_ze_vpisan(self):
 		self.db_find_and_merge = True
 		status = await self.exe(self.polnoletna_oseba, db_saved=False)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
+		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve', 'informacije'])
 		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
+		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE])
 
 	async def test_mladoletnik_se_vclani(self):
 		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=True)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika'])
+		self.assertCountEqual(status.napake, [])
+		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije'])
+		self.assertEqual(status.informacije, [
+			TipVpisnaInformacija.MLADOLETNIK,
+			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
+			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO])
 
 	async def test_mladoletnik_je_chuck_noris(self):
 		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
 		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertEqualProperties(status, [
+			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
+			'razlogi_prekinitve', 'informacije'])
 		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS])
+		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
 
 	async def test_mladoletnik_vnese_napacne_podatke(self):
 		self.mladoletna_oseba.kontakti[0].nivo_validiranosti = NivoValidiranosti.VALIDIRAN
 		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
 
 		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertEqualProperties(status, [
+			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
+			'razlogi_prekinitve', 'informacije'])
 		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE])
+		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
 
 	async def test_mladoletnik_je_hacker(self):
 		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
 		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
 
 		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertEqualProperties(status, [
+			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
+			'razlogi_prekinitve', 'informacije'])
 		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS, TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER])
+		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
 
 	async def test_mladoletnik_je_ze_vpisan(self):
 		self.db_find_and_merge = True
 		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'razlogi_prekinitve'])
+		self.assertEqualProperties(status, [
+			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
+			'razlogi_prekinitve', 'informacije'])
 		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
+		self.assertCountEqual(status.informacije, [
+			TipVpisnaInformacija.MLADOLETNIK,
+			TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE,
+			TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE])
 
 
 class Test_zacni_izclanitveni_postopek(unittest.IsolatedAsyncioTestCase):

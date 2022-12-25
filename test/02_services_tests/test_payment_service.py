@@ -76,6 +76,11 @@ class test_customer(test_payment_service):
 		self.assertEqualCustomer(customer, self.customer)
 		test_customer.customer = customer
 
+	def test_03_create_customer_again_returns_existing(self):
+		self.assertIsNotNone(self.customer.id)
+		customer = self.service.create_customer(self.customer)
+		self.assertEqual(self.customer, customer)
+
 	""" GET CUSTOMERS """
 
 	def test_03_get_customer(self):

@@ -115,7 +115,6 @@ def stripe_request(default_value):
 	return decorator
 
 
-@traced
 class PaymentStripe(PaymentService):
 
 	def __init__(self, api_key: str):
@@ -125,10 +124,16 @@ class PaymentStripe(PaymentService):
 	""" CUSTOMER """
 
 	@stripe_request(default_value=None)
+	@traced
 	def create_customer(self, customer: StripeCustomer) -> Customer | None:
+		if customer.id is not None:
+			old_customer = self.get_customer(id=customer.id)
+			if old_customer is not None:
+				return old_customer
 		return StripeCustomer.create(customer)
 
 	@stripe_request(default_value=None)
+	@traced
 	def get_customer(self, id: str) -> Customer | None:
 		c = stripe.Customer.retrieve(id=id, expand=['subscriptions'])
 		if c.get('deleted', False):
@@ -149,20 +154,24 @@ class PaymentStripe(PaymentService):
 
 		return [StripeCustomer.parse(**dict(c)) for c in all_customers]
 
+	@traced
 	def search_customers(self, query: str) -> list[Customer]:
 		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit, expand=['subscriptions']).data]
 
 	@stripe_request(default_value=False)
+	@traced
 	def delete_customer(self, id: str) -> bool:
 		return stripe.Customer.delete(sid=id).deleted
 
 	""" SUBSCRIPTION """
 
 	@stripe_request(default_value=None)
+	@traced
 	def create_subscription(self, subscription: Subscription):
 		return StripeSubscription.create(subscription)
 
 	@stripe_request(default_value=None)
+	@traced
 	def get_subscription(self, id: str) -> Subscription | None:
 		sub = stripe.Subscription.retrieve(id=id, expand=['customer'])
 		return StripeSubscription.parse(**dict(sub))
@@ -175,16 +184,18 @@ class PaymentStripe(PaymentService):
 			subscriptions = stripe.Subscription.list(limit=self.page_limit, starting_after=starting_after, expand=['data.customer'])
 			all_subscriptions += subscriptions.data
 			if subscriptions.has_more:
-				starting_after = subscriptions[-1].id
+				starting_after = subscriptions.data[-1].id
 			else:
 				break
 
 		return [StripeSubscription.parse(**dict(c)) for c in all_subscriptions]
 
+	@traced
 	def search_subscription(self, query: str) -> list[Subscription]:
 		return [StripeSubscription.parse(**dict(s)) for s in stripe.Subscription.search(query=query, limit=self.page_limit, expand=['customer']).data]
 
 	@stripe_request(default_value=False)
+	@traced
 	def cancel_subscription(self, id: str) -> bool:
 		sub = stripe.Subscription.delete(sid=id)
 		return sub.status == SubscriptionStatus.CANCELED.value

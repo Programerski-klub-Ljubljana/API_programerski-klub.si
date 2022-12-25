@@ -22,6 +22,13 @@ class Customer:
 
 	deleted: bool = False
 
+	def subscribed_to(self, price):
+		# TODO: Test me!
+		for sub in self.subscriptions:
+			if sub.status != SubscriptionStatus.CANCELED:
+				if price in sub.prices:
+					return True
+		return False
 
 
 class SubscriptionStatus(EntityEnum):

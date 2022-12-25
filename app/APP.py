@@ -1,7 +1,6 @@
 import logging
 import sys
 
-import autologging
 from autologging import traced
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Singleton, DependenciesContainer, Factory, Provider

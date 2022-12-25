@@ -24,7 +24,23 @@ class TipPrekinitveVpisa(str, Enum):
 	# ---- The day after Chuck Norris was born he drove his mother home, he wanted her to get some rest.
 	# ---- Chuck Norris built the hospital that he was born in.
 	HACKER = auto()  # UPORABNIK JE VNESEL VSE NAPACNE PODATKE.
-	NOTRANJA_NAPAKA = auto()  # ZGODILA SE JE NOTRANJA NAPAKA :(
+
+
+class TipVpisnaInformacija(str, Enum):
+	NAROCEN_NA_KLUBSKO_CLANARINO = auto()
+	ZE_NAROCEN_NA_KLUBSKO_CLANARINO = auto()
+	POSKUSNO_OBDOBJE = auto()
+	SKRBNIK_SE_PONOVNO_VPISUJE = auto()
+	MLADOLETNIK = auto()
+	CLAN_SE_PONOVNO_VPISUJE = auto()
+
+
+class TipVpisnoOpozorilo(str, Enum):
+	PAYMENT_SUBSCRIPTION_FAIL = auto()
+	ZE_NAROCEN_NA_KLUBSKO_CLANARINO = auto()
+	PAYMENT_CUSTOMER_FAIL = auto()
+	IZVOR_TELEFONA_NI_NAJDEN = auto()
+	PAYMENT_SERVICE_FAIL = auto()  # ZGODILA SE JE NOTRANJA NAPAKA :(
 
 
 @dataclass
@@ -34,6 +50,8 @@ class StatusVpisa:
 	razlogi_prekinitve: list[TipPrekinitveVpisa] = list_field()
 	validirani_podatki_skrbnika: list[Kontakt] = list_field()
 	validirani_podatki_clana: list[Kontakt] = list_field()
+	informacije: list[TipVpisnaInformacija] = list_field()
+	napake: list[TipVpisnoOpozorilo] = list_field()
 
 	def _napacni_podatki(self, kontakti):
 		lam_ni_validiran = lambda kontakt: kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN
@@ -84,92 +102,135 @@ class Zacni_vclanitveni_postopek(UseCase):
 			email: str, telefon: str,
 			ime_skrbnika: str | None = None, priimek_skrbnika: str | None = None,
 			email_skrbnika: str | None = None, telefon_skrbnika: str | None = None) -> StatusVpisa:
-		# ZACNI VPISNI POSTOPEK
-		vpis: StatusVpisa = StatusVpisa()
+		# * ZACNI VPISNI POSTOPEK
+		status: StatusVpisa = StatusVpisa()
 
-		# FORMAT PHONE
+		# * USTVARI CLANA
 		telefon = self.phone.format(phone=telefon)
-
-		# USTVARI CLANA
-		vpis.clan = Oseba(
+		status.clan = Oseba(
 			ime=ime, priimek=priimek, rojen=date(year=leto_rojstva, month=mesec_rojstva, day=dan_rojstva),
 			tip_osebe=[TipOsebe.CLAN], kontakti=[
 				Kontakt(data=email, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
 				Kontakt(data=telefon, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
 
-		# VPISI SAMO IN SAMO CLANA! SKRBNIK SE NE STEJE KOT VPISAN ELEMENT!
-		vpis.clan.nov_vpis()
-
-		# MERGE CLAN IN DB
-		db_oseba: Oseba
-		for db_oseba in self.db.find(entity=vpis.clan):
-			# CE JE CLAN ZE VPISAN POTEM PREKINI CELOTEN PROCES!
-			if db_oseba.vpisan:
-				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.ZE_VPISAN)
-			db_oseba.merge(vpis.clan)
-			vpis.clan = db_oseba
-
-		if vpis.clan.mladoletnik:
-			# FORMAT PHONE
+		# * USTVARI SKRBNIKA
+		if status.clan.mladoletnik:
+			status.informacije.append(TipVpisnaInformacija.MLADOLETNIK)
 			telefon_skrbnika = self.phone.format(phone=telefon_skrbnika)
-
-			# USTVARI SKRBNIKA... KATEREGA NE VPISI!!!
-			vpis.skrbnik = Oseba(
+			status.skrbnik = Oseba(
 				ime=ime_skrbnika, priimek=priimek_skrbnika, rojen=None,
 				tip_osebe=[TipOsebe.SKRBNIK], kontakti=[
 					Kontakt(data=email_skrbnika, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
 					Kontakt(data=telefon_skrbnika, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
 
-			# PREVERI ZLORABO AUTORITETO?
 			if email == email_skrbnika or telefon == telefon_skrbnika:  # Nisi chuck noris da bi bil sam seb skrbnik.
-				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.CHUCK_NORIS)
+				status.razlogi_prekinitve.append(TipPrekinitveVpisa.CHUCK_NORIS)
 
-			# MERGE SKRBNIK
-			for db_oseba in self.db.find(entity=vpis.skrbnik):
-				db_oseba.merge(vpis.skrbnik)
-				vpis.skrbnik = db_oseba
+		# * PREPARE OSEBE ZA VPIS
+		status.clan.nov_vpis()
+		self._merge_osebe(status=status)
+		self._validacija_kontaktov(status=status)
 
-		# ZDAJ KO IMA UPORABNIK CISTE KONTAKTE JIH LAHKO VALIDIRAMO
-		# PAZI: CLAN IN SKRBNIK JE LAHKO MERGAN PRESTEJ SAMO TISTO KAR SE JE VALIDIRALO!
-		vpis.validirani_podatki_clana = self.validate_kontakts_existances.exe(*vpis.clan.kontakti)
-		if vpis.clan.mladoletnik:
-			vpis.validirani_podatki_skrbnika = self.validate_kontakts_existances.exe(*vpis.skrbnik.kontakti)
+		# ! V PRIMERU NAPAK PREKINI VPISNI POSTOPEK
+		if len(status.razlogi_prekinitve) > 0:
+			return status
 
-		ST_VALIDACIJ = len(vpis.validirani_podatki)
-		if vpis.stevilo_napacnih_podatkov > 0:
-			vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.NAPAKE)
-			if vpis.stevilo_napacnih_podatkov == ST_VALIDACIJ:
-				vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
+		# * CE NI BILO NAPAK USTVARI PAYMENT CUSTOMERJA
+		self._create_payment_customer(
+			status=status, billing_phone=telefon_skrbnika if status.clan.mladoletnik else telefon,
+			billing_email=email_skrbnika if status.clan.mladoletnik else email)
 
-		# SELE KO JE CLAN IN SKRBNIK SHRANJEN NA VARNO V MOJI BAZI USTVARIM PAYMENT FLOW ZA NJEGA
-		# CE GRE PAYMENT V MALORO SE PROCES NE SME PREKINITI! SAJ SE GA LAHKO DODA NA ROKO NOTRI.
-		izvor_telefona = self.phone.origin(phone=telefon)
+		# * SHRANI INFORMACIJE V BAZO
+		self._shrani_v_bazo(status=status)
+
+		# * PREVERI OVNERSHIP ZA KONTAKTE
+		await self._validate_kontakts_ownerships(status=status)
+
+		return status
+
+	def _merge_osebe(self, status: StatusVpisa):
+		db_oseba: Oseba  # Type hinting...
+
+		# * V PRIMERU CE SE CLAN NAHAJA V BAZI
+		for db_oseba in self.db.find(entity=status.clan):
+			status.informacije.append(TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE)
+			# CE JE CLAN ZE VPISAN POTEM PREKINI CELOTEN PROCES!
+			if db_oseba.vpisan:
+				status.razlogi_prekinitve.append(TipPrekinitveVpisa.ZE_VPISAN)
+			db_oseba.merge(status.clan)
+			status.clan = db_oseba
+
+		# * V PRIMERU CE SE SKRBNIK NAHAJA V BAZI
+		if status.clan.mladoletnik:
+			for db_oseba in self.db.find(entity=status.skrbnik):
+				status.informacije.append(TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE)
+				db_oseba.merge(status.skrbnik)
+				status.skrbnik = db_oseba
+
+	def _validacija_kontaktov(self, status: StatusVpisa):
+		# * PREVERI KONTAKTE CLANA
+		status.validirani_podatki_clana = self.validate_kontakts_existances.exe(*status.clan.kontakti)
+
+		# * PREVERI KONTAKTE SKRBNIKA
+		if status.clan.mladoletnik:
+			status.validirani_podatki_skrbnika = self.validate_kontakts_existances.exe(*status.skrbnik.kontakti)
+
+		# * PREVERI STEVILO NAPAK
+		ST_VALIDACIJ = len(status.validirani_podatki)
+		if status.stevilo_napacnih_podatkov > 0:
+			status.razlogi_prekinitve.append(TipPrekinitveVpisa.NAPAKE)
+			if status.stevilo_napacnih_podatkov == ST_VALIDACIJ:
+				status.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
+
+	def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
+		# * POISCI IZVOR BILLING TELEFONA
+		izvor_telefona = self.phone.origin(phone=billing_phone)
+		if len(izvor_telefona.languages) == 0:
+			status.napake.append(TipVpisnoOpozorilo.IZVOR_TELEFONA_NI_NAJDEN)
+
+		# * CE SE JE MERGE ZGODIL POTEM IMA ZE NASTAVLJEN ID OD STRIPE-a
 		customer = self.payment.create_customer(customer=Customer(
-			name=f'{vpis.clan.ime} {vpis.clan.priimek}',
-			billing_email=email_skrbnika if vpis.clan.mladoletnik else email,
+			id=status.clan._id, name=f'{status.clan.ime} {status.clan.priimek}',
+			billing_email=billing_email,
 			languages=izvor_telefona.languages))
 
+		# ! CE SE CUSTOMER NI USTVARIL NE NADALJUJ...
 		if customer is None:
-			vpis.razlogi_prekinitve.append(TipPrekinitveVpisa.NOTRANJA_NAPAKA)
+			return status.napake.append(TipVpisnoOpozorilo.PAYMENT_CUSTOMER_FAIL)
 
-		# SE NI VPISAL IN NI BILO NAPAK
-		if len(vpis.razlogi_prekinitve) == 0:
-			# OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
-			vpis.clan._id = customer.id
+		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
+		status.clan._id = customer.id
 
-			# SHRANI CLANA IN SKRBNIKA V BAZI
-			with self.db.transaction(note=f'Shrani {vpis.clan}') as root:
-				root.save(vpis.clan, unique=True)
-				if vpis.clan.mladoletnik:
-					vpis.clan.connect(vpis.skrbnik)
-					root.save(vpis.skrbnik, unique=True)
-					await self.validate_kontakts_ownerships.exe(oseba=vpis.skrbnik)
-				await self.validate_kontakts_ownerships.exe(oseba=vpis.clan)
+		# ! CE JE ZE NAROCEN POTEM KONCAJ...
+		if customer.subscribed_to(price=CONST.payment_prices.klubska_clanarina):
+			return status.informacije.append(TipVpisnaInformacija.ZE_NAROCEN_NA_KLUBSKO_CLANARINO)
 
-			# USTVARI NAROČNINO ZA ČLANA
-			self.payment.create_subscription(subscription=Subscription(
-				prices=[CONST.payment_prices.klubska_clanarina],
-				customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
-				days_until_due=CONST.days_until_due, trial_period_days=CONST.trial_period_days))
+		# * IZRACUNAJ VELIKOST POSKUSNEGA OBDOBJA
+		trial_period_days = 0
+		if len(customer.subscriptions) == 0:
+			status.informacije.append(TipVpisnaInformacija.POSKUSNO_OBDOBJE)
+			trial_period_days = CONST.trial_period_days
 
-		return vpis
+		# * CE NI ZE NAROCEN POTEM USTVARI SUBSCRIPTION NA KLUBSKO CLANARINO
+		subscription = self.payment.create_subscription(subscription=Subscription(
+			prices=[CONST.payment_prices.klubska_clanarina],
+			customer=customer, collection_method=CollectionMethod.SEND_INVOICE,
+			days_until_due=CONST.days_until_due, trial_period_days=trial_period_days))
+
+		# ! CE SE SUBSCRIPTION NI MORALA USTVARITI POTEM KONCAJ...
+		if subscription is None:
+			return status.napake.append(TipVpisnoOpozorilo.PAYMENT_SUBSCRIPTION_FAIL)
+
+		status.informacije.append(TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO)
+
+	def _shrani_v_bazo(self, status: StatusVpisa):
+		with self.db.transaction(note=f'Shrani {status.clan}') as root:
+			root.save(status.clan, unique=True)
+			if status.clan.mladoletnik:
+				status.clan.connect(status.skrbnik)
+				root.save(status.skrbnik, unique=True)
+
+	async def _validate_kontakts_ownerships(self, status: StatusVpisa):
+		await self.validate_kontakts_ownerships.exe(oseba=status.clan)
+		if status.clan.mladoletnik:
+			await self.validate_kontakts_ownerships.exe(oseba=status.skrbnik)
