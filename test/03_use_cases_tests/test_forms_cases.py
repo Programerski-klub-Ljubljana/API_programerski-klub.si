@@ -118,13 +118,6 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		self.assertCountEqual(sorted(prop), sorted(expected))
 
 	def assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
-		# MORA IMETI VPIS.
-		if vpis:
-			before = datetime.now()
-			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=-1)
-			self.assertEqual(len(status_oseba.vpisi), 1)
-		else:
-			self.assertEqual(len(status_oseba.vpisi), 0)
 
 		# MORA IMETI ENAKE INFORMACIJE
 		self.assertEqual(original_oseba.ime, status_oseba.ime)
@@ -133,6 +126,14 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 		# MORA BITI PRAVEGA TIPA
 		self.assertEqual(status_oseba.tip_osebe, [tip])
+
+		# MORA BITI VPISANA
+		if vpis:
+			before = datetime.now()
+			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=-1)
+			self.assertEqual(len(status_oseba.vpisi), 1)
+		else:
+			self.assertEqual(len(status_oseba.vpisi), 0)
 
 		# NESME IMETI IZPISOV
 		self.assertEqual(original_oseba.izpisi, [])
