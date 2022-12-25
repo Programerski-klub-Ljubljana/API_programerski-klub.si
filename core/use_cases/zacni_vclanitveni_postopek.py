@@ -147,6 +147,9 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# * PREVERI OVNERSHIP ZA KONTAKTE
 		await self._validate_kontakts_ownerships(status=status)
 
+		# * CE IMA UPORABNIK GITHUB GA POVABI V ORGANIZACIJO SAJ JE NJEGOV EMAIL ZE VALIDIRAN
+		self._vcs_vabilo_v_organizacijo(status=status, email=email)
+
 		return status
 
 	def _merge_osebe(self, status: StatusVpisa):
