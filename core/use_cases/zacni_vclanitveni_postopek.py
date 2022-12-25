@@ -7,7 +7,7 @@ from app import CONST
 from core.cutils import list_field
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, NivoValidiranosti, TipOsebe
 from core.services.db_service import DbService
-from core.services.payment_service import Customer, PaymentService, Subscription, CollectionMethod
+from core.services.payment_service import Customer, PaymentService, Subscription, CollectionMethod, SubscriptionHistoryStatus
 from core.services.phone_service import PhoneService
 from core.use_cases._usecase import UseCase
 from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta
@@ -127,7 +127,6 @@ class Zacni_vclanitveni_postopek(UseCase):
 				status.razlogi_prekinitve.append(TipPrekinitveVpisa.CHUCK_NORIS)
 
 		# * PREPARE OSEBE ZA VPIS
-		status.clan.nov_vpis()
 		self._merge_osebe(status=status)
 		self._validacija_kontaktov(status=status)
 
@@ -201,15 +200,15 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
 		status.clan._id = customer.id
 
-		# ! CE JE ZE NAROCEN POTEM KONCAJ...
-		if customer.subscribed_to(price=CONST.payment_prices.klubska_clanarina):
-			return status.informacije.append(TipVpisnaInformacija.ZE_NAROCEN_NA_KLUBSKO_CLANARINO)
-
-		# * IZRACUNAJ VELIKOST POSKUSNEGA OBDOBJA
+		# * PREVERI ZGODOVINO SUBSCRIPTIONS
+		sub_history_status = customer.subscription_history_status(price=CONST.payment_prices.klubska_clanarina)
 		trial_period_days = 0
-		if len(customer.subscriptions) == 0:
-			status.informacije.append(TipVpisnaInformacija.POSKUSNO_OBDOBJE)
-			trial_period_days = CONST.trial_period_days
+		match sub_history_status:
+
+			# * CE SE NI BIL NIKOLI NAROCEN
+			case SubscriptionHistoryStatus.NEVER_SUBSCRIBED:
+				status.informacije.append(TipVpisnaInformacija.POSKUSNO_OBDOBJE)
+				trial_period_days = CONST.trial_period_days
 
 		# * CE NI ZE NAROCEN POTEM USTVARI SUBSCRIPTION NA KLUBSKO CLANARINO
 		subscription = self.payment.create_subscription(subscription=Subscription(
@@ -224,6 +223,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		status.informacije.append(TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO)
 
 	def _shrani_v_bazo(self, status: StatusVpisa):
+		status.clan.nov_vpis()
 		with self.db.transaction(note=f'Shrani {status.clan}') as root:
 			root.save(status.clan, unique=True)
 			if status.clan.mladoletnik:

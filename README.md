@@ -26,12 +26,8 @@ coverage html --omit="*/test*,*/core/services/*"
 google-chrome htmlcov/index.html
 ```
 
-```bash
-for i in {1..100} ; do echo "$i <----------------" && python -m unittest test.02_services_tests.test_payment_service; done
-```
-
 ## TODO:
-V token data probaj posiljati _id entitija, saj bo zmeraj unikaten!
 
+V token data probaj posiljati _id entitija, saj bo zmeraj unikaten!
 
 ```

@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from app import APP
-from core.services.payment_service import PaymentService, Customer, Subscription, CollectionMethod, SubscriptionStatus
+from core.services.payment_service import PaymentService, Customer, Subscription, CollectionMethod, SubscriptionStatus, SubscriptionHistoryStatus
 
 
 class test_payment_service(unittest.TestCase):
@@ -60,7 +60,33 @@ class test_payment_service(unittest.TestCase):
 		self.assertEqualSubscription(found_subscription, subscription)
 
 
-class test_customer(test_payment_service):
+class test_customer(unittest.TestCase):
+	subscription0_active = None
+	subscription1_canceled = None
+	customer = None
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		cls.customer = Customer(name='name', billing_email='billing_email')
+		cls.subscription0_active = Subscription(
+			prices=['price0', 'price1', 'price2'], customer=cls.customer.id, collection_method=CollectionMethod.SEND_INVOICE, days_until_due=7,
+			trial_period_days=0, status=SubscriptionStatus.ACTIVE)
+
+		cls.subscription1_canceled = Subscription(
+			prices=['price3', 'price4', 'price5'], customer=cls.customer.id, collection_method=CollectionMethod.SEND_INVOICE,
+			days_until_due=7, trial_period_days=0, status=SubscriptionStatus.CANCELED)
+
+		cls.customer.subscriptions += [cls.subscription0_active, cls.subscription1_canceled]
+
+	def test_subscription_history_status(self):
+		for i in range(3):
+			self.assertEqual(SubscriptionHistoryStatus.IS_SUBSCRIBED, self.customer.subscription_history_status(f'price{i}'))
+		for i in range(3, 6):
+			self.assertEqual(SubscriptionHistoryStatus.WAS_SUBSCRIBED, self.customer.subscription_history_status(f'price{i}'))
+		self.assertEqual(SubscriptionHistoryStatus.NEVER_SUBSCRIBED, self.customer.subscription_history_status(f'price7'))
+
+
+class test_customer_api(test_payment_service):
 	"""CREATE CUSTOMERS =========================================================== """
 
 	def test_01_create_customer_wrong_email(self):
@@ -74,7 +100,7 @@ class test_customer(test_payment_service):
 
 		self.assertTrue(before.timestamp() - 10 <= customer.created.timestamp() <= after.timestamp() + 10)
 		self.assertEqualCustomer(customer, self.customer)
-		test_customer.customer = customer
+		test_customer_api.customer = customer
 
 	def test_03_create_customer_again_returns_existing(self):
 		self.assertIsNotNone(self.customer.id)
@@ -83,7 +109,7 @@ class test_customer(test_payment_service):
 
 	""" GET CUSTOMERS """
 
-	def test_03_get_customer(self):
+	def test_030_get_customer(self):
 		customer = self.service.get_customer(id=self.customer.id)
 		self.assertEqual(customer.id, self.customer.id)
 		self.assertEqualCustomer(customer, self.customer)
@@ -115,7 +141,7 @@ class test_customer(test_payment_service):
 		self.assertIsNone(customer)
 
 
-class test_subscription(test_payment_service):
+class test_subscription_api(test_payment_service):
 	""" CREATE SUBSCRIPTIONS ======================================================= """
 
 	def test_01_create_subscription_unknown_customer(self):
@@ -137,7 +163,7 @@ class test_subscription(test_payment_service):
 		self.subscription.customer = self.service.create_customer(self.customer)
 		sub = self.service.create_subscription(subscription=self.subscription)
 		self.assertEqualSubscription(sub, self.subscription)
-		test_subscription.subscription = sub
+		test_subscription_api.subscription = sub
 
 	def test_031_test_id(self):
 		self.assertIsNotNone(self.subscription.id)

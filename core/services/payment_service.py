@@ -1,9 +1,30 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum, auto
 
 from core import cutils
-from core.domain._enums import EntityEnum
+
+
+class SubscriptionHistoryStatus(str, Enum):
+	WAS_SUBSCRIBED = auto()
+	IS_SUBSCRIBED = auto()
+	NEVER_SUBSCRIBED = auto()
+
+
+class SubscriptionStatus(str, Enum):
+	INCOMPLETE = 'incomplete'
+	INCOMPLETE_EXPIRED = 'incomplete_expired'
+	TRIALING = 'trialing'
+	ACTIVE = 'active'
+	PAST_DUE = 'past_due'
+	CANCELED = 'canceled'
+	UNPAID = 'unpaid'
+
+
+class CollectionMethod(str, Enum):
+	CHARGE_AUTOMATICALLY = 'charge_automatically'
+	SEND_INVOICE = 'send_invoice'
 
 
 @dataclass
@@ -22,28 +43,15 @@ class Customer:
 
 	deleted: bool = False
 
-	def subscribed_to(self, price):
-		# TODO: Test me!
+	def subscription_history_status(self, price: str) -> SubscriptionHistoryStatus:
+		status = SubscriptionHistoryStatus.NEVER_SUBSCRIBED
 		for sub in self.subscriptions:
-			if sub.status != SubscriptionStatus.CANCELED:
-				if price in sub.prices:
-					return True
-		return False
+			if price in sub.prices:
+				status = SubscriptionHistoryStatus.WAS_SUBSCRIBED
+				if sub.status != SubscriptionStatus.CANCELED:
+					return SubscriptionHistoryStatus.IS_SUBSCRIBED
 
-
-class SubscriptionStatus(EntityEnum):
-	INCOMPLETE = 'incomplete'
-	INCOMPLETE_EXPIRED = 'incomplete_expired'
-	TRIALING = 'trialing'
-	ACTIVE = 'active'
-	PAST_DUE = 'past_due'
-	CANCELED = 'canceled'
-	UNPAID = 'unpaid'
-
-
-class CollectionMethod(EntityEnum):
-	CHARGE_AUTOMATICALLY = 'charge_automatically'
-	SEND_INVOICE = 'send_invoice'
+		return status
 
 
 @dataclass

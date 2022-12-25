@@ -129,7 +129,9 @@ class PaymentStripe(PaymentService):
 		if customer.id is not None:
 			old_customer = self.get_customer(id=customer.id)
 			if old_customer is not None:
+				log.warning(f"Returning allready created customer: {old_customer}")
 				return old_customer
+		log.warning(f"Creating new customer: {customer}")
 		return StripeCustomer.create(customer)
 
 	@stripe_request(default_value=None)
