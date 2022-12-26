@@ -24,21 +24,38 @@ class test_email(IsolatedAsyncioTestCase):
 		self.assertFalse(self.service.check_existance('xxx'))
 		self.assertFalse(self.service.check_existance(f'xxx@{shortuuid.uuid().lower()}.com'))
 
-	async def test_send_and_mailbox(self):
+	async def test_send_and_get_all_and_delete(self):
 		subject = f'TESTING: {datetime.now()}'
 		vsebina = f'<h3><b>__file__</b> = {__file__}<br><b>__name__</b> = {__name__}</h3>'
 		await self.service.send(
 			recipients=[CONST.emails.api],
 			subject=subject,
 			vsebina=vsebina)
-		send_email = Email(sender=EmailPerson(name=CONST.org_name, email=CONST.emails.api), subject=subject, content=vsebina)
+		send_email = Email(
+			sender=EmailPerson(name=CONST.org_name, email=CONST.emails.api),
+			subject=subject,
+			content=vsebina)
+
 		while True:
-			email = self.service.mailbox()[-1]
-			if email.subject == send_email.subject:
-				self.assertEqual(send_email.sender, EmailPerson(name=CONST.org_name, email=CONST.emails.api))
-				self.assertEqual(send_email.content, vsebina)
+			emails = self.service.get_all()
+			get_email = emails[-1]
+			if send_email.subject == get_email.subject:
+				self.assertEqual(send_email.sender, get_email.sender)
+				self.assertEqual(send_email.content, get_email.content)
 				break
 			time.sleep(1)
+
+		self.assertTrue(self.service.delete(id=get_email.id))
+
+	def test_inbox_status(self):
+		folder_status = self.service.inbox_status()
+		for k, v in folder_status.__dict__.items():
+			self.assertGreaterEqual(v, 0, msg=k)
+
+	def test_folder_status(self):
+		folder_status = self.service.folder_status(folder='INBOX')
+		for k, v in folder_status.__dict__.items():
+			self.assertGreaterEqual(v, 0, msg=k)
 
 
 if __name__ == '__main__':

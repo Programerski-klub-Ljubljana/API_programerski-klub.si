@@ -40,3 +40,4 @@ phonenumbers
 PyGithub
 pycountry
 countryinfo
+imap-tools

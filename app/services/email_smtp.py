@@ -1,17 +1,15 @@
-import email
-import imaplib
 import logging
-import re
 from ipaddress import IPv4Address, IPv6Address
 from typing import List, Any, Dict
 
 from autologging import traced
 from fastapi_mail import ConnectionConfig, MessageType, MessageSchema, FastMail
+from imap_tools import MailBox
 from pydantic import BaseModel, EmailStr
 from validate_email import validate_email
 
 from core import cutils
-from core.services.email_service import EmailService, Email, EmailPerson
+from core.services.email_service import EmailService, EmailPerson, Email, EmailFlag, EmailFolderStatus
 
 log = logging.getLogger(__name__)
 
@@ -21,16 +19,8 @@ class EmailSchema(BaseModel):
 	body: Dict[str, Any]
 
 
-class SmtpPerson(EmailPerson):
-	@staticmethod
-	def parse(data: str):
-		e_mail = re.findall(pattern='\<(.*?)>', string=data)
-		if len(e_mail) == 1:
-			return EmailPerson(email=e_mail[0], name=data.replace(f' <{e_mail[0]}>', '').strip())
-
-
 @traced
-class EmailSmtp(EmailService):
+class Email_smtp_imap(EmailService):
 	def __init__(self, name: str, email: str, server: str, port: str, username: str, password: str, suppress_send: bool):
 		self.conn = ConnectionConfig(
 			MAIL_FROM_NAME=name, MAIL_FROM=email,
@@ -42,8 +32,8 @@ class EmailSmtp(EmailService):
 			TEMPLATE_FOLDER=str(cutils.root_path('templates')))
 
 		self.fmail = FastMail(self.conn)
-		self.mail = imaplib.IMAP4_SSL(server)
-		self.mail.login(user=email, password=password)
+		self.imap = MailBox(server)
+		self.imap.login(username=username, password=password, initial_folder='INBOX')
 
 	def check_existance(self, email: str):
 		return validate_email(
@@ -64,31 +54,31 @@ class EmailSmtp(EmailService):
 
 		await self.fmail.send_message(message)
 
-	def mailbox(self) -> list[Email]:
-		self.mail.select('inbox')
+	def delete(self, id: str) -> bool:
+		r, e = self.imap.delete(uid_list=[id])
+		return r[0] == 'OK' and e[0] == 'OK'
 
-		status, data = self.mail.search(None, 'ALL')
-		mail_ids = []
-		for block in data:
-			mail_ids += block.split()
+	def get_all(self) -> list[Email]:
+		mails = []
+		for msg in self.imap.fetch():
+			from_value = msg.from_values
+			person = EmailPerson(email=from_value.email, name=from_value.name)
+			mail = Email(
+				id=msg.uid,
+				sender=person,
+				subject=msg.subject,
+				content=msg.html,
+				created=msg.date,
+				flags=[EmailFlag.parse(flag) for flag in msg.flags])
+			mails.append(mail)
+		return mails
 
-		all_emails = []
-		for i in mail_ids:
-			status, data = self.mail.fetch(i, '(RFC822)')
-			for response_part in data:
-				if isinstance(response_part, tuple):
-					e = Email()
-					message = email.message_from_bytes(response_part[1])
-					e.sender = SmtpPerson.parse(data=message['from'])
-					e.subject = message['subject']
+	def inbox_status(self) -> EmailFolderStatus:
+		return self.folder_status(folder='INBOX')
 
-					if message.is_multipart():
-						e.content = ''
-						for part in message.get_payload():
-							if part.get_content_type() == 'text/plain':
-								e.content += part.get_payload()
-					else:
-						e.content = message.get_payload()
-
-					all_emails.append(e)
-		return all_emails
+	def folder_status(self, folder: str) -> EmailFolderStatus:
+		stats = self.imap.folder.status(folder=folder)
+		return EmailFolderStatus(
+			messages=stats['MESSAGES'],
+			recent=stats['RECENT'],
+			unseen=stats['UNSEEN'])

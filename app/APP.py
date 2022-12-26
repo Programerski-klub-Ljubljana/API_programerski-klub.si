@@ -8,7 +8,7 @@ from dependency_injector.providers import Singleton, DependenciesContainer, Fact
 from app import ENV, CONST
 from app.db.db_zodb import DbZo
 from app.services.auth_jwt import AuthJwt
-from app.services.email_smtp import EmailSmtp
+from app.services.email_smtp import Email_smtp_imap
 from app.services.github_vcs import GithubVcs
 from app.services.payment_stripe import PaymentStripe
 from app.services.phone_twilio import PhoneTwilio
@@ -33,8 +33,8 @@ class Services(DeclarativeContainer):
 	phone: Provider[PhoneTwilio] = Singleton(
 		PhoneTwilio, default_country_code=CONST.phone_default_country_code, from_number=CONST.phones.api,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
-	email: Provider[EmailSmtp] = Singleton(
-		EmailSmtp, name=CONST.org_name, email=CONST.emails.api,
+	email: Provider[Email_smtp_imap] = Singleton(
+		Email_smtp_imap, name=CONST.org_name, email=CONST.emails.api,
 		server=CONST.domain, port=ENV.MAIL_PORT,
 		username=CONST.emails.api, password=ENV.MAIL_PASSWORD,
 		suppress_send=ENV.MAIL_SUPPRESS_SEND

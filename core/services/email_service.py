@@ -1,5 +1,7 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 
 
 @dataclass
@@ -13,11 +15,35 @@ class EmailPerson:
 		pass
 
 
+class EmailFlag(str, Enum):
+	SEEN = '\\Seen'
+	ANSWERED = '\\Answered'
+	FLAGGED = '\\Flagged'
+	DELETED = '\\Deleted'
+	DRAFT = '\\Draft'
+
+	@classmethod
+	def parse(cls, data):
+		for finger in cls:
+			if finger == data:
+				return finger
+
+
+@dataclass
+class EmailFolderStatus:
+	messages: int
+	recent: int
+	unseen: int
+
+
 @dataclass
 class Email:
+	id: str = None
 	sender: EmailPerson = None
 	subject: str = None
 	content: str = None
+	created: datetime = None
+	flags: list[str] = None
 
 
 class EmailService(ABC):
@@ -30,5 +56,17 @@ class EmailService(ABC):
 		pass
 
 	@abstractmethod
-	def mailbox(self) -> list[Email]:
+	def get_all(self) -> list[Email]:
+		pass
+
+	@abstractmethod
+	def folder_status(self, folder: str) -> EmailFolderStatus:
+		pass
+
+	@abstractmethod
+	def inbox_status(self) -> EmailFolderStatus:
+		pass
+
+	@abstractmethod
+	def delete(self, id: str) -> bool:
 		pass
