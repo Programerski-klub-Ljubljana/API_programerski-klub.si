@@ -1,3 +1,4 @@
+import time
 import unittest
 from datetime import datetime
 from unittest import IsolatedAsyncioTestCase
@@ -5,7 +6,7 @@ from unittest import IsolatedAsyncioTestCase
 import shortuuid
 
 from app import APP, CONST
-from core.services.email_service import EmailService
+from core.services.email_service import EmailService, Email, EmailPerson
 
 
 class test_email(IsolatedAsyncioTestCase):
@@ -23,18 +24,21 @@ class test_email(IsolatedAsyncioTestCase):
 		self.assertFalse(self.service.check_existance('xxx'))
 		self.assertFalse(self.service.check_existance(f'xxx@{shortuuid.uuid().lower()}.com'))
 
-	async def test_send(self):
+	async def test_send_and_mailbox(self):
+		subject = f'TESTING: {datetime.now()}'
+		vsebina = f'<h3><b>__file__</b> = {__file__}<br><b>__name__</b> = {__name__}</h3>'
 		await self.service.send(
-			[CONST.emails.api],
-			f'TESTING: {datetime.now()}',
-			f'<h3><b>__file__</b> = {__file__}<br><b>__name__</b> = {__name__}</h3>')
-
-	def test_mailbox(self):
-		email = self.service.mailbox()[-1]
-		self.assertTrue(self.service.check_existance(email.sender.email))
-		self.assertGreater(len(email.sender.name), 3)
-		self.assertGreater(len(email.subject), 2)
-		self.assertIsNotNone(email.content)
+			recipients=[CONST.emails.api],
+			subject=subject,
+			vsebina=vsebina)
+		send_email = Email(sender=EmailPerson(name=CONST.org_name, email=CONST.emails.api), subject=subject, content=vsebina)
+		while True:
+			email = self.service.mailbox()[-1]
+			if email.subject == send_email.subject:
+				self.assertEqual(send_email.sender, EmailPerson(name=CONST.org_name, email=CONST.emails.api))
+				self.assertEqual(send_email.content, vsebina)
+				break
+			time.sleep(1)
 
 
 if __name__ == '__main__':
