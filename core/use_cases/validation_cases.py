@@ -37,9 +37,12 @@ class Preveri_obstoj_kontakta(UseCase):
 	def _kontakt_obstaja(self, kontakt: Kontakt):
 		match kontakt.tip:
 			case TipKontakta.EMAIL:
-				return self.vcs.user(email=kontakt.data) is not None or self.email.check_existance(email=kontakt.data)
+				is_vcs_user = self.vcs.user(email=kontakt.data) is not None
+				email_exists = self.email.check_existance(email=kontakt.data)
+				return is_vcs_user or email_exists
 			case TipKontakta.PHONE:
 				return self.phone.check_existance(phone=kontakt.data)
+		return False
 
 
 @traced
