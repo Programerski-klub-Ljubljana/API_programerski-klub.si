@@ -1,4 +1,7 @@
+import email
+import imaplib
 import logging
+import re
 from ipaddress import IPv4Address, IPv6Address
 from typing import List, Any, Dict
 
@@ -8,7 +11,7 @@ from pydantic import BaseModel, EmailStr
 from validate_email import validate_email
 
 from core import cutils
-from core.services.email_service import EmailService
+from core.services.email_service import EmailService, Email, EmailPerson
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +19,14 @@ log = logging.getLogger(__name__)
 class EmailSchema(BaseModel):
 	email: List[EmailStr]
 	body: Dict[str, Any]
+
+
+class SmtpPerson(EmailPerson):
+	@staticmethod
+	def parse(data: str):
+		e_mail = re.findall(pattern='\<(.*?)>', string=data)
+		if len(e_mail) == 1:
+			return EmailPerson(email=e_mail[0], name=data.replace(f' <{e_mail[0]}>', '').strip())
 
 
 @traced
@@ -29,7 +40,10 @@ class EmailSmtp(EmailService):
 			USE_CREDENTIALS=True, VALIDATE_CERTS=True,
 			SUPPRESS_SEND=suppress_send,
 			TEMPLATE_FOLDER=str(cutils.root_path('templates')))
-		self.inst = FastMail(self.conn)
+
+		self.fmail = FastMail(self.conn)
+		self.mail = imaplib.IMAP4_SSL(server)
+		self.mail.login(user=email, password=password)
 
 	def check_existance(self, email: str):
 		return validate_email(
@@ -48,4 +62,33 @@ class EmailSmtp(EmailService):
 			subject=subject,
 			subtype=MessageType.html)
 
-		await self.inst.send_message(message)
+		await self.fmail.send_message(message)
+
+	def mailbox(self) -> list[Email]:
+		self.mail.select('inbox')
+
+		status, data = self.mail.search(None, 'ALL')
+		mail_ids = []
+		for block in data:
+			mail_ids += block.split()
+
+		all_emails = []
+		for i in mail_ids:
+			status, data = self.mail.fetch(i, '(RFC822)')
+			for response_part in data:
+				if isinstance(response_part, tuple):
+					e = Email()
+					message = email.message_from_bytes(response_part[1])
+					e.sender = SmtpPerson.parse(data=message['from'])
+					e.subject = message['subject']
+
+					if message.is_multipart():
+						e.content = ''
+						for part in message.get_payload():
+							if part.get_content_type() == 'text/plain':
+								e.content += part.get_payload()
+					else:
+						e.content = message.get_payload()
+
+					all_emails.append(e)
+		return all_emails
