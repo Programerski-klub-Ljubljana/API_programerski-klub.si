@@ -11,9 +11,21 @@ web = f'https://{domain}'
 web_api = f'{web}/api'
 
 """ CONTACTS """
-email = f'info@{domain}'
-alt_email = 'jar.fmf@gmail.com'
-phone = f'051-240-885'
+
+
+class emails:
+	info = f'info@{domain}'
+	api = f'api@{domain}'
+
+	test_vcs_member = f'test@{domain}'
+	test = f'test@{domain}'
+	test2 = f'test2@{domain}'
+
+class phones:
+	api = f'+38651240885'
+	info = f'051-240-885'
+	test = f'051-240-885'
+	test2 = f'051-240-885'
 
 """ GITHUB """
 github_org = org_name.lower().replace(' ', '-')
@@ -38,7 +50,7 @@ trial_period_days = 7 * 4
 api_openapi = {
 	'version': version,
 	'title': f"API - {org_name}",
-	'contact': {'email': email, 'web': web, 'github': github},
+	'contact': {'email': emails.info, 'web': web, 'github': github},
 	'description': f"""
 		API server ki ga uporablja {org_name} za svoje delovanje.
 		Notri se nahaja vse stvari za popolno avtomatizacijo kluba ter spletne strani

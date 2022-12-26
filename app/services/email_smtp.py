@@ -38,13 +38,7 @@ class EmailSmtp(EmailService):
 			check_blacklist=True,
 			check_dns=not self.conn.SUPPRESS_SEND,
 			check_smtp=False,
-			dns_timeout=20,
-			smtp_timeout=20,
-			smtp_helo_host=self.conn.MAIL_SERVER,
-			smtp_from_address=self.conn.MAIL_FROM,
-			smtp_skip_tls=False,
-			smtp_tls_context=None,
-			smtp_debug=True,
+			dns_timeout=3,
 			address_types=frozenset([IPv4Address, IPv6Address]))
 
 	async def send(self, recipients: List[str], subject: str, vsebina: str):

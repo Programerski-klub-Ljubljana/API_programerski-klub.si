@@ -79,13 +79,13 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		self.today = date.today()
 
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
-			Kontakt(data=CONST.alt_email, tip=TipKontakta.EMAIL), Kontakt(data='041327791', tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.emails.test2, tip=TipKontakta.EMAIL), Kontakt(data='041327791', tip=TipKontakta.PHONE)])
 
 		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
-			Kontakt(data=CONST.email, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phone, tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
 
 		self.mladoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 10, month=1, day=1), kontakti=[
-			Kontakt(data=CONST.email, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phone, tip=TipKontakta.PHONE)])
+			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
 
 		# * CLEAN DATABASE
 		with self.case.db.transaction() as root:

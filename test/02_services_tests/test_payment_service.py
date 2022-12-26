@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from app import APP
+from app import APP, CONST
 from core.services.payment_service import PaymentService, Customer, Subscription, CollectionMethod, SubscriptionStatus, SubscriptionHistoryStatus
 
 
@@ -16,7 +16,7 @@ class test_payment_service(unittest.TestCase):
 		cls.service: PaymentService = APP.services.payment()
 		cls.prices = ["klubska_clanarina"]
 
-		cls.customer = Customer(name='name', description='description', billing_email='jar.fmf@gmail.com', languages=['si-SI'])
+		cls.customer = Customer(name='name', description='description', billing_email=CONST.emails.test, languages=['si-SI'])
 		cls.customer_fail = Customer(id='xxx', name='name', description='description', billing_email='xxx', languages=['si-SI'])
 		cls.subscription = Subscription(
 			description='description', prices=cls.prices,

@@ -28,5 +28,6 @@ class PhoneService(ABC):
 	def format(self, phone: str) -> str:
 		pass
 
+	@abstractmethod
 	def send_sms(self, phone: str, text: str) -> bool:
 		pass

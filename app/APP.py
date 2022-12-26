@@ -31,12 +31,12 @@ class Services(DeclarativeContainer):
 	vcs: Provider[GithubVcs] = Singleton(
 		GithubVcs, app_id=ENV.GITHUB_APP_ID, private_key_path=ENV.GITHUB_PRIVATE_KEY_PATH, organization=CONST.github_org)
 	phone: Provider[PhoneTwilio] = Singleton(
-		PhoneTwilio, default_country_code=CONST.phone_default_country_code, from_number=ENV.TWILIO_FROM_NUMBER,
+		PhoneTwilio, default_country_code=CONST.phone_default_country_code, from_number=CONST.phones.api,
 		service_sid=ENV.TWILIO_SERVICE_SID, account_sid=ENV.TWILIO_ACCOUNT_SID, auth_token=ENV.TWILIO_AUTH_TOKEN)
 	email: Provider[EmailSmtp] = Singleton(
-		EmailSmtp, name=CONST.org_name, email=CONST.email,
+		EmailSmtp, name=CONST.org_name, email=CONST.emails.api,
 		server=CONST.domain, port=ENV.MAIL_PORT,
-		username=CONST.email, password=ENV.MAIL_PASSWORD,
+		username=CONST.emails.api, password=ENV.MAIL_PASSWORD,
 		suppress_send=ENV.MAIL_SUPPRESS_SEND
 	)
 	template: Provider[TemplateJinja] = Singleton(TemplateJinja, searchpath=CONST.api_templates)
