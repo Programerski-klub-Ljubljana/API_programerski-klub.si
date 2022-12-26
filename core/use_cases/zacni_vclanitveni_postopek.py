@@ -37,7 +37,7 @@ class TipVpisnaInformacija(str, Enum):
 	CLAN_SE_PONOVNO_VPISUJE = auto()
 
 
-class TipVpisnoOpozorilo(str, Enum):
+class TipVpisnaNapaka(str, Enum):
 	VCS_INVITE_FAIL = auto()
 	PAYMENT_SUBSCRIPTION_FAIL = auto()
 	PAYMENT_CUSTOMER_FAIL = auto()
@@ -52,7 +52,7 @@ class StatusVpisa:
 	validirani_podatki_skrbnika: list[Kontakt] = list_field()
 	validirani_podatki_clana: list[Kontakt] = list_field()
 	informacije: list[TipVpisnaInformacija] = list_field()
-	napake: list[TipVpisnoOpozorilo] = list_field()
+	napake: list[TipVpisnaNapaka] = list_field()
 
 	def _napacni_podatki(self, kontakti):
 		lam_ni_validiran = lambda kontakt: kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN
@@ -190,7 +190,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# * POISCI IZVOR BILLING TELEFONA
 		izvor_telefona = self.phone.origin(phone=billing_phone)
 		if len(izvor_telefona.languages) == 0:
-			status.napake.append(TipVpisnoOpozorilo.IZVOR_TELEFONA_NI_NAJDEN)
+			status.napake.append(TipVpisnaNapaka.IZVOR_TELEFONA_NI_NAJDEN)
 
 		# * CE SE JE MERGE ZGODIL POTEM IMA ZE NASTAVLJEN ID OD STRIPE-a
 		customer = self.payment.create_customer(customer=Customer(
@@ -200,7 +200,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ! CE SE CUSTOMER NI USTVARIL NE NADALJUJ...
 		if customer is None:
-			return status.napake.append(TipVpisnoOpozorilo.PAYMENT_CUSTOMER_FAIL)
+			return status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_FAIL)
 
 		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
 		status.clan._id = customer.id
@@ -223,7 +223,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ! CE SE SUBSCRIPTION NI MORALA USTVARITI POTEM KONCAJ...
 		if subscription is None:
-			return status.napake.append(TipVpisnoOpozorilo.PAYMENT_SUBSCRIPTION_FAIL)
+			return status.napake.append(TipVpisnaNapaka.PAYMENT_SUBSCRIPTION_FAIL)
 
 		status.informacije.append(TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO)
 
@@ -248,4 +248,4 @@ class Zacni_vclanitveni_postopek(UseCase):
 		if self.vcs.user_invite(email=email, member_role=VcsMemberRole.DIRECT_MEMBER):
 			return status.informacije.append(TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO)
 
-		return status.napake.append(TipVpisnoOpozorilo.VCS_INVITE_FAIL)
+		return status.napake.append(TipVpisnaNapaka.VCS_INVITE_FAIL)
