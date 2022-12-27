@@ -16,7 +16,6 @@ from core.services.vcs_service import VcsService, VcsMemberRole
 from core.use_cases._usecase import UseCase
 from core.use_cases.auth_cases import Send_token_parts, TokenPart
 from core.use_cases.msg_cases import Poslji_porocilo_napake
-from core.use_cases.validation_cases import Preveri_obstoj_kontakta
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +110,6 @@ class VpisniPodatki:
 
 @dataclass
 class Pripravi_vclanitveni_postopek(UseCase):
-	preveri_obstoj_kontakta: Preveri_obstoj_kontakta
 	phone: PhoneService
 	email: EmailService
 	auth: AuthService

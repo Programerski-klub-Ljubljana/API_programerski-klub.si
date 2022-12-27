@@ -6,7 +6,6 @@ from core.cutils import list_field
 from core.domain.arhitektura_kluba import Oseba
 from core.services.db_service import DbService
 from core.use_cases._usecase import UseCase
-from core.use_cases.validation_cases import Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +24,6 @@ class StatusIzpisa:
 @dataclass
 class Zacni_izclanitveni_postopek(UseCase):
 	db: DbService
-	validate_izpis_request: Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
 	async def exe(self, ime: str, priimek: str, email: str, razlog: str) -> StatusIzpisa:
 		# * POISCI CLANA V PODATKOVNI BAZI

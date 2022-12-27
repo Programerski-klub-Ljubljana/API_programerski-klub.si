@@ -1,10 +1,9 @@
 {% include "_HEAD.html" %}
 
-<h1>VERIFIKACIJA OSEBE</h1>
-<h2>{{ime}} {{priimek}}</h2>
-<h3>Klikni ustrezni gumb da....</h3>
+<h1>EMAIL VERIFIKACIJA KONTAKTA</h1>
 
-<a href="{{CONST_auth_ownership_url}}/{{token}}">Potrdiš svojo identiteto</a>
-<a href="{{CONST_auth_report_url}}/{{token}}">Prijaviš zlorabo email naslova</a>
+<h2>Geslo: {{token}}</h2>
+
+<a href="{{CONST_auth_report_url}}/{{kontakt}}">Prijavi zlorabo email naslova</a>
 
 {% include "_FOOT.html" %}

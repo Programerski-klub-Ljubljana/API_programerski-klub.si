@@ -15,9 +15,9 @@ from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
-from core.use_cases.auth_cases import Ustvari_osebni_zeton
+from core.use_cases.auth_cases import Send_token_parts
 from core.use_cases.db_cases import Vrni_vsebino_baze
-from core.use_cases.validation_cases import Preveri_obstoj_kontakta
+from core.use_cases.msg_cases import Poslji_porocilo_napake, Poslji_sporocilo_kontaktu
 from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek
 
 
@@ -34,8 +34,7 @@ class Services(DeclarativeContainer):
 		Email_smtp_imap, name=CONST.org_name, email=CONST.emails.api,
 		server=CONST.domain, port=ENV.MAIL_PORT,
 		username=CONST.emails.api, password=ENV.MAIL_PASSWORD,
-		suppress_send=ENV.MAIL_SUPPRESS_SEND
-	)
+		suppress_send=ENV.MAIL_SUPPRESS_SEND)
 	template: Provider[TemplateJinja] = Singleton(TemplateJinja, searchpath=CONST.api_templates)
 
 
@@ -43,21 +42,20 @@ class UseCases(DeclarativeContainer):
 	d: Services = DependenciesContainer()
 
 	""" FIRST LEVEL USE CASES """
+	poslji_sporocilo_kontaktu: Provider[Poslji_sporocilo_kontaktu] = Factory(
+		Poslji_sporocilo_kontaktu, db=d.db, phone=d.phone, email=d.email)
+	poslji_porocilo_napake: Provider[Poslji_porocilo_napake] = Factory(
+		Poslji_porocilo_napake, db=d.db, phone=d.phone, email=d.email, template=d.template, poslji_sporocilo_kontaktu=poslji_sporocilo_kontaktu)
 
 	# AUTH
-	ustvari_osebni_zeton: Provider[Ustvari_osebni_zeton] = Factory(Ustvari_osebni_zeton, db=d.db, auth=d.auth)
+	send_token_parts: Provider[Send_token_parts] = Factory(Send_token_parts, phone=d.phone, email=d.email, template=d.template)
 
 	# DB
 	vrni_vsebino_baze: Provider[Vrni_vsebino_baze] = Factory(Vrni_vsebino_baze, db=d.db)
 
-	# OSEBA
-	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, phone=d.phone)
-
 	# FORMS
 	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
-		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment, vcs=d.vcs,
-		validate_kontakts_existances=preveri_obstoj_kontakta,
-		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
+		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment, vcs=d.vcs, auth=d.auth, poslji_porocilo_napake=poslji_porocilo_napake)
 
 
 log = logging.getLogger(__name__)

@@ -156,24 +156,43 @@ class test_oseba(unittest.TestCase):
 		self.assertEqual(str(o0), "janeznovak_24051992")
 		self.assertEqual(str(o1), "janeznovak_xxx")
 
-	def test_nov_vpis(self):
+	def test_nov_vpis_in_vpis(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
 		t = datetime.now()
+
 		self.assertEqual(len(o.vpisi), 0)
+		self.assertEqual(len(o.izpisi), 0)
+
+		o.nov_izpis()
+		self.assertEqual(len(o.vpisi), 0)
+		self.assertEqual(len(o.izpisi), 0)
+
 		o.nov_vpis()
 		self.assertEqual(len(o.vpisi), 1)
-		o.nov_vpis()
-		self.assertEqual(len(o.vpisi), 2)
+		self.assertEqual(len(o.izpisi), 0)
 		self.assertGreater(o.vpisi[-1], t)
 
-	def test_nov_izpis(self):
-		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)
-		t = datetime.now()
+		o.nov_vpis()
+		self.assertEqual(len(o.vpisi), 1)
 		self.assertEqual(len(o.izpisi), 0)
+		self.assertGreater(o.vpisi[-1], t)
+
 		o.nov_izpis()
+		self.assertEqual(len(o.vpisi), 1)
 		self.assertEqual(len(o.izpisi), 1)
+		self.assertGreater(o.vpisi[-1], t)
+		self.assertGreater(o.izpisi[-1], t)
+
 		o.nov_izpis()
-		self.assertEqual(len(o.izpisi), 2)
+		self.assertEqual(len(o.vpisi), 1)
+		self.assertEqual(len(o.izpisi), 1)
+		self.assertGreater(o.vpisi[-1], t)
+		self.assertGreater(o.izpisi[-1], t)
+
+		o.nov_vpis()
+		self.assertEqual(len(o.vpisi), 2)
+		self.assertEqual(len(o.izpisi), 1)
+		self.assertGreater(o.vpisi[-1], t)
 		self.assertGreater(o.izpisi[-1], t)
 
 	def test_starost(self):
@@ -229,8 +248,8 @@ class test_oseba(unittest.TestCase):
 		half_oseba.izpisi = half_oseba.izpisi[:2]
 
 		# MERGE RETURN FALSE ON OSEBA NOT MATCHING!
-		self.assertFalse(empty_oseba3.merge(full_oseba0))
-		self.assertFalse(full_oseba0.merge(empty_oseba3))
+		self.assertFalse(empty_oseba3.merge(full_oseba0, merge_kontakti=True, merge_vpisi_izpisi=True))
+		self.assertFalse(full_oseba0.merge(empty_oseba3, merge_kontakti=True, merge_vpisi_izpisi=True))
 
 		# AFTER FAILED MERGE NOTHING SHOULD CHANGE!
 		self.assertEqual(full_oseba0, full_oseba1)
@@ -242,25 +261,25 @@ class test_oseba(unittest.TestCase):
 		self.assertNotEqual(empty_oseba0, empty_oseba3)
 		self.assertNotEqual(half_oseba, full_oseba0)
 
-		self.assertTrue(full_oseba0.merge(full_oseba0))
-		self.assertTrue(empty_oseba0.merge(empty_oseba1))
-		self.assertTrue(empty_oseba2.merge(empty_oseba1, merge_vpisi_izpisi=False))
+		self.assertTrue(full_oseba0.merge(full_oseba0, merge_vpisi_izpisi=True, merge_kontakti=True))
+		self.assertTrue(empty_oseba0.merge(empty_oseba1, merge_vpisi_izpisi=True, merge_kontakti=True))
+		self.assertTrue(empty_oseba2.merge(empty_oseba1, merge_vpisi_izpisi=False, merge_kontakti=True))
 
 		# MERGE SAME OBJECT SHOULD NOT CHANGE ANYTHING
 		self.assertEqual(full_oseba0, full_oseba1)
 		self.assertEqual(empty_oseba0, empty_oseba1)
 		self.assertEqual(empty_oseba0, empty_oseba2)
 
-		self.assertTrue(empty_oseba0.merge(full_oseba0))
-		self.assertTrue(half_oseba.merge(full_oseba0))
-		self.assertTrue(full_oseba1.merge(empty_oseba1))
+		self.assertTrue(empty_oseba0.merge(full_oseba0, merge_vpisi_izpisi=True, merge_kontakti=True))
+		self.assertTrue(half_oseba.merge(full_oseba0, merge_vpisi_izpisi=True, merge_kontakti=True))
+		self.assertTrue(full_oseba1.merge(empty_oseba1, merge_vpisi_izpisi=True, merge_kontakti=True))
 
 		# MERGE ORDER SHOULD NOT BE IMPORTANT!
 		self.assertEqual(empty_oseba0, full_oseba0)
 		self.assertEqual(full_oseba0, full_oseba1)
 		self.assertEqual(half_oseba, full_oseba1)
 
-		self.assertTrue(empty_oseba2.merge(full_oseba0, merge_vpisi_izpisi=False))
+		self.assertTrue(empty_oseba2.merge(full_oseba0, merge_vpisi_izpisi=False, merge_kontakti=True))
 		self.assertEqual(empty_oseba2.ime, full_oseba0.ime)
 		self.assertEqual(empty_oseba2.priimek, full_oseba0.priimek)
 		self.assertEqual(empty_oseba2.rojen, full_oseba0.rojen)

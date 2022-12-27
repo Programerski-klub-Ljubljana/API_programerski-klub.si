@@ -37,8 +37,10 @@ class Send_token_parts(UseCase):
 		for kontakt in kontakti:
 			# * CALCULATE NEXT TOKEN PART
 			limit = len(token) - CONST.auth_verification_size
-			token: str = token[:limit]
+
+			token_data: str = token[:limit]
 			token_part: str = token[limit:]
+			token = token_data
 
 			# * TOKEN PARTS FROM 0...n
 			tp = TokenPart(order=i, info=kontakt.data, data=token_part)
@@ -46,7 +48,7 @@ class Send_token_parts(UseCase):
 			token_parts.append(tp)
 
 			# * SEND TOKEN MESSAGE
-			temp.set(token=token_part)
+			temp.set(token=token_part, kontakt=kontakt.data)
 			match kontakt.tip:
 				case TipKontakta.EMAIL:
 					await self.email.send(recipients=[kontakt.data], subject=CONST.email_subject.verifikacija, vsebina=temp.email_verifikacija)

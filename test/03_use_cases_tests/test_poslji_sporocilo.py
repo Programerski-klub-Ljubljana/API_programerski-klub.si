@@ -29,7 +29,7 @@ class test_poslji_sporocilo(unittest.IsolatedAsyncioTestCase):
 		cls.phone = MagicMock(PhoneService)
 		cls.email = MagicMock(EmailService)
 		cls.email.send = AsyncMock()
-		cls.case: Poslji_sporocilo_kontaktu = APP.cases.poslji_sporocilo(phone=cls.phone, email=cls.email)
+		cls.case: Poslji_sporocilo_kontaktu = APP.cases.poslji_sporocilo_kontaktu(phone=cls.phone, email=cls.email)
 
 		# DB
 		with cls.case.db.transaction() as root:

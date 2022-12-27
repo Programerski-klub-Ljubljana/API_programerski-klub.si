@@ -6,8 +6,6 @@ from app import APP, CONST
 from core.domain.arhitektura_kluba import TipKontakta, NivoValidiranosti, TipOsebe, Kontakt, Oseba
 from core.services.phone_service import PhoneService
 from core.services.vcs_service import VcsService
-from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
-	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek, StatusIzpisa, TipPrekinitveIzpisa
 from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, TipPrekinitveVpisa, TipVpisnaInformacija, TipVpisnaNapaka
 

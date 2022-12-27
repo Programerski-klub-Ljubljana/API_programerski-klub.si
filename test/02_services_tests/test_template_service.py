@@ -14,15 +14,17 @@ class test_template(unittest.TestCase):
 	def test_fail(self):
 		temp = self.service.init()
 		try:
-			temp.web_napaka
+			temp._TEST
 		except UndefinedError as err:
 			self.assertEqual(str(err), "'ime' is undefined")
 
 	def test_success(self):
 		temp = self.service.init(priimek='priimek')
-		temp('ime', 'ime')
-		temp('napake', ['napaka1', 'napaka2'])
-		self.assertIn("</body>", temp.web_napaka)
+		temp.set(ime='ime')
+		temp.set(napake=['napaka1', 'napaka2'])
+		self.assertIn('ime', temp._TEST)
+		self.assertIn('napaka1', temp._TEST)
+		self.assertIn('napaka2', temp._TEST)
 
 
 if __name__ == '__main__':
