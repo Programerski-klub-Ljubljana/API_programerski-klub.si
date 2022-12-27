@@ -1,3 +1,4 @@
+import json
 import logging
 from dataclasses import dataclass
 from datetime import date
@@ -6,12 +7,16 @@ from enum import Enum, auto
 from app import CONST
 from core.cutils import list_field
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, NivoValidiranosti, TipOsebe
+from core.services.auth_service import TokenData, AuthService
 from core.services.db_service import DbService
+from core.services.email_service import EmailService
 from core.services.payment_service import Customer, PaymentService, Subscription, CollectionMethod, SubscriptionHistoryStatus
 from core.services.phone_service import PhoneService
 from core.services.vcs_service import VcsService, VcsMemberRole
 from core.use_cases._usecase import UseCase
-from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta
+from core.use_cases.auth_cases import Send_token_parts, TokenPart
+from core.use_cases.msg_cases import Poslji_porocilo_napake
+from core.use_cases.validation_cases import Preveri_obstoj_kontakta
 
 log = logging.getLogger(__name__)
 
@@ -48,44 +53,133 @@ class TipVpisnaNapaka(str, Enum):
 class StatusVpisa:
 	clan: Oseba | None = None
 	skrbnik: Oseba | None = None
-	razlogi_prekinitve: list[TipPrekinitveVpisa] = list_field()
-	validirani_podatki_skrbnika: list[Kontakt] = list_field()
-	validirani_podatki_clana: list[Kontakt] = list_field()
 	informacije: list[TipVpisnaInformacija] = list_field()
 	napake: list[TipVpisnaNapaka] = list_field()
 
-	def _napacni_podatki(self, kontakti):
-		lam_ni_validiran = lambda kontakt: kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN
-		return list(filter(lam_ni_validiran, kontakti))
 
-	@property
-	def napacni_podatki_skrbnika(self):
-		return self._napacni_podatki(self.validirani_podatki_skrbnika)
+@dataclass
+class VpisniPodatki:
+	ime: str
+	priimek: str
+	dan_rojstva: int
+	mesec_rojstva: int
+	leto_rojstva: int
+	email: str
+	telefon: str
+	ime_skrbnika: str | None = None
+	priimek_skrbnika: str | None = None
+	email_skrbnika: str | None = None
+	telefon_skrbnika: str | None = None
 
-	@property
-	def napacni_podatki_clana(self):
-		return self._napacni_podatki(self.validirani_podatki_clana)
+	def clan(self, nivo_validiranosti: NivoValidiranosti):
+		return Oseba(
+			ime=self.ime, priimek=self.priimek, rojen=date(year=self.leto_rojstva, month=self.mesec_rojstva, day=self.dan_rojstva),
+			tip_osebe=[TipOsebe.CLAN], kontakti=[
+				Kontakt(data=self.email, tip=TipKontakta.EMAIL, nivo_validiranosti=nivo_validiranosti),
+				Kontakt(data=self.telefon, tip=TipKontakta.PHONE, nivo_validiranosti=nivo_validiranosti)])
 
-	@property
-	def stevilo_napacnih_podatkov(self):
-		return len(self.napacni_podatki_skrbnika + self.napacni_podatki_clana)
+	def skrbnik(self, nivo_validiranosti: NivoValidiranosti):
+		return Oseba(
+			ime=self.ime_skrbnika, priimek=self.priimek_skrbnika, rojen=None,
+			tip_osebe=[TipOsebe.SKRBNIK], kontakti=[
+				Kontakt(data=self.email_skrbnika, tip=TipKontakta.EMAIL, nivo_validiranosti=nivo_validiranosti),
+				Kontakt(data=self.telefon_skrbnika, tip=TipKontakta.PHONE, nivo_validiranosti=nivo_validiranosti)])
 
-	@property
-	def validirani_podatki(self):
-		return self.validirani_podatki_skrbnika + self.validirani_podatki_clana
+	def encode(self):
+		return json.dumps(list(self.__dict__.values())).replace(' ', '')
 
-	@property
-	def stevilo_problemov(self):
-		return len(self.razlogi_prekinitve)
+	@staticmethod
+	def decode(data: str) -> 'VpisniPodatki':
+		return VpisniPodatki(*json.loads(data))
 
-	def __str__(self):
-		return f"""
-			Clan   : {self.clan}
-			Skrbnik: {self.skrbnik}
-			Razlogi prekinitve          : {self.razlogi_prekinitve}
-			Napake skrbnika: {", ".join(k.data for k in self.napacni_podatki_skrbnika)}
-			Napake clana   : {", ".join(k.data for k in self.napacni_podatki_clana)}
-		""".removeprefix('\t\t')
+
+class ERROR_CLAN_JE_CHUCK_NORIS(Exception):
+	pass
+
+
+class ERROR_CLAN_JE_ZE_VPISAN(Exception):
+	pass
+
+
+class ERROR_VALIDACIJA_KONTAKTOV(Exception):
+	pass
+
+
+@dataclass
+class Pripravi_vclanitveni_postopek(UseCase):
+	preveri_obstoj_kontakta: Preveri_obstoj_kontakta
+	phone: PhoneService
+	email: EmailService
+	auth: AuthService
+	send_token_parts: Send_token_parts
+	db: DbService
+
+	async def exe(self, vp: VpisniPodatki) -> list[TokenPart] | None:
+		# ! NA TEJ TOCKI KO NEVES ALI SO KONTAKTI RES UPORABNISKI NE SMES NOBENE INFORMACIJE IZDATI UPORABNIKU (HECKER)
+		# ! HACKER LAHKO UPORABNI TE INFORMACIJE V ZLOBNE NAMENE!
+
+		# * FORMATIRAJ TELEFONE
+		vp.telefon = self.phone.format(phone=vp.telefon)
+		vp.telefon_skrbnika = self.phone.format(phone=vp.telefon_skrbnika)
+
+		# ! ERROR CE JE CHUCK NORIS
+		if vp.email == vp.email_skrbnika or vp.telefon == vp.telefon_skrbnika:
+			raise ERROR_CLAN_JE_CHUCK_NORIS()
+
+		# * ZACNI VPISNI PROTOKOL
+		clan = vp.clan(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+		skrbnik = vp.skrbnik(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+
+		# ! ERROR JE ZE VPISAN
+		# * TUKAJ SE MERGANJE NE DELA SAJ JE LAHKO HACKER :)
+		db_oseba: Oseba
+		for db_oseba in self.db.find(entity=clan):
+			clan = db_oseba
+			if db_oseba.vpisan:
+				raise ERROR_CLAN_JE_ZE_VPISAN()
+
+		# * V PRIMERU CE SE SKRBNIK NAHAJA V BAZI NI TREBA NJEMU POSILJATI EMAIL-A
+		if clan.mladoletnik:
+			for db_oseba in self.db.find(entity=skrbnik):
+				skrbnik = db_oseba
+
+		# ! ERROR KONTAKT NI VALIDIRAN
+		kontakti = self._preveri_obstoj_kontaktov(*clan.kontakti)
+		if clan.mladoletnik:
+			kontakti += self._preveri_obstoj_kontaktov(*skrbnik.kontakti)
+
+		# * USTVARI OSNOVNI TOKEN
+		token = self.auth.encode(token_data=TokenData(data=vp.encode()), expiration=CONST.auth_verification_token_life)
+
+		# * CREATE JWT TOKEN WITH 4 PARTS
+		return await self.send_token_parts.exe(token=token.data, kontakti=kontakti)
+
+	def _preveri_obstoj_kontaktov(self, *kontakti: Kontakt) -> list[Kontakt]:
+		# * NAJPREJ PREVERI EMAIL-a POTEM PA TELEFONE TAKO JE MANJ VERJETNO DA BO HACKER TI PORABLJAL PHONE MONEY
+		email_kontakti = [k for k in kontakti if k.tip == TipKontakta.EMAIL]
+		phone_kontakti = [k for k in kontakti if k.tip == TipKontakta.PHONE]
+
+		validirani_kontakti = []
+		for kontakt in email_kontakti + phone_kontakti:
+			if kontakt.nivo_validiranosti == NivoValidiranosti.NI_VALIDIRAN:
+				if self._kontakt_obstaja(kontakt=kontakt):
+					kontakt.nivo_validiranosti = NivoValidiranosti.VALIDIRAN
+				else:
+					raise ERROR_VALIDACIJA_KONTAKTOV(kontakt)
+				validirani_kontakti.append(kontakt)
+		return validirani_kontakti
+
+	def _kontakt_obstaja(self, kontakt: Kontakt):
+		match kontakt.tip:
+			case TipKontakta.EMAIL:
+				return self.email.check_existance(email=kontakt.data)
+			case TipKontakta.PHONE:
+				return self.phone.check_existance(phone=kontakt.data)
+		return False
+
+
+class ERROR_NEVELJAVEN_TOKEN(Exception):
+	pass
 
 
 @dataclass
@@ -94,103 +188,53 @@ class Zacni_vclanitveni_postopek(UseCase):
 	phone: PhoneService
 	payment: PaymentService
 	vcs: VcsService
-	validate_kontakts_existances: Preveri_obstoj_kontakta
-	validate_kontakts_ownerships: Poslji_test_ki_preveri_lastnistvo_kontakta
+	auth: AuthService
+	poslji_porocilo_napake: Poslji_porocilo_napake
 
-	async def exe(
-			self,
-			ime: str, priimek: str,
-			dan_rojstva: int, mesec_rojstva: int, leto_rojstva: int,
-			email: str, telefon: str,
-			ime_skrbnika: str | None = None, priimek_skrbnika: str | None = None,
-			email_skrbnika: str | None = None, telefon_skrbnika: str | None = None) -> StatusVpisa:
-		# * ZACNI VPISNI POSTOPEK
-		status: StatusVpisa = StatusVpisa()
+	async def exe(self, token: str) -> StatusVpisa:
+		# * DEKODIRAJ TOKEN
+		token = self.auth.decode(token)
 
-		# * USTVARI CLANA
-		telefon = self.phone.format(phone=telefon)
-		status.clan = Oseba(
-			ime=ime, priimek=priimek, rojen=date(year=leto_rojstva, month=mesec_rojstva, day=dan_rojstva),
-			tip_osebe=[TipOsebe.CLAN], kontakti=[
-				Kontakt(data=email, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
-				Kontakt(data=telefon, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
+		# ! V PRIMERU DA SE TOKEN NE MORA DEKODIRATI TAKOJ PREKINI
+		if token is None:
+			raise ERROR_NEVELJAVEN_TOKEN()
 
-		# * USTVARI SKRBNIKA
+		# * DEKODIRAJ TOKEN V JSONA IN GA PREVERI CE JE PRAVILNE OBLIKE?
+		vp = VpisniPodatki.decode(token.d)
+		status = StatusVpisa(
+			clan=vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN),
+			skrbnik=vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN))
+
+		# * USTVARI CLANA IN GA POVEZI V BAZO!
+		db_oseba: Oseba
+		for db_oseba in self.db.find(entity=status.clan):
+			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False)
+			status.clan = db_oseba
+
+		# * USTVARI SKRBNIKA IN GA POVEZI V BAZO!
 		if status.clan.mladoletnik:
-			status.informacije.append(TipVpisnaInformacija.MLADOLETNIK)
-			telefon_skrbnika = self.phone.format(phone=telefon_skrbnika)
-			status.skrbnik = Oseba(
-				ime=ime_skrbnika, priimek=priimek_skrbnika, rojen=None,
-				tip_osebe=[TipOsebe.SKRBNIK], kontakti=[
-					Kontakt(data=email_skrbnika, tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
-					Kontakt(data=telefon_skrbnika, tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)])
-
-			if email == email_skrbnika or telefon == telefon_skrbnika:  # Nisi chuck noris da bi bil sam seb skrbnik.
-				status.razlogi_prekinitve.append(TipPrekinitveVpisa.CHUCK_NORIS)
-
-		# * PREPARE OSEBE ZA VPIS
-		self._merge_osebe(status=status)
-		self._validacija_kontaktov(status=status)
-
-		# ! V PRIMERU NAPAK PREKINI VPISNI POSTOPEK
-		if len(status.razlogi_prekinitve) > 0:
-			return status
+			for db_oseba in self.db.find(entity=status.skrbnik):
+				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False)
+				status.skrbnik = db_oseba
 
 		# * CE NI BILO NAPAK USTVARI PAYMENT CUSTOMERJA
-		self._create_payment_customer(
-			status=status, billing_phone=telefon_skrbnika if status.clan.mladoletnik else telefon,
-			billing_email=email_skrbnika if status.clan.mladoletnik else email)
+		await self._create_payment_customer(
+			status=status,
+			billing_phone=vp.telefon_skrbnika if status.clan.mladoletnik else vp.telefon,
+			billing_email=vp.email_skrbnika if status.clan.mladoletnik else vp.email)
 
 		# * SHRANI INFORMACIJE V BAZO
 		self._shrani_v_bazo(status=status)
 
-		# * PREVERI OVNERSHIP ZA KONTAKTE
-		await self._validate_kontakts_ownerships(status=status)
-
 		# * CE IMA UPORABNIK GITHUB GA POVABI V ORGANIZACIJO SAJ JE NJEGOV EMAIL ZE VALIDIRAN
-		self._vcs_vabilo_v_organizacijo(status=status, email=email)
+		await self._vcs_vabilo_v_organizacijo(status=status, email=vp.email)
 
+		# ! PO KONCANEM PREVERI DB CONSISTENCY!!!
 		return status
-
-	def _merge_osebe(self, status: StatusVpisa):
-		db_oseba: Oseba  # Type hinting...
-
-		# * V PRIMERU CE SE CLAN NAHAJA V BAZI
-		for db_oseba in self.db.find(entity=status.clan):
-			status.informacije.append(TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE)
-			# CE JE CLAN ZE VPISAN POTEM PREKINI CELOTEN PROCES!
-			if db_oseba.vpisan:
-				status.razlogi_prekinitve.append(TipPrekinitveVpisa.ZE_VPISAN)
-			db_oseba.merge(status.clan)
-			status.clan = db_oseba
-
-		# * V PRIMERU CE SE SKRBNIK NAHAJA V BAZI
-		if status.clan.mladoletnik:
-			for db_oseba in self.db.find(entity=status.skrbnik):
-				status.informacije.append(TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE)
-				db_oseba.merge(status.skrbnik)
-				status.skrbnik = db_oseba
-
-	def _validacija_kontaktov(self, status: StatusVpisa):
-		# * PREVERI KONTAKTE CLANA
-		status.validirani_podatki_clana = self.validate_kontakts_existances.exe(*status.clan.kontakti)
-
-		# * PREVERI KONTAKTE SKRBNIKA
-		if status.clan.mladoletnik:
-			status.validirani_podatki_skrbnika = self.validate_kontakts_existances.exe(*status.skrbnik.kontakti)
-
-		# * PREVERI STEVILO NAPAK
-		ST_VALIDACIJ = len(status.validirani_podatki)
-		if status.stevilo_napacnih_podatkov > 0:
-			status.razlogi_prekinitve.append(TipPrekinitveVpisa.NAPAKE)
-			if status.stevilo_napacnih_podatkov == ST_VALIDACIJ:
-				status.razlogi_prekinitve.append(TipPrekinitveVpisa.HACKER)
 
 	def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
 		# * POISCI IZVOR BILLING TELEFONA
 		izvor_telefona = self.phone.origin(phone=billing_phone)
-		if len(izvor_telefona.languages) == 0:
-			status.napake.append(TipVpisnaNapaka.IZVOR_TELEFONA_NI_NAJDEN)
 
 		# * CE SE JE MERGE ZGODIL POTEM IMA ZE NASTAVLJEN ID OD STRIPE-a
 		customer = self.payment.create_customer(customer=Customer(
@@ -200,7 +244,10 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ! CE SE CUSTOMER NI USTVARIL NE NADALJUJ...
 		if customer is None:
-			return status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_FAIL)
+			status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_FAIL)
+			return self.poslji_porocilo_napake.exe(
+				napaka="Payment service napaka", opis="Payment customer se pri včlanitvi ni mogel ustvariti!",
+				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email)
 
 		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
 		status.clan._id = customer.id
@@ -223,7 +270,10 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ! CE SE SUBSCRIPTION NI MORALA USTVARITI POTEM KONCAJ...
 		if subscription is None:
-			return status.napake.append(TipVpisnaNapaka.PAYMENT_SUBSCRIPTION_FAIL)
+			status.napake.append(TipVpisnaNapaka.PAYMENT_SUBSCRIPTION_FAIL)
+			return self.poslji_porocilo_napake.exe(
+				napaka="Payment service napaka", opis="Payment subcription se pri včlanitvi ni mogla ustvariti!",
+				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email, customer=customer)
 
 		status.informacije.append(TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO)
 
@@ -235,11 +285,6 @@ class Zacni_vclanitveni_postopek(UseCase):
 				status.clan.connect(status.skrbnik)
 				root.save(status.skrbnik, unique=True)
 
-	async def _validate_kontakts_ownerships(self, status: StatusVpisa):
-		await self.validate_kontakts_ownerships.exe(oseba=status.clan)
-		if status.clan.mladoletnik:
-			await self.validate_kontakts_ownerships.exe(oseba=status.skrbnik)
-
 	def _vcs_vabilo_v_organizacijo(self, status: StatusVpisa, email: str):
 		user = self.vcs.user(email=email)
 		if user is None:
@@ -248,4 +293,5 @@ class Zacni_vclanitveni_postopek(UseCase):
 		if self.vcs.user_invite(email=email, member_role=VcsMemberRole.DIRECT_MEMBER):
 			return status.informacije.append(TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO)
 
-		return status.napake.append(TipVpisnaNapaka.VCS_INVITE_FAIL)
+		status.napake.append(TipVpisnaNapaka.VCS_INVITE_FAIL)
+		return self.poslji_porocilo_napake.exe(napaka="Vcs service napaka", opis="Vcs povabilo se pri včlanitvi ni moglo poslati!", email=email)

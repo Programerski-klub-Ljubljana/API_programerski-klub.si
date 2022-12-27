@@ -8,7 +8,7 @@ from core.domain.arhitektura_kluba import Kontakt, NivoValidiranosti, TipKontakt
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.vcs_service import VcsService
-from core.use_cases.msg_cases import Poslji_sporocilo
+from core.use_cases.msg_cases import Poslji_sporocilo_kontaktu
 from core.use_cases.validation_cases import Poslji_test_ki_preveri_lastnistvo_kontakta, Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
 
@@ -73,7 +73,7 @@ class test_poslji_test_ki_preveri_lastnistvo_kontakta(unittest.IsolatedAsyncioTe
 
 		cls.oseba = Oseba(ime='ime', priimek='priimek', rojen=None, kontakti=cls.kontakts)
 
-		cls.msg_send: Poslji_sporocilo = MagicMock(Poslji_sporocilo)
+		cls.msg_send: Poslji_sporocilo_kontaktu = MagicMock(Poslji_sporocilo_kontaktu)
 		cls.msg_send.exe = AsyncMock()
 		cls.case: Poslji_test_ki_preveri_lastnistvo_kontakta = APP.cases.poslji_test_ki_preveri_lastnistvo_kontakta(msg_send=cls.msg_send)
 
@@ -122,7 +122,7 @@ class test_poslji_test_ki_preveri_zeljo_za_koncno_izclanitev(unittest.IsolatedAs
 			Kontakt(data='data4', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
 		])
 
-		cls.msg_send: Poslji_sporocilo = MagicMock(Poslji_sporocilo)
+		cls.msg_send: Poslji_sporocilo_kontaktu = MagicMock(Poslji_sporocilo_kontaktu)
 		cls.msg_send.exe = AsyncMock()
 
 		cls.case: Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev = APP.cases.poslji_test_ki_preveri_zeljo_za_koncno_izclanitev(msg_send=cls.msg_send)

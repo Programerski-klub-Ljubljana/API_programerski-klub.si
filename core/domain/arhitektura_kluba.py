@@ -21,6 +21,8 @@ class NivoValidiranosti(EntityEnum):
 
 
 class TipOsebe(EntityEnum):
+	ADMIN = auto()
+	TRENER = auto()
 	CLAN = auto()
 	SKRBNIK = auto()
 
@@ -72,7 +74,7 @@ class Oseba(Entity):
 
 		return False
 
-	def merge(self, oseba, merge_vpisi_izpisi: bool = True) -> bool:
+	def merge(self, oseba, merge_kontakti: bool, merge_vpisi_izpisi: bool) -> bool:
 		# Save GUARD FOR STUPID DEVELOPERS!
 		if not self.equal(oseba):
 			return False
@@ -87,9 +89,10 @@ class Oseba(Entity):
 		self.dodaj_tip_osebe(*oseba.tip_osebe)
 
 		# Vse unikatne kontakte tudi nevalidirane je potrebno dodati notri, ce se kontakt duplicira potem dodas kontakt z vecjo validacijo.
-		self.dodaj_kontakte(*oseba.kontakti)
-		if merge_vpisi_izpisi:
+		if merge_kontakti:
+			self.dodaj_kontakte(*oseba.kontakti)
 
+		if merge_vpisi_izpisi:
 			# Ce uporabnik ustvari 2 clanska accounta bi zelel mergati informacije o vpisu in izpisu v enega
 			for vpis in oseba.vpisi:
 				if vpis not in self.vpisi:

@@ -6,11 +6,11 @@ from autologging import traced
 @traced
 class TemplateRenderer(ABC):
 	@abstractmethod
-	def __call__(self, key, value):
+	def set(self, **kwargs):
 		pass
 
 	@abstractmethod
-	def __getattr__(self, item):
+	def __getattr__(self, item) -> str:
 		pass
 
 

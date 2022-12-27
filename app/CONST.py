@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from core import cutils
 
 """ VARS """
@@ -21,11 +23,13 @@ class emails:
 	test = f'test@{domain}'
 	test2 = f'test2@{domain}'
 
+
 class phones:
 	api = f'+38651240885'
 	info = f'051-240-885'
 	test = f'051-240-885'
 	test2 = f'051-240-885'
+
 
 """ GITHUB """
 github_org = org_name.lower().replace(' ', '-')
@@ -33,8 +37,10 @@ github = f'https://github.com/{github_org}'
 
 """ AUTH """
 auth_token_url = '/auth/login'
-auth_token_life = 24  # 24ur
-auth_verification_token_life = 48  # 2 dni
+auth_token_life = timedelta(hours=24)
+auth_verification_token_life = timedelta(minutes=10)
+auth_verification_size = 4
+
 auth_signout_url = f'{web_api}/auth/signout'
 auth_ownership_url = f'{web_api}/auth/ownership'
 auth_report_url = f'{web_api}/auth/report'
@@ -73,6 +79,7 @@ class email_subject:
 	vpis_skrbnik = f'{org_name} | Obvestilo skrbnika o vpisu'
 	verifikacija = f'{org_name} | Verifikacija osebe'
 	verifikacija_izpisa = f'{org_name} | Verifikacija izpisa'
+	porocilo_napake = f'{org_name} | Poročilo napake'
 
 
 class payment_prices:

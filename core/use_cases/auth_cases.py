@@ -1,84 +1,60 @@
 from dataclasses import dataclass
-from datetime import timedelta
-
-from autologging import traced
 
 from app import CONST
-from core.domain.arhitektura_kluba import Oseba
-from core.services.auth_service import AuthService, Token, TokenData
-from core.services.db_service import DbService
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta
+from core.services.email_service import EmailService
+from core.services.phone_service import PhoneService
+from core.services.template_service import TemplateService, TemplateRenderer
 from core.use_cases._usecase import UseCase
 
 
-@traced
 @dataclass
-class Vpisi_osebo(UseCase):
-	db: DbService
-	auth: AuthService
+class TokenPart:
+	order: int
+	data: str
+	info: str = None
 
-	def exe(self, username, password) -> Token | None:
-		for oseba in self.db.oseba_find(username):
-			if self.auth.verify(password=password, hashed_password=oseba.geslo):
-				"""
-					THIS SENDS OSEBA ID SINCE EMAILS ARE NOT UNIQUE AND CAN BE SHARED!
-				"""
-				return self.auth.encode(TokenData(data=oseba._id), expiration=timedelta(hours=CONST.auth_token_life))
-		return None
+	@staticmethod
+	def merge(parts: list['TokenPart']) -> str:
+		token = ''
+		for part in sorted(parts, key=lambda p: p.order, reverse=True):
+			token += part.data
+		return token
 
 
-@traced
 @dataclass
-class Vclani_osebo(UseCase):
-	db: DbService
-	auth: AuthService
+class Send_token_parts(UseCase):
+	phone: PhoneService
+	email: EmailService
+	template: TemplateService
 
-	def exe(self, oseba_id: str) -> bool:
-		# TODO: Here you have to activated payment subscription on stripe!
-		vpisan = False
-		for oseba in self.db.oseba_find(data=oseba_id):
-			if oseba._id == oseba_id:
-				if not oseba.vpisan:
-					oseba.nov_vpis()
-					vpisan = True
-		return vpisan
+	async def exe(self, token: str, kontakti: list[Kontakt]) -> list[TokenPart]:
+		token_parts = []
 
+		# * PREVERI OVNERSHIP ZA KONTAKTE
+		temp: TemplateRenderer = self.template.init()
+		i = 0
+		for kontakt in kontakti:
+			# * CALCULATE NEXT TOKEN PART
+			limit = len(token) - CONST.auth_verification_size
+			token: str = token[:limit]
+			token_part: str = token[limit:]
 
-@traced
-@dataclass
-class Izpisi_osebo(UseCase):
-	db: DbService
-	auth: AuthService
+			# * TOKEN PARTS FROM 0...n
+			tp = TokenPart(order=i, info=kontakt.data, data=token_part)
+			i += 1
+			token_parts.append(tp)
 
-	def exe(self, oseba_id: str) -> bool:
-		# TODO: Here you have to DE - activated payment subscription on stripe!
-		izpisan = False
-		for oseba in self.db.oseba_find(data=oseba_id):
-			if oseba._id == oseba_id:
-				if oseba.vpisan:
-					oseba.nov_izpis()
-					izpisan = True
-		return izpisan
+			# * SEND TOKEN MESSAGE
+			temp.set(token=token_part)
+			match kontakt.tip:
+				case TipKontakta.EMAIL:
+					await self.email.send(recipients=[kontakt.data], subject=CONST.email_subject.verifikacija, vsebina=temp.email_verifikacija)
+				case TipKontakta.PHONE:
+					self.phone.send_sms(phone=kontakt.data, text=temp.sms_verifikacija)
 
+		# * DODAJ SE MAIN TOKEN NA ZADNJE MESTO!
+		tp = TokenPart(order=i, data=token)
+		token_parts.append(tp)
 
-@traced
-@dataclass
-class Vpisne_informacije(UseCase):
-	db: DbService
-	auth: AuthService
-
-	def exe(self, token: Token) -> Oseba | None:
-		token_data = self.auth.decode(token.data)
-		if token_data is None:
-			return None
-		for oseba in self.db.oseba_find(token_data.d):
-			return oseba
-
-
-@traced
-@dataclass
-class Ustvari_osebni_zeton(UseCase):
-	db: DbService
-	auth: AuthService
-
-	def exe(self, data: str) -> Token:
-		return self.auth.encode(TokenData(data=data), expiration=timedelta(hours=CONST.auth_verification_token_life))
+		return token_parts

@@ -15,12 +15,9 @@ from app.services.phone_twilio import PhoneTwilio
 from app.services.template_jinja import TemplateJinja
 from core import cutils
 from core.services.db_service import DbService
-from core.use_cases.auth_cases import Vpisi_osebo, Vpisne_informacije, Ustvari_osebni_zeton, Vclani_osebo, Izpisi_osebo
+from core.use_cases.auth_cases import Ustvari_osebni_zeton
 from core.use_cases.db_cases import Vrni_vsebino_baze
-from core.use_cases.msg_cases import Poslji_sporocilo
-from core.use_cases.validation_cases import Preveri_obstoj_kontakta, Poslji_test_ki_preveri_lastnistvo_kontakta, \
-	Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
-from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek
+from core.use_cases.validation_cases import Preveri_obstoj_kontakta
 from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek
 
 
@@ -47,33 +44,20 @@ class UseCases(DeclarativeContainer):
 
 	""" FIRST LEVEL USE CASES """
 
-	poslji_sporocilo: Provider[Poslji_sporocilo] = Factory(Poslji_sporocilo, db=d.db, phone=d.phone, email=d.email)
-
 	# AUTH
-	vpisi_osebo: Provider[Vpisi_osebo] = Factory(Vpisi_osebo, db=d.db, auth=d.auth)
-	preberi_informacije_osebnega_zetona: Provider[Vpisne_informacije] = Factory(Vpisne_informacije, db=d.db, auth=d.auth)
 	ustvari_osebni_zeton: Provider[Ustvari_osebni_zeton] = Factory(Ustvari_osebni_zeton, db=d.db, auth=d.auth)
-	vclani_osebo: Provider[Vclani_osebo] = Factory(Vclani_osebo, db=d.db, auth=d.auth)
-	izpisi_osebo: Provider[Izpisi_osebo] = Factory(Izpisi_osebo, db=d.db, auth=d.auth)
 
 	# DB
 	vrni_vsebino_baze: Provider[Vrni_vsebino_baze] = Factory(Vrni_vsebino_baze, db=d.db)
 
 	# OSEBA
-	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, vcs=d.vcs, phone=d.phone)
-	poslji_test_ki_preveri_lastnistvo_kontakta: Provider[Poslji_test_ki_preveri_lastnistvo_kontakta] = Factory(
-		Poslji_test_ki_preveri_lastnistvo_kontakta, template=d.template, msg_send=poslji_sporocilo, auth_verification_token=ustvari_osebni_zeton)
-	poslji_test_ki_preveri_zeljo_za_koncno_izclanitev: Provider[Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev] = Factory(
-		Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev, template=d.template, msg_send=poslji_sporocilo,
-		auth_verification_token=ustvari_osebni_zeton)
+	preveri_obstoj_kontakta: Provider[Preveri_obstoj_kontakta] = Factory(Preveri_obstoj_kontakta, email=d.email, phone=d.phone)
 
 	# FORMS
 	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
 		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment, vcs=d.vcs,
 		validate_kontakts_existances=preveri_obstoj_kontakta,
 		validate_kontakts_ownerships=d.validate_kontakts_ownerships)
-	zacni_izclanitveni_postopek: Provider[Zacni_izclanitveni_postopek] = Factory(
-		Zacni_izclanitveni_postopek, db=d.db, validate_izpis_request=poslji_test_ki_preveri_zeljo_za_koncno_izclanitev)
 
 
 log = logging.getLogger(__name__)

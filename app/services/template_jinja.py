@@ -11,10 +11,11 @@ class TemplateRendererJinja(TemplateRenderer):
 		self.env = env
 		self.kwargs = kwargs
 
-	def __call__(self, key, value):
-		self.kwargs[key] = value
+	def set(self, **kwargs):
+		for k, v in kwargs.items():
+			self.kwargs[k] = v
 
-	def __getattr__(self, item):
+	def __getattr__(self, item) -> str:
 		template = self.env.get_template(f'{item}.html')
 		return template.render(**self.kwargs)
 

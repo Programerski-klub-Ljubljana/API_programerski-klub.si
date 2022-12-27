@@ -3,17 +3,19 @@ from typing import Any
 
 from autologging import traced
 
-from core.domain.arhitektura_kluba import Kontakt, TipKontakta
+from app import CONST
+from core.domain.arhitektura_kluba import Kontakt, TipKontakta, TipOsebe
 from core.domain.oznanila_sporocanja import Sporocilo
 from core.services.db_service import DbService
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
+from core.services.template_service import TemplateService
 from core.use_cases._usecase import UseCase
 
 
 @traced
 @dataclass
-class Poslji_sporocilo(UseCase):
+class Poslji_sporocilo_kontaktu(UseCase):
 	db: DbService
 	phone: PhoneService
 	email: EmailService
@@ -27,3 +29,24 @@ class Poslji_sporocilo(UseCase):
 				self.phone.send_sms(phone=kontakt.data, text=vsebina)
 			kontakt.connect(sporocilo)
 			root.save(sporocilo)
+
+
+@traced
+@dataclass
+class Poslji_porocilo_napake(UseCase):
+	db: DbService
+	phone: PhoneService
+	email: EmailService
+	templates: TemplateService
+	poslji_sporocilo_kontaktu: Poslji_sporocilo_kontaktu
+
+	async def exe(self, napaka: str, opis: str, **kwargs) -> Any:
+		temp = self.templates.init(napaka=napaka, opis=opis, **kwargs)
+		with self.db.transaction() as root:
+			for oseba in root.oseba:
+				if TipOsebe.ADMIN == oseba.tip_osebe:
+					for kontakt in oseba.kontakti:
+						await self.poslji_sporocilo_kontaktu.exe(
+							kontakt=kontakt,
+							naslov=CONST.email_subject.porocilo_napake,
+							vsebina=temp.porocilo_napake)

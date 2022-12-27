@@ -6,7 +6,7 @@ from core.domain.arhitektura_kluba import Kontakt, NivoValidiranosti, TipKontakt
 from core.domain.oznanila_sporocanja import Sporocilo
 from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
-from core.use_cases.msg_cases import Poslji_sporocilo
+from core.use_cases.msg_cases import Poslji_sporocilo_kontaktu
 
 
 class test_poslji_sporocilo(unittest.IsolatedAsyncioTestCase):
@@ -29,7 +29,7 @@ class test_poslji_sporocilo(unittest.IsolatedAsyncioTestCase):
 		cls.phone = MagicMock(PhoneService)
 		cls.email = MagicMock(EmailService)
 		cls.email.send = AsyncMock()
-		cls.case: Poslji_sporocilo = APP.cases.poslji_sporocilo(phone=cls.phone, email=cls.email)
+		cls.case: Poslji_sporocilo_kontaktu = APP.cases.poslji_sporocilo(phone=cls.phone, email=cls.email)
 
 		# DB
 		with cls.case.db.transaction() as root:
