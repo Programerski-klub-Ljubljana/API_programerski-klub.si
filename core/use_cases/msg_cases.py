@@ -40,8 +40,8 @@ class Poslji_porocilo_napake(UseCase):
 	templates: TemplateService
 	poslji_sporocilo_kontaktu: Poslji_sporocilo_kontaktu
 
-	async def exe(self, napaka: str, opis: str, **kwargs) -> Any:
-		temp = self.templates.init(napaka=napaka, opis=opis, **kwargs)
+	async def exe(self, naslov: str, opis: str, **kwargs) -> Any:
+		temp = self.templates.init(napaka=naslov, opis=opis, data=kwargs)
 		with self.db.transaction() as root:
 			for oseba in root.oseba:
 				if TipOsebe.ADMIN == oseba.tip_osebe:

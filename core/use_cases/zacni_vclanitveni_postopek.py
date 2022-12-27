@@ -21,6 +21,22 @@ from core.use_cases.validation_cases import Preveri_obstoj_kontakta
 log = logging.getLogger(__name__)
 
 
+class ERROR_CLAN_JE_CHUCK_NORIS(Exception):
+	pass
+
+
+class ERROR_CLAN_JE_ZE_VPISAN(Exception):
+	pass
+
+
+class ERROR_VALIDACIJA_KONTAKTOV(Exception):
+	pass
+
+
+class ERROR_NEVELJAVEN_TOKEN(Exception):
+	pass
+
+
 class TipPrekinitveVpisa(str, Enum):
 	ZE_VPISAN = auto()
 	NAPAKE = auto()  # UPORABNIK JE VNESEL PODATKE KI SO SIGURNO NAPACNE.
@@ -33,12 +49,12 @@ class TipPrekinitveVpisa(str, Enum):
 
 
 class TipVpisnaInformacija(str, Enum):
+	CLAN_JE_MLADOLETNIK = auto()
 	NIMA_VCS_PROFILA = auto()
 	POVABLJEN_V_VCS_ORGANIZACIJO = auto()
 	NAROCEN_NA_KLUBSKO_CLANARINO = auto()
 	POSKUSNO_OBDOBJE = auto()
 	SKRBNIK_SE_PONOVNO_VPISUJE = auto()
-	MLADOLETNIK = auto()
 	CLAN_SE_PONOVNO_VPISUJE = auto()
 
 
@@ -93,18 +109,6 @@ class VpisniPodatki:
 		return VpisniPodatki(*json.loads(data))
 
 
-class ERROR_CLAN_JE_CHUCK_NORIS(Exception):
-	pass
-
-
-class ERROR_CLAN_JE_ZE_VPISAN(Exception):
-	pass
-
-
-class ERROR_VALIDACIJA_KONTAKTOV(Exception):
-	pass
-
-
 @dataclass
 class Pripravi_vclanitveni_postopek(UseCase):
 	preveri_obstoj_kontakta: Preveri_obstoj_kontakta
@@ -115,8 +119,13 @@ class Pripravi_vclanitveni_postopek(UseCase):
 	db: DbService
 
 	async def exe(self, vp: VpisniPodatki) -> list[TokenPart] | None:
-		# ! NA TEJ TOCKI KO NEVES ALI SO KONTAKTI RES UPORABNISKI NE SMES NOBENE INFORMACIJE IZDATI UPORABNIKU (HECKER)
-		# ! HACKER LAHKO UPORABNI TE INFORMACIJE V ZLOBNE NAMENE!
+		"""
+			Cim manj informacij izdaj tukaj, in ne bodi prevec strog glede uporabe kontaktov.
+			Bolje je da uporabnikom vec pustis in potem naknadno detektiras anomalije v db-ju,
+			v nasprotnem primeru ce bos prevec strog bo folk uporabljal lahko lazna imena in kontakte,
+			ce jih sistem ne bo naprej pustil kar pa nocem. Anomalije se bodo prej zaznale
+			ce bos vec dovolil saj se potem heckerji ne bodo prevec trudili.
+		"""
 
 		# * FORMATIRAJ TELEFONE
 		vp.telefon = self.phone.format(phone=vp.telefon)
@@ -131,7 +140,7 @@ class Pripravi_vclanitveni_postopek(UseCase):
 		skrbnik = vp.skrbnik(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
 
 		# ! ERROR JE ZE VPISAN
-		# * TUKAJ SE MERGANJE NE DELA SAJ JE LAHKO HACKER :)
+		# * MERGANJE SE DELA V DRUGEM KORAKU
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=clan):
 			clan = db_oseba
@@ -178,10 +187,6 @@ class Pripravi_vclanitveni_postopek(UseCase):
 		return False
 
 
-class ERROR_NEVELJAVEN_TOKEN(Exception):
-	pass
-
-
 @dataclass
 class Zacni_vclanitveni_postopek(UseCase):
 	db: DbService
@@ -201,21 +206,14 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# * DEKODIRAJ TOKEN V JSONA IN GA PREVERI CE JE PRAVILNE OBLIKE?
 		vp = VpisniPodatki.decode(token.d)
+
+		# * USTVARI STATUS ZA VPIS
 		status = StatusVpisa(
-			clan=vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN),
-			skrbnik=vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN))
+			clan=vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN),  # * Kontakti so ze potrjeni v 1 koraku.
+			skrbnik=vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN))  # * Kontakti so ze potrjeni v 1 koraku.
 
-		# * USTVARI CLANA IN GA POVEZI V BAZO!
-		db_oseba: Oseba
-		for db_oseba in self.db.find(entity=status.clan):
-			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False)
-			status.clan = db_oseba
-
-		# * USTVARI SKRBNIKA IN GA POVEZI V BAZO!
-		if status.clan.mladoletnik:
-			for db_oseba in self.db.find(entity=status.skrbnik):
-				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False)
-				status.skrbnik = db_oseba
+		# * MERGE CLANA IN SKRBNIKA V BAZI
+		self._merge_clana_in_skrbnika(status=status)
 
 		# * CE NI BILO NAPAK USTVARI PAYMENT CUSTOMERJA
 		await self._create_payment_customer(
@@ -223,18 +221,41 @@ class Zacni_vclanitveni_postopek(UseCase):
 			billing_phone=vp.telefon_skrbnika if status.clan.mladoletnik else vp.telefon,
 			billing_email=vp.email_skrbnika if status.clan.mladoletnik else vp.email)
 
-		# * SHRANI INFORMACIJE V BAZO
-		self._shrani_v_bazo(status=status)
-
 		# * CE IMA UPORABNIK GITHUB GA POVABI V ORGANIZACIJO SAJ JE NJEGOV EMAIL ZE VALIDIRAN
 		await self._vcs_vabilo_v_organizacijo(status=status, email=vp.email)
+
+		# * ZABELEZI NOV VPIS ZA CLANA
+		status.clan.nov_vpis()
+
+		# * SHRANI INFORMACIJE V BAZO
+		self._shrani_v_bazo(status=status)
 
 		# ! PO KONCANEM PREVERI DB CONSISTENCY!!!
 		return status
 
+	def _merge_clana_in_skrbnika(self, status: StatusVpisa):
+		# * USTVARI CLANA IN GA POVEZI V BAZO!
+		db_oseba: Oseba
+		for db_oseba in self.db.find(entity=status.clan):
+			status.informacije.append(TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE)
+			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False)
+			status.clan = db_oseba
+
+		# * USTVARI SKRBNIKA IN GA POVEZI V BAZO!
+		if status.clan.mladoletnik:
+			status.informacije.append(TipVpisnaInformacija.CLAN_JE_MLADOLETNIK)
+			for db_oseba in self.db.find(entity=status.skrbnik):
+				status.informacije.append(TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE)
+				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False)
+				status.skrbnik = db_oseba
+
 	def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
 		# * POISCI IZVOR BILLING TELEFONA
 		izvor_telefona = self.phone.origin(phone=billing_phone)
+
+		if len(izvor_telefona.languages) == 0:
+			status.napake.append(TipVpisnaNapaka.IZVOR_TELEFONA_NI_NAJDEN)
+			self.poslji_porocilo_napake.exe(naslov="Phone service napaka", opis="Izvor telefona ni bil najden!", billing_phone=billing_phone)
 
 		# * CE SE JE MERGE ZGODIL POTEM IMA ZE NASTAVLJEN ID OD STRIPE-a
 		customer = self.payment.create_customer(customer=Customer(
@@ -246,7 +267,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		if customer is None:
 			status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_FAIL)
 			return self.poslji_porocilo_napake.exe(
-				napaka="Payment service napaka", opis="Payment customer se pri včlanitvi ni mogel ustvariti!",
+				naslov="Payment service napaka", opis="Payment customer se pri včlanitvi ni mogel ustvariti!",
 				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email)
 
 		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
@@ -272,13 +293,12 @@ class Zacni_vclanitveni_postopek(UseCase):
 		if subscription is None:
 			status.napake.append(TipVpisnaNapaka.PAYMENT_SUBSCRIPTION_FAIL)
 			return self.poslji_porocilo_napake.exe(
-				napaka="Payment service napaka", opis="Payment subcription se pri včlanitvi ni mogla ustvariti!",
+				naslov="Payment service napaka", opis="Payment subcription se pri včlanitvi ni mogla ustvariti!",
 				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email, customer=customer)
 
 		status.informacije.append(TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO)
 
 	def _shrani_v_bazo(self, status: StatusVpisa):
-		status.clan.nov_vpis()
 		with self.db.transaction(note=f'Shrani {status.clan}') as root:
 			root.save(status.clan, unique=True)
 			if status.clan.mladoletnik:
@@ -294,4 +314,4 @@ class Zacni_vclanitveni_postopek(UseCase):
 			return status.informacije.append(TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO)
 
 		status.napake.append(TipVpisnaNapaka.VCS_INVITE_FAIL)
-		return self.poslji_porocilo_napake.exe(napaka="Vcs service napaka", opis="Vcs povabilo se pri včlanitvi ni moglo poslati!", email=email)
+		return self.poslji_porocilo_napake.exe(naslov="Vcs service napaka", opis="Vcs povabilo se pri včlanitvi ni moglo poslati!", email=email)

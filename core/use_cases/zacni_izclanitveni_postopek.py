@@ -28,6 +28,13 @@ class Zacni_izclanitveni_postopek(UseCase):
 	validate_izpis_request: Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev
 
 	async def exe(self, ime: str, priimek: str, email: str, razlog: str) -> StatusIzpisa:
+		# * POISCI CLANA V PODATKOVNI BAZI
+		# ! ALI MORA BITI KONTAKT POTRJEN DA UPORABNIK GRE STRAN IZ KLUBA (NAJBRS DA NE) SAMO MORA POTRDITI POTDRITVENO KODO!
+		# * PREVERI ALI JE EMAIL POTRJEN IZ STRANI UPORABNIKA
+		# * SEAKTIVIRAJ SUBSCRIPTION PAYMENT CUSTOMERJA
+		# * DODAJ NOV IZPIS CLANA
+		# * IZPISI GA IZ ORGANIZACIJE
+
 		# TUKAJ NIC NE SPREMINJAJ V BAZI SPREMENI SELE KO UPORABNIK POTRDI NA EMAILU DA JE UPORABNIK!
 		izpis = StatusIzpisa()
 
