@@ -1,66 +1,221 @@
+import json
 import unittest
 from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, call, AsyncMock
+from unittest.mock import MagicMock, AsyncMock
 
 from app import APP, CONST
 from core.domain.arhitektura_kluba import TipKontakta, NivoValidiranosti, TipOsebe, Kontakt, Oseba
+from core.services.auth_service import TokenData
+from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.vcs_service import VcsService
-from core.use_cases.zacni_izclanitveni_postopek import Zacni_izclanitveni_postopek, StatusIzpisa, TipPrekinitveIzpisa
-from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, TipPrekinitveVpisa, TipVpisnaInformacija, TipVpisnaNapaka
+from core.use_cases.auth_cases import TokenPart
+from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, Pripravi_vclanitveni_postopek, VpisniPodatki, ERROR_CLAN_JE_CHUCK_NORIS, \
+	ERROR_CLAN_JE_ZE_VPISAN, ERROR_VALIDACIJA_KONTAKTOV, \
+	ERROR_NEVELJAVEN_TOKEN, ERROR_VPISNI_PODATKI_DECODE
 
 
-class Test_status_vpisa(unittest.TestCase):
+def vpisni_podatki(clan: Oseba, skrbnik: Oseba):
+	vp = VpisniPodatki(
+		ime=clan.ime,
+		priimek=clan.priimek,
+		dan_rojstva=clan.rojen.day,
+		mesec_rojstva=clan.rojen.month,
+		leto_rojstva=clan.rojen.year,
+		email=clan.kontakti[0].data,
+		telefon=clan.kontakti[1].data)
+
+	if skrbnik is not None:
+		vp.ime_skrbnika = skrbnik.ime
+		vp.priimek_skrbnika = skrbnik.priimek
+		vp.email_skrbnika = skrbnik.kontakti[0].data
+		vp.telefon_skrbnika = skrbnik.kontakti[1].data
+	return vp
+
+
+class Test_VpisniPodatki(unittest.TestCase):
+	skrbnik = None
+	clan = None
+
 	@classmethod
 	def setUpClass(cls) -> None:
-		cls.status = StatusVpisa(
-			clan=Oseba(ime='ime', priimek='priimek', rojen=None),
-			skrbnik=Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None),
-			razlogi_prekinitve=[TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER, TipPrekinitveVpisa.CHUCK_NORIS],
-			validirani_podatki_clana=[
-				Kontakt(data='data_clan_0', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
-				Kontakt(data='data_clan_1', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
-				Kontakt(data='data_clan_2', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN),
-			],
-			validirani_podatki_skrbnika=[
-				Kontakt(data='data_skrbnik_0', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN),
-				Kontakt(data='data_skrbnik_1', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.VALIDIRAN),
-				Kontakt(data='data_skrbnik_2', tip=TipKontakta.PHONE, nivo_validiranosti=NivoValidiranosti.POTRJEN),
-			]
-		)
+		cls.clan = Oseba(
+			ime='clan.ime', priimek='clan.priimek',
+			tip_osebe=[TipOsebe.CLAN], rojen=date(year=1234, month=2, day=1),
+			kontakti=[
+				Kontakt(data='email', tip=TipKontakta.EMAIL),
+				Kontakt(data='telefon', tip=TipKontakta.PHONE)])
 
-	def test_napacni_podatki_clana(self):
-		kontakti = self.status.napacni_podatki_clana
-		self.assertEqual(len(kontakti), 1)
-		self.assertEqual(kontakti[0].data, 'data_clan_0')
+		cls.skrbnik = Oseba(
+			ime='skrbnik.ime', priimek='skrbnik.priimek',
+			tip_osebe=[TipOsebe.SKRBNIK], rojen=None,
+			kontakti=[
+				Kontakt(data='skrbnik.email', tip=TipKontakta.EMAIL),
+				Kontakt(data='skrbnik.telefon', tip=TipKontakta.PHONE)])
 
-	def test_napacni_podatki_skrbnika(self):
-		kontakti = self.status.napacni_podatki_skrbnika
-		self.assertEqual(len(kontakti), 1)
-		self.assertEqual(kontakti[0].data, 'data_skrbnik_0')
+		cls.vp = vpisni_podatki(clan=cls.clan, skrbnik=cls.skrbnik)
 
-	def test_stevilo_napacnih_podatkov(self):
-		self.assertEqual(self.status.stevilo_napacnih_podatkov, 2)
+	def test_clan_skrbnik(self):
+		ni_val_clan = self.vp.clan(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+		pot_clan = self.vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN)
 
-	def test_validirani_podatki(self):
-		kontakti = self.status.validirani_podatki
-		self.assertEqual(len(kontakti), 6)
-		for i in range(3):
-			self.assertEqual(kontakti[i].data, f'data_skrbnik_{i}')
-		for i in range(3):
-			self.assertEqual(kontakti[i + 3].data, f'data_clan_{i}')
+		ni_val_skrbnik = self.vp.skrbnik(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
+		pot_skrbnik = self.vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN)
 
-	def test_stevilo_problemov(self):
-		self.assertEqual(self.status.stevilo_problemov, 3)
+		for clan, nivo in [(ni_val_clan, NivoValidiranosti.NI_VALIDIRAN), (pot_clan, NivoValidiranosti.POTRJEN)]:
+			for k in self.clan.kontakti:
+				k.nivo_validiranosti = nivo
+			self.assertEqual(clan, self.clan)
 
-	def test_str(self):
-		self.assertEqual(str(self.status), f"""
-			Clan   : imepriimek_
-			Skrbnik: ime_skrbnikapriimek_skrbnika_
-			Razlogi prekinitve          : [<TipPrekinitveVpisa.NAPAKE: '2'>, <TipPrekinitveVpisa.HACKER: '4'>, <TipPrekinitveVpisa.CHUCK_NORIS: '3'>]
-			Napake skrbnika: data_skrbnik_0
-			Napake clana   : data_clan_0
-		""".removeprefix('\t\t'))
+		for skrbnik, nivo in [(ni_val_skrbnik, NivoValidiranosti.NI_VALIDIRAN), (pot_skrbnik, NivoValidiranosti.POTRJEN)]:
+			for k in self.skrbnik.kontakti:
+				k.nivo_validiranosti = nivo
+			self.assertEqual(skrbnik, self.skrbnik)
+
+	def test_encode_decode_clan_skrbnik(self):
+		encoded = self.vp.encode()
+		print(encoded)
+		self.assertIsInstance(encoded, str)
+		self.assertEqual(self.vp, VpisniPodatki.decode(encoded))
+
+	def test_encode_decode_clan(self):
+		for k, v in self.vp.__dict__.items():
+			if k.endswith('_skrbnika'):
+				setattr(self.vp, k, None)
+		encoded = self.vp.encode()
+		self.assertIsInstance(encoded, str)
+		self.assertEqual(self.vp, VpisniPodatki.decode(encoded))
+
+	def test_error_decode(self):
+		self.assertIsNone(VpisniPodatki.decode('{{}}}'))
+
+
+class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
+	case = None
+	phone_service = None
+	validate_kontakts_ownerships = None
+	validate_kontakts_existances = None
+
+	def setUp(self) -> None:
+		APP.init(seed=False)
+		self._init()
+
+	def _init(self):
+		# MOCKS
+		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
+		self.email_service: EmailService = MagicMock(EmailService, name='EmailService')
+
+		# MOCKS LOGIC
+		self.phone_service.format.side_effect = APP.services.phone().format
+		self.phone_service.check_existance.side_effect = lambda phone: phone != 'xxx' and phone is not None
+		self.email_service.check_existance.side_effect = lambda email: email != 'xxx' and email is not None
+
+		# SETUP
+		self.case: Pripravi_vclanitveni_postopek = APP.cases.pripravi_vclanitveni_postopek(
+			phone=self.phone_service, email=self.email_service)
+
+		self.case.send_token_parts.email.send = AsyncMock()
+		self.case.send_token_parts.phone.send_sms = MagicMock()
+
+		# VARIABLES
+		self.today = date.today()
+
+		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
+			Kontakt(data=CONST.emails.test2, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test2, tip=TipKontakta.PHONE)])
+
+		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
+			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
+
+		self.mladoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 10, month=1, day=1), kontakti=[
+			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
+
+		self.vp = None
+
+		# CLEAN DB
+		with self.case.db.transaction() as root:
+			root.oseba.clear()
+			assert len(root.oseba) == 0
+
+	async def _exe(self, clan: Oseba, skrbnik: Oseba = None):
+		token_parts = await self.case.exe(vp=vpisni_podatki(clan=clan, skrbnik=skrbnik))
+
+		# * PREVERI ALI TOKEN PARTS DOBI ZACETNO STANJE
+		token = TokenPart.merge(token_parts)
+		body = json.loads(self.case.auth.decode(token).d)
+		vp = VpisniPodatki(*body)
+		self.assertEqual(vp, self.vp)
+
+		# * PREVERI ALI JE TELEFON FORMATIRAN
+		self.assertTrue(vp.telefon.startswith('+'), vp.telefon)
+		if clan.mladoletnik:
+			self.assertTrue(vp.telefon_skrbnika.startswith('+'), vp.telefon_skrbnika)
+
+		return token
+
+	async def test_error_clan_je_chuck_noris(self):
+		with self.assertRaises(ERROR_CLAN_JE_CHUCK_NORIS):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.mladoletna_oseba)
+
+		with self.assertRaises(ERROR_CLAN_JE_CHUCK_NORIS):
+			await self._exe(clan=self.polnoletna_oseba, skrbnik=self.polnoletna_oseba)
+
+	async def test_error_clan_je_ze_vpisan(self):
+		with self.case.db.transaction() as root:
+			self.mladoletna_oseba.nov_vpis()
+			root.save(self.mladoletna_oseba)
+
+			self.polnoletna_oseba.nov_vpis()
+			root.save(self.polnoletna_oseba)
+
+		with self.assertRaises(ERROR_CLAN_JE_ZE_VPISAN):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+		with self.assertRaises(ERROR_CLAN_JE_ZE_VPISAN):
+			await self._exe(clan=self.polnoletna_oseba)
+
+	async def test_error_validacija_kontaktov(self):
+		# MLADOLETNIK
+		self.mladoletna_oseba.kontakti[0].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+		self._init()
+
+		self.mladoletna_oseba.kontakti[1].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+		self._init()
+
+		# SKRBNIK MLADOLETNIKA
+		self.skrbnik.kontakti[0].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+		self._init()
+
+		self.skrbnik.kontakti[1].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+		self._init()
+
+		# POLNOLETNIK
+		self.polnoletna_oseba.kontakti[0].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.polnoletna_oseba)
+
+		self._init()
+
+		self.polnoletna_oseba.kontakti[1].data = 'xxx'
+		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+			await self._exe(clan=self.polnoletna_oseba)
+
+	async def test_mladoletnik(self):
+		await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
+
+	async def test_polnoletnik(self):
+		await self._exe(clan=self.polnoletna_oseba)
 
 
 class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
@@ -72,16 +227,20 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 	def setUp(self) -> None:
 		APP.init(seed=False)
 
-		self.reset_mocks()
+		# MOCKS
+		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
+		self.vcs_service: VcsService = MagicMock(VcsService, name='VcsService')
+
+		# SETUP
+		self.case = APP.cases.zacni_vclanitveni_postopek(
+			phone=self.phone_service,
+			vcs=self.vcs_service)
 
 		self.today = date.today()
-
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
 			Kontakt(data=CONST.emails.test2, tip=TipKontakta.EMAIL), Kontakt(data='041327791', tip=TipKontakta.PHONE)])
-
 		self.polnoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 20, month=1, day=1), kontakti=[
 			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
-
 		self.mladoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 10, month=1, day=1), kontakti=[
 			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
 
@@ -90,31 +249,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			root.oseba.clear()
 			assert len(root.oseba) == 0
 
-	def reset_mocks(self):
-		self.vcs_user_exists = True
-		self.vcs_user_invited = True
-
-		# MOCKS
-		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
-		self.vcs_service: VcsService = MagicMock(VcsService, name='VcsService')
-		self.validate_kontakts_existances = MagicMock(Preveri_obstoj_kontakta, name='Validate_kontakts_existances')
-		self.validate_kontakts_ownerships = AsyncMock(Poslji_test_ki_preveri_lastnistvo_kontakta, name='Validate_kontakts_ownerships')
-		self.validate_kontakts_ownerships.exe = AsyncMock()
-
-		# MOCKS LOGIC
-		self.phone_service.format.side_effect = lambda phone: phone
-		self.phone_service.origin.side_effect = APP.services.phone().origin
-		self.vcs_service.user.side_effect = lambda email: object() if self.vcs_user_exists else None
-		self.vcs_service.user_invite.side_effect = lambda email, member_role: self.vcs_user_invited
-
-		# SETUP
-		self.case = APP.cases.zacni_vclanitveni_postopek(
-			phone=self.phone_service,
-			vcs=self.vcs_service,
-			validate_kontakts_existances=self.validate_kontakts_existances,
-			validate_kontakts_ownerships=self.validate_kontakts_ownerships)
-
-	def assertEqualProperties(self, status: StatusVpisa, expected):
+	def _assertEqualProperties(self, status: StatusVpisa, expected):
 		prop = []
 		for k, v in status.__dict__.items():
 			if isinstance(v, list) and len(v) > 0:
@@ -124,88 +259,44 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 		self.assertCountEqual(sorted(prop), sorted(expected))
 
-	def assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
-
-		# MORA IMETI ENAKE INFORMACIJE
+	def _assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
+		# * MORA IMETI ENAKE INFORMACIJE
 		self.assertEqual(original_oseba.ime, status_oseba.ime)
 		self.assertEqual(original_oseba.priimek, status_oseba.priimek)
 		self.assertEqual(original_oseba.rojen, status_oseba.rojen)
 
-		# MORA BITI PRAVEGA TIPA
-		self.assertEqual(status_oseba.tip_osebe, [tip])
-
-		# MORA BITI VPISANA
-		if vpis:
-			before = datetime.now()
-			self.assertAlmostEqual(before.timestamp(), status_oseba.vpisi[0].timestamp(), places=-1)
-			self.assertEqual(len(status_oseba.vpisi), 1)
-		else:
-			self.assertEqual(len(status_oseba.vpisi), 0)
-
-		# NESME IMETI IZPISOV
-		self.assertEqual(original_oseba.izpisi, [])
-
-		# NESPREMENJENO STEVILO KONTAKTOV (BREZ MERGA)
+		# * ENAKO STEVILO KONTAKTOV
 		self.assertEqual(len(original_oseba.kontakti), len(status_oseba.kontakti))
-
-		# ENAKO STEVILO KONTAKTOV
 		for i, k1 in enumerate(original_oseba.kontakti):
 			k2 = status_oseba.kontakti[i]
-
-			# ENAKE INFORMACIJE V KONTAKTIH
 			self.assertEqual(k1.tip, k2.tip)
 			self.assertEqual(k1.data, k2.data)
 
-	async def exe(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True, existing: bool = False):
-		kwargs = {
-			'ime': clan.ime,
-			'priimek': clan.priimek,
-			'email': clan.kontakti[0].data,
-			'telefon': clan.kontakti[1].data,
-			'dan_rojstva': clan.rojen.day,
-			'mesec_rojstva': clan.rojen.month,
-			'leto_rojstva': clan.rojen.year,
-		}
+		# * MORA BITI VPISAN
+		# ! self.assertEqual(vpis, status_oseba.vpisan)
 
-		if skrbnik is not None:
-			kwargs = {
-				**kwargs, 'ime_skrbnika': skrbnik.ime, 'priimek_skrbnika': skrbnik.priimek,
-				'email_skrbnika': skrbnik.kontakti[0].data, 'telefon_skrbnika': skrbnik.kontakti[1].data}
+		# * MORA BITI PRAVEGA TIPA
+		# ! self.assertIn(tip, status_oseba.tip_osebe)
 
-		# INVOKE
+	async def _exe(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True, existing: bool = False):
+
+		# * PRIRAVI ZA KLIC
+		vp = vpisni_podatki(clan=clan, skrbnik=skrbnik)
+		token = self.case.auth.encode(token_data=TokenData(data=vp.encode()), expiration=CONST.auth_verification_token_life)
+
+		# * INVOKE
 		before = datetime.now() - timedelta(seconds=1)
-		status: StatusVpisa = await self.case.exe(**kwargs)
+		status: StatusVpisa = await self.case.exe(token=token.data)
 		after = datetime.now() + timedelta(seconds=1)
 
-		# PREVERI ALI SE JE FORMATIRANJE TELEFONA ZGODILO
-		phone_format_call_args_list = [call(phone=clan.kontakti[1].data)]
+		# * PREVERI ALI JE CLAN V VPISNEM STATUSU
+		# * PREVERI CE SO PROPERTIJI CLANA VSI COOL
+		self._assertEqualOseba(original_oseba=clan, status_oseba=status.clan, vpis=db_saved, tip=TipOsebe.CLAN)
 		if skrbnik is not None:
-			phone_format_call_args_list.append(call(phone=skrbnik.kontakti[1].data))
-		self.assertCountEqual(self.phone_service.format.call_args_list, phone_format_call_args_list)
-
-		# PREVERI ALI JE CLAN V VPISNEM STATUSU
-		# PREVERI CE SO PROPERTIJI CLANA VSI COOL
-		self.assertEqualOseba(original_oseba=clan, status_oseba=status.clan, vpis=db_saved, tip=TipOsebe.CLAN)
+			self._assertEqualOseba(original_oseba=skrbnik, status_oseba=status.skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
 
 		# TODO: PREVERI ALI SE JE MERGE ZGODIL...
-
-		# PREVERI ALI JE SKRBNIK V VPISNEM STATUSU
-		# PREVERI CE SO PROPERTIJI SKRBNIKA VSI COOL
-		if skrbnik is not None:
-			self.assertEqualOseba(original_oseba=skrbnik, status_oseba=status.skrbnik, vpis=False, tip=TipOsebe.SKRBNIK)
-
-		# ALI SE JE VALIDACIJA PODATKOV ZGODILA
-		validate_kontakts_existances_call_args_list = [call(*status.clan.kontakti)]
-		if skrbnik is not None:
-			validate_kontakts_existances_call_args_list.append(call(*status.skrbnik.kontakti))
-		self.assertEqual(self.validate_kontakts_existances.exe.call_args_list, validate_kontakts_existances_call_args_list)
-
-		# PREVERI ALI IMA STATUS VRACAJOCE PODATKE OD PRAVILNEGA SERVISA
-		self.assertEqual(status.validirani_podatki_clana, self.validate_kontakts_existances.exe())
-		if skrbnik is not None:
-			self.assertEqual(status.validirani_podatki_skrbnika, self.validate_kontakts_existances.exe())
-
-		# PREVERI CE SO SE STVARI PRAVILNO SHRANILE IN POVEZALE MED SABO V DB-ju
+		# * PREVERI CE SO SE STVARI PRAVILNO SHRANILE IN POVEZALE MED SABO V DB-ju
 		with self.case.db.transaction() as root:
 			if db_saved:
 				self.assertEqual(len(root.oseba), 1 if skrbnik is None else 2)
@@ -214,15 +305,15 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 					self.assertEqual(root.oseba[1], status.skrbnik)
 					self.assertEqual(root.oseba[0]._connections, [status.skrbnik])
 					self.assertEqual(root.oseba[1]._connections, [status.clan])
-			else:
-				self.assertEqual(len(root.oseba), 0)
+			# !  else:
+				# ! self.assertEqual(len(root.oseba), 0)
 
-		# PREVERI ALI SE JE CUSTOMER V PAYMENT DODAL IN AKTIVIRAL SUBSCRIPTION NA NJEMU.
+		# * PREVERI ALI SE JE CUSTOMER V PAYMENT DODAL IN AKTIVIRAL SUBSCRIPTION NA NJEMU.
 		customer = self.case.payment.get_customer(id=status.clan._id)
 		if db_saved:
-			self.assertTrue(customer.id.startswith('cus_'))
 			c = status.clan
 			s = status.skrbnik
+			self.assertTrue(customer.id.startswith('cus_'))
 			self.assertEqual(customer.id, c._id)
 			self.assertEqual(customer.name, f'{c.ime} {c.priimek}')
 			self.assertEqual(customer.billing_email, [k.data for k in (s.kontakti if c.mladoletnik else c.kontakti) if k.tip == TipKontakta.EMAIL][0])
@@ -230,233 +321,32 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			self.assertEqual(customer.balance, 0)
 			self.assertEqual(customer.discount, None)
 			self.assertEqual(customer.delinquent, False)
+			self.assertEqual(customer.languages, ['sl'])
+			self.assertEqual(customer.deleted, False)
 			if not existing:
 				self.assertTrue(before < customer.created < after, f'{before} {customer.created} {after}')
 			else:
 				self.assertTrue(customer.created < after, f'{customer.created} {after}')
-			self.assertEqual(customer.languages, ['sl'])
-			self.assertEqual(customer.deleted, False)
 		else:
 			self.assertIsNone(customer, msg=customer)
 
-		# PREVERI ALI SO SE PRAVILNE FUNKCIJE KLICALE KI PREVERIJO KONTAKTS OWNERSHIPS
-		validate_ownerships_call_args_list = [call(oseba=status.clan)]
-		if skrbnik is not None:
-			validate_ownerships_call_args_list.append(call(oseba=status.skrbnik))
-
-		if not existing:
-			self.assertCountEqual(self.validate_kontakts_ownerships.exe.call_args_list, validate_ownerships_call_args_list if db_saved else [])
-		else:
-			self.assertCountEqual(self.validate_kontakts_ownerships.exe.call_args_list, [])
+		# * PREVERI ALI SE JE VABILO V VCS POSLALO
 
 		return status
 
-	async def test_polnoletnik_vnese_napacne_podatke(self):
-		self.polnoletna_oseba.kontakti[0].nivo_validiranosti = NivoValidiranosti.VALIDIRAN
-		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.polnoletna_oseba.kontakti
+	async def test_error_neveljaven_token(self):
+		with self.assertRaises(ERROR_NEVELJAVEN_TOKEN):
+			await self.case.exe(token='xxx')
 
-		status = await self.exe(self.polnoletna_oseba, db_saved=False)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE])
+	async def test_error_vpisni_podatki_decode(self):
+		with self.assertRaises(ERROR_VPISNI_PODATKI_DECODE):
+			await self.case.exe(token=self.case.auth.encode(token_data=TokenData(data='xxx'), expiration=CONST.auth_verification_token_life).data)
 
-	async def test_polnoletnik_se_vclani_prvic_ima_vcs_profil(self):
-		status = await self.exe(self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
-
-		Test_zacni_vclanitveni_postopek.temp_clan_id = status.clan._id
-
-	async def test_polnoletnik_se_vclani_prvic_nima_vcs_profila(self):
-		self.vcs_user_exists = False
-		status = await self.exe(self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.NIMA_VCS_PROFILA])
-
-	async def test_polnoletnik_se_vclani_prvic_ima_vcs_vendar_ni_povabljen(self):
-		self.vcs_user_exists = True
-		self.vcs_user_invited = False
-		status = await self.exe(self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije', 'napake'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO])
-		self.assertEqual(status.napake, [TipVpisnaNapaka.VCS_INVITE_FAIL])
-
-	async def test_polnoletnik_se_vclani_prvic_vcs_profila(self):
-		self.vcs_user_exists = False
-		status = await self.exe(self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.NIMA_VCS_PROFILA])
-
-		Test_zacni_vclanitveni_postopek.temp_clan_id = status.clan._id
-
-	async def test_polnoletnik_se_vclani_drugic_ima_vcs_profil(self):
-		status = await self.exe(clan=self.polnoletna_oseba, db_saved=True)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
-
-		self.reset_mocks()
-
-		status2 = await self.exe(clan=self.polnoletna_oseba, db_saved=True, existing=True)
-		self.assertEqualProperties(status2, ['clan', 'validirani_podatki_clana', 'informacije', 'razlogi_prekinitve'])
-		self.assertEqual(status2.informacije, [TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE])
-		self.assertEqual(status2.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
-
-	async def test_polnoletnik_je_hacker(self):
-		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.polnoletna_oseba.kontakti
-
-		status = await self.exe(self.polnoletna_oseba, db_saved=False)
-		self.assertEqualProperties(status, ['clan', 'validirani_podatki_clana', 'razlogi_prekinitve'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER])
-
-	async def test_mladoletnik_je_chuck_noris(self):
-		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
-		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, [
-			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
-			'razlogi_prekinitve', 'informacije'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS])
-		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
-
-	async def test_mladoletnik_vnese_napacne_podatke(self):
-		self.mladoletna_oseba.kontakti[0].nivo_validiranosti = NivoValidiranosti.VALIDIRAN
-		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
-
-		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, [
-			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
-			'razlogi_prekinitve', 'informacije'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.NAPAKE])
-		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
-
-	async def test_mladoletnik_je_hacker(self):
-		self.validate_kontakts_existances.exe.side_effect = lambda *kontakti: self.mladoletna_oseba.kontakti + self.skrbnik.kontakti
-		self.mladoletna_oseba.kontakti[0].data = self.skrbnik.kontakti[0].data
-
-		status = await self.exe(self.mladoletna_oseba, self.skrbnik, db_saved=False)
-		self.assertEqualProperties(status, [
-			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika',
-			'razlogi_prekinitve', 'informacije'])
-		self.assertCountEqual(status.razlogi_prekinitve, [TipPrekinitveVpisa.CHUCK_NORIS, TipPrekinitveVpisa.NAPAKE, TipPrekinitveVpisa.HACKER])
-		self.assertCountEqual(status.informacije, [TipVpisnaInformacija.MLADOLETNIK])
-
-	async def test_mladoletnik_se_vclani_prvic_ima_vcs_profil(self):
-		status = await self.exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.MLADOLETNIK,
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
-
-	async def test_mladoletnik_se_vclani_prvic_nima_vcs_profil(self):
-		self.vcs_user_exists = False
-		status = await self.exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.MLADOLETNIK,
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.NIMA_VCS_PROFILA])
-
-	async def test_mladoletnik_se_vclani_prvic_ima_vcs_profil_vendar_ni_povabljen(self):
-		self.vcs_user_exists = True
-		self.vcs_user_invited = False
-		status = await self.exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije', 'napake'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.MLADOLETNIK,
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO])
-		self.assertEqual(status.napake, [TipVpisnaNapaka.VCS_INVITE_FAIL])
-
-	async def test_mladoletnik_se_vclani_drugic_ima_vcs_profil(self):
-		status = await self.exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True)
-		self.assertEqualProperties(status, ['skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije'])
-		self.assertEqual(status.informacije, [
-			TipVpisnaInformacija.MLADOLETNIK,
-			TipVpisnaInformacija.POSKUSNO_OBDOBJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
-			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO
-		])
-
-		self.reset_mocks()
-
-		# ! DA SE SKRBNIK LAHKO MERGA MORA IMETI POTRJENE KONTAKTE!
-		with self.case.db.transaction() as root:
-			for oseba in root.oseba:
-				if TipOsebe.SKRBNIK in oseba.tip_osebe:
-					oseba.kontakti[0].nivo_validiranosti = NivoValidiranosti.POTRJEN
-
-		status2 = await self.exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True, existing=True)
-		self.assertEqualProperties(status2, [
-			'skrbnik', 'clan', 'validirani_podatki_clana', 'validirani_podatki_skrbnika', 'informacije', 'razlogi_prekinitve'])
-		self.assertEqual(status2.informacije, [
-			TipVpisnaInformacija.MLADOLETNIK,
-			TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE,
-			TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE])
-		self.assertEqual(status2.razlogi_prekinitve, [TipPrekinitveVpisa.ZE_VPISAN])
-
-
-class Test_zacni_izclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
-	def setUp(self) -> None:
-		APP.init(seed=False)
-
-		# SETUP
-		self.validate_izpis_request = MagicMock(Poslji_test_ki_preveri_zeljo_za_koncno_izclanitev)
-		self.validate_izpis_request.exe = AsyncMock()
-		self.case: Zacni_izclanitveni_postopek = APP.cases.zacni_izclanitveni_postopek(validate_izpis_request=self.validate_izpis_request)
-		self.oseba = Oseba(ime='ime', priimek='priimek', rojen=None, kontakti=[
-			Kontakt(data='data', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
-		self.vpisana_oseba = Oseba(ime='ime2', priimek='priimek2', rojen=None, kontakti=[
-			Kontakt(data='data2', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
-		self.vpisana_oseba.nov_vpis()
-
-		with self.case.db.transaction() as root:
-			root.oseba.clear()
-			root.save(self.oseba, self.vpisana_oseba)
-
-	def tearDown(self) -> None:
-		with self.case.db.transaction() as root:
-			root.oseba.clear()
-
-	async def test_izclanitev(self):
-		status: StatusIzpisa = await self.case.exe(
-			ime=self.vpisana_oseba.ime, priimek=self.vpisana_oseba.priimek, email=self.vpisana_oseba.kontakti[0].data, razlog='razlog')
-
-		self.assertEqual(status.clan, self.vpisana_oseba)
-		self.assertEqual(status.razlogi_prekinitve, [])
-		self.assertEqual(self.validate_izpis_request.exe.call_args_list, [
-			call(oseba=self.vpisana_oseba)
-		])
-
-	async def test_ni_vpisan(self):
-		status: StatusIzpisa = await self.case.exe(
-			ime=self.oseba.ime, priimek=self.oseba.priimek, email=self.oseba.kontakti[0].data, razlog='razlog')
-
-		self.assertEqual(status.clan, self.oseba)
-		self.assertEqual(status.razlogi_prekinitve, [TipPrekinitveIzpisa.NI_VPISAN])
-		self.assertEqual(self.validate_izpis_request.exe.call_args_list, [])
-
-	async def test_ne_obstaja(self):
-		status: StatusIzpisa = await self.case.exe(
-			ime=self.oseba.ime, priimek=self.oseba.priimek, email='xxx', razlog='razlog')
-
-		self.assertEqual(status.clan, None)
-		self.assertEqual(status.razlogi_prekinitve, [TipPrekinitveIzpisa.NE_OBSTAJA])
-		self.assertEqual(self.validate_izpis_request.exe.call_args_list, [])
+	async def test_nov_polnoletni_clan(self):
+		status = await self._exe(clan=self.polnoletna_oseba, db_saved=False)
+		self._assertEqualProperties(status, ['clan', 'skrbnik', 'napake', 'informacije'])
+		self.assertEqual(status.napake, [])
+		self.assertEqual(status.informacije, [])
 
 
 if __name__ == '__main__':

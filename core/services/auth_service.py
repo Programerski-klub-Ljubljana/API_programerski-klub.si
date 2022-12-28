@@ -29,7 +29,7 @@ class AuthService(ABC):
 		pass
 
 	@abstractmethod
-	def decode(self, token: str) -> TokenData:
+	def decode(self, token: str) -> TokenData | None:
 		pass
 
 	@abstractmethod

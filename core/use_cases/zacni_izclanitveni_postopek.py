@@ -49,6 +49,6 @@ class Zacni_izclanitveni_postopek(UseCase):
 			izpis.razlogi_prekinitve.append(TipPrekinitveIzpisa.NE_OBSTAJA)
 
 		if len(izpis.razlogi_prekinitve) == 0:
-			await self.validate_izpis_request.exe(oseba=izpis.clan)
+			await self.validate_izpis_request._exe(oseba=izpis.clan)
 
 		return izpis

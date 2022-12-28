@@ -27,7 +27,7 @@ class emails:
 class phones:
 	api = f'+38651240885'
 	info = f'051-240-885'
-	test = f'051-240-885'
+	test = f'+19032962250'
 	test2 = f'051-240-885'
 
 

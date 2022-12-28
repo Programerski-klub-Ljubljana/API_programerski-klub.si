@@ -20,7 +20,7 @@ class TokenResponse(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	login = APP.cases.vpisi_osebo()
-	token = login.exe(username=form_data.username, password=form_data.password)
+	token = login._exe(username=form_data.username, password=form_data.password)
 
 	if token is not None:
 		return {'access_token': token.data, "token_type": token.type}
@@ -36,7 +36,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.get("/info")
 def info(token: str = Depends(oauth2_scheme)):
 	auth_info = APP.cases.preberi_informacije_osebnega_zetona()
-	info = auth_info.exe(token)
+	info = auth_info._exe(token)
 
 	if info is not None:
 		return info

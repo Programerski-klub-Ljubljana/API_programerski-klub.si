@@ -18,7 +18,7 @@ from core.services.db_service import DbService
 from core.use_cases.auth_cases import Send_token_parts
 from core.use_cases.db_cases import Vrni_vsebino_baze
 from core.use_cases.msg_cases import Poslji_porocilo_napake, Poslji_sporocilo_kontaktu
-from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek
+from core.use_cases.zacni_vclanitveni_postopek import Zacni_vclanitveni_postopek, Pripravi_vclanitveni_postopek
 
 
 class Services(DeclarativeContainer):
@@ -54,6 +54,8 @@ class UseCases(DeclarativeContainer):
 	vrni_vsebino_baze: Provider[Vrni_vsebino_baze] = Factory(Vrni_vsebino_baze, db=d.db)
 
 	# FORMS
+	pripravi_vclanitveni_postopek: Provider[Pripravi_vclanitveni_postopek] = Factory(
+		Pripravi_vclanitveni_postopek, phone=d.phone, email=d.email, auth=d.auth, send_token_parts=send_token_parts, db=d.db)
 	zacni_vclanitveni_postopek: Provider[Zacni_vclanitveni_postopek] = Factory(
 		Zacni_vclanitveni_postopek, db=d.db, phone=d.phone, payment=d.payment, vcs=d.vcs, auth=d.auth, poslji_porocilo_napake=poslji_porocilo_napake)
 

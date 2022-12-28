@@ -20,6 +20,14 @@ from core.use_cases.msg_cases import Poslji_porocilo_napake
 log = logging.getLogger(__name__)
 
 
+class ERROR_VPISNI_PODATKI_DECODE(Exception):
+	pass
+
+
+class ERROR_VALIDACIJA_PODATKOV(Exception):
+	pass
+
+
 class ERROR_CLAN_JE_CHUCK_NORIS(Exception):
 	pass
 
@@ -104,8 +112,11 @@ class VpisniPodatki:
 		return json.dumps(list(self.__dict__.values())).replace(' ', '')
 
 	@staticmethod
-	def decode(data: str) -> 'VpisniPodatki':
-		return VpisniPodatki(*json.loads(data))
+	def decode(data: str) -> 'VpisniPodatki | None':
+		try:
+			return VpisniPodatki(*json.loads(data))
+		except Exception as err:
+			log.error(err)
 
 
 @dataclass
@@ -138,17 +149,10 @@ class Pripravi_vclanitveni_postopek(UseCase):
 		skrbnik = vp.skrbnik(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
 
 		# ! ERROR JE ZE VPISAN
-		# * MERGANJE SE DELA V DRUGEM KORAKU
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=clan):
-			clan = db_oseba
 			if db_oseba.vpisan:
 				raise ERROR_CLAN_JE_ZE_VPISAN()
-
-		# * V PRIMERU CE SE SKRBNIK NAHAJA V BAZI NI TREBA NJEMU POSILJATI EMAIL-A
-		if clan.mladoletnik:
-			for db_oseba in self.db.find(entity=skrbnik):
-				skrbnik = db_oseba
 
 		# ! ERROR KONTAKT NI VALIDIRAN
 		kontakti = self._preveri_obstoj_kontaktov(*clan.kontakti)
@@ -204,6 +208,13 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# * DEKODIRAJ TOKEN V JSONA IN GA PREVERI CE JE PRAVILNE OBLIKE?
 		vp = VpisniPodatki.decode(token.d)
+
+		# ! V PRIMERU DA SE VPISNI TOKEN NE MORA DEKODIRATI
+		if vp is None:
+			raise ERROR_VPISNI_PODATKI_DECODE()
+
+		# ? NA TEJ TOCKI SE VALIDACIJA KONCA IN SE CELOTEN POSTOPEK MORA NAREDITI PA CEPRAV Z NAPAKAMI
+		# ? NAPAKE SE BODO RESEVALE NA ROKO!
 
 		# * USTVARI STATUS ZA VPIS
 		status = StatusVpisa(
@@ -303,7 +314,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 				status.clan.connect(status.skrbnik)
 				root.save(status.skrbnik, unique=True)
 
-	def _vcs_vabilo_v_organizacijo(self, status: StatusVpisa, email: str):
+	async def _vcs_vabilo_v_organizacijo(self, status: StatusVpisa, email: str):
 		user = self.vcs.user(email=email)
 		if user is None:
 			return status.informacije.append(TipVpisnaInformacija.NIMA_VCS_PROFILA)
@@ -312,4 +323,4 @@ class Zacni_vclanitveni_postopek(UseCase):
 			return status.informacije.append(TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO)
 
 		status.napake.append(TipVpisnaNapaka.VCS_INVITE_FAIL)
-		return self.poslji_porocilo_napake.exe(naslov="Vcs service napaka", opis="Vcs povabilo se pri včlanitvi ni moglo poslati!", email=email)
+		return await self.poslji_porocilo_napake.exe(naslov="Vcs service napaka", opis="Vcs povabilo se pri včlanitvi ni moglo poslati!", email=email)

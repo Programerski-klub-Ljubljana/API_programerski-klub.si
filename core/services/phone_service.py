@@ -7,6 +7,10 @@ from autologging import traced
 log = logging.getLogger(__name__)
 
 
+class ERROR_PHONE_FORMAT(Exception):
+	pass
+
+
 @dataclass
 class PhoneOrigin:
 	languages: list[str]
