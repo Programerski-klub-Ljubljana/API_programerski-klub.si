@@ -65,8 +65,10 @@ class Entity(Persistent):
 
 	def connect(self, *entity):
 		for e in entity:
-			self._connections.append(e)
-			e._connections.append(self)
+			if e not in self._connections:
+				self._connections.append(e)
+			if self not in e._connections:
+				e._connections.append(self)
 
 	# TODO: Make this abstract
 	def equal(self, entity):

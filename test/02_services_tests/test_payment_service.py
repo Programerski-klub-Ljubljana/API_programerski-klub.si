@@ -37,7 +37,8 @@ class test_payment_service(unittest.TestCase):
 
 	def assertEqualSubscription(self, res_s, original):
 		self.assertEqual(res_s.customer.id, original.customer.id)
-		self.assertEqual(len(res_s.prices), len(original.prices))
+		self.assertGreaterEqual(len(res_s.prices), 1)
+		self.assertEqual(res_s.prices, original.prices)
 		if original.id is not None:
 			self.assertEqual(res_s.id, original.id)
 

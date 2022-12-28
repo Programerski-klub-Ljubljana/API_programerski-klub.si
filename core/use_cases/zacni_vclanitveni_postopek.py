@@ -217,12 +217,15 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# ? NAPAKE SE BODO RESEVALE NA ROKO!
 
 		# * USTVARI STATUS ZA VPIS
-		status = StatusVpisa(
-			clan=vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN),  # * Kontakti so ze potrjeni v 1 koraku.
-			skrbnik=vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN))  # * Kontakti so ze potrjeni v 1 koraku.
+		status = StatusVpisa(clan=vp.clan(nivo_validiranosti=NivoValidiranosti.POTRJEN))  # * Kontakti so ze potrjeni v 1 koraku.
+		if status.clan.mladoletnik:  # * CE JE MLADOLETNIK USTVARI SE SKRBNIKA
+			status.skrbnik = vp.skrbnik(nivo_validiranosti=NivoValidiranosti.POTRJEN)  # * Kontakti so ze potrjeni v 1 koraku.
 
-		# * MERGE CLANA IN SKRBNIKA V BAZI
+		# * MERGE CLANA IN SKRBNIKA SAJ MORA CLAN IZ STATUSA PRIDOBITI PRAVILEN ID ZA PAYMENT!
 		self._merge_clana_in_skrbnika(status=status)
+
+		# * ZABELEZI NOV VPIS ZA CLANA
+		status.clan.nov_vpis()
 
 		# * CE NI BILO NAPAK USTVARI PAYMENT CUSTOMERJA
 		await self._create_payment_customer(
@@ -232,9 +235,6 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# * CE IMA UPORABNIK GITHUB GA POVABI V ORGANIZACIJO SAJ JE NJEGOV EMAIL ZE VALIDIRAN
 		await self._vcs_vabilo_v_organizacijo(status=status, email=vp.email)
-
-		# * ZABELEZI NOV VPIS ZA CLANA
-		status.clan.nov_vpis()
 
 		# * SHRANI INFORMACIJE V BAZO
 		self._shrani_v_bazo(status=status)
@@ -247,7 +247,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=status.clan):
 			status.informacije.append(TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE)
-			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False)
+			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False) # ? Vpis se zgodi po mergu, zato to ni treba mergat
 			status.clan = db_oseba
 
 		# * USTVARI SKRBNIKA IN GA POVEZI V BAZO!
@@ -255,16 +255,16 @@ class Zacni_vclanitveni_postopek(UseCase):
 			status.informacije.append(TipVpisnaInformacija.CLAN_JE_MLADOLETNIK)
 			for db_oseba in self.db.find(entity=status.skrbnik):
 				status.informacije.append(TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE)
-				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False)
+				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False) # ? Vpis se zgodi po mergu, zato to ni treba mergat.
 				status.skrbnik = db_oseba
 
-	def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
+	async def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
 		# * POISCI IZVOR BILLING TELEFONA
 		izvor_telefona = self.phone.origin(phone=billing_phone)
 
 		if len(izvor_telefona.languages) == 0:
 			status.napake.append(TipVpisnaNapaka.IZVOR_TELEFONA_NI_NAJDEN)
-			self.poslji_porocilo_napake.exe(naslov="Phone service napaka", opis="Izvor telefona ni bil najden!", billing_phone=billing_phone)
+			await self.poslji_porocilo_napake.exe(naslov="Phone service napaka", opis="Izvor telefona ni bil najden!", billing_phone=billing_phone)
 
 		# * CE SE JE MERGE ZGODIL POTEM IMA ZE NASTAVLJEN ID OD STRIPE-a
 		customer = self.payment.create_customer(customer=Customer(
@@ -275,12 +275,13 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# ! CE SE CUSTOMER NI USTVARIL NE NADALJUJ...
 		if customer is None:
 			status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_FAIL)
-			return self.poslji_porocilo_napake.exe(
+			return await self.poslji_porocilo_napake.exe(
 				naslov="Payment service napaka", opis="Payment customer se pri včlanitvi ni mogel ustvariti!",
 				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email)
 
 		# * OBVEZNA POSODOBITEV ID KI SE UJEMA Z PAYMENT ID
-		status.clan._id = customer.id
+		with self.db.transaction() as _:
+			status.clan._id = customer.id
 
 		# * PREVERI ZGODOVINO SUBSCRIPTIONS
 		sub_history_status = customer.subscription_history_status(price=CONST.payment_prices.klubska_clanarina)
@@ -301,7 +302,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		# ! CE SE SUBSCRIPTION NI MORALA USTVARITI POTEM KONCAJ...
 		if subscription is None:
 			status.napake.append(TipVpisnaNapaka.PAYMENT_SUBSCRIPTION_FAIL)
-			return self.poslji_porocilo_napake.exe(
+			return await self.poslji_porocilo_napake.exe(
 				naslov="Payment service napaka", opis="Payment subcription se pri včlanitvi ni mogla ustvariti!",
 				clan=status.clan, billing_phone=billing_phone, billing_email=billing_email, customer=customer)
 

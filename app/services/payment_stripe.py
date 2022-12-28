@@ -92,7 +92,7 @@ class StripeSubscription(Subscription, StripeObj):
 		kwargs = {
 			**kwargs,
 			'customer': customer,
-			'prices': [item['id'] for item in kwargs['items']],
+			'prices': [item['price']['id'] for item in kwargs['items']['data']],
 			'created': datetime.fromtimestamp(kwargs['created']),
 			'start_date': datetime.fromtimestamp(kwargs['start_date']),
 			'canceled_at': None if canceled_at is None else datetime.fromtimestamp(canceled_at)
@@ -137,7 +137,7 @@ class PaymentStripe(PaymentService):
 	@stripe_request(default_value=None)
 	@traced
 	def get_customer(self, id: str) -> Customer | None:
-		c = stripe.Customer.retrieve(id=id, expand=['subscriptions'])
+		c = stripe.Customer.retrieve(id=id, expand=['subscriptions', 'subscriptions.data.items'])
 		if c.get('deleted', False):
 			return None
 		return StripeCustomer.parse(**c)
@@ -147,7 +147,8 @@ class PaymentStripe(PaymentService):
 
 		starting_after = None
 		while True:
-			customers: stripe.Customer = stripe.Customer.list(limit=self.page_limit, starting_after=starting_after, expand=['data.subscriptions'])
+			customers: stripe.Customer = stripe.Customer.list(
+				limit=self.page_limit, starting_after=starting_after, expand=['data.subscriptions', 'data.subscriptions.data.items'])
 			all_customers += customers.data
 			if customers.has_more:
 				starting_after = list(customers)[-1].id
@@ -158,7 +159,8 @@ class PaymentStripe(PaymentService):
 
 	@traced
 	def search_customers(self, query: str) -> list[Customer]:
-		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(query=query, limit=self.page_limit, expand=['subscriptions']).data]
+		return [StripeCustomer.parse(**dict(c)) for c in stripe.Customer.search(
+			query=query, limit=self.page_limit, expand=['subscriptions', 'subscriptions.data.items']).data]
 
 	@stripe_request(default_value=False)
 	@traced
@@ -175,7 +177,7 @@ class PaymentStripe(PaymentService):
 	@stripe_request(default_value=None)
 	@traced
 	def get_subscription(self, id: str) -> Subscription | None:
-		sub = stripe.Subscription.retrieve(id=id, expand=['customer'])
+		sub = stripe.Subscription.retrieve(id=id, expand=['customer', 'items'])
 		return StripeSubscription.parse(**dict(sub))
 
 	def list_subscriptions(self) -> list[Subscription]:
@@ -183,7 +185,7 @@ class PaymentStripe(PaymentService):
 
 		starting_after = None
 		while True:
-			subscriptions = stripe.Subscription.list(limit=self.page_limit, starting_after=starting_after, expand=['data.customer'])
+			subscriptions = stripe.Subscription.list(limit=self.page_limit, starting_after=starting_after, expand=['data.customer', 'data.items'])
 			all_subscriptions += subscriptions.data
 			if subscriptions.has_more:
 				starting_after = subscriptions.data[-1].id
@@ -194,7 +196,7 @@ class PaymentStripe(PaymentService):
 
 	@traced
 	def search_subscription(self, query: str) -> list[Subscription]:
-		return [StripeSubscription.parse(**dict(s)) for s in stripe.Subscription.search(query=query, limit=self.page_limit, expand=['customer']).data]
+		return [StripeSubscription.parse(**dict(s)) for s in stripe.Subscription.search(query=query, limit=self.page_limit, expand=['customer', 'items']).data]
 
 	@stripe_request(default_value=False)
 	@traced
