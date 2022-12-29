@@ -20,28 +20,18 @@ from core.use_cases.msg_cases import Poslji_porocilo_napake
 log = logging.getLogger(__name__)
 
 
-class ERROR_VPISNI_PODATKI_DECODE(Exception):
-	pass
+class ERROR:
+	class VPISNI_PODATKI_DECODE(Exception): pass
 
+	class VALIDACIJA_PODATKOV(Exception): pass
 
-class ERROR_VALIDACIJA_PODATKOV(Exception):
-	pass
+	class CLAN_JE_CHUCK_NORIS(Exception): pass
 
+	class CLAN_JE_ZE_VPISAN(Exception): pass
 
-class ERROR_CLAN_JE_CHUCK_NORIS(Exception):
-	pass
+	class VALIDACIJA_KONTAKTOV(Exception): pass
 
-
-class ERROR_CLAN_JE_ZE_VPISAN(Exception):
-	pass
-
-
-class ERROR_VALIDACIJA_KONTAKTOV(Exception):
-	pass
-
-
-class ERROR_NEVELJAVEN_TOKEN(Exception):
-	pass
+	class NEVELJAVEN_TOKEN(Exception): pass
 
 
 class TipPrekinitveVpisa(str, Enum):
@@ -144,7 +134,7 @@ class Pripravi_vclanitveni_postopek(UseCase):
 
 		# ! ERROR CE JE CHUCK NORIS
 		if vp.email == vp.email_skrbnika or vp.telefon == vp.telefon_skrbnika:
-			raise ERROR_CLAN_JE_CHUCK_NORIS()
+			raise ERROR.CLAN_JE_CHUCK_NORIS()
 
 		# * ZACNI VPISNI PROTOKOL
 		clan = vp.clan(nivo_validiranosti=NivoValidiranosti.NI_VALIDIRAN)
@@ -154,7 +144,7 @@ class Pripravi_vclanitveni_postopek(UseCase):
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=clan):
 			if db_oseba.vpisan:
-				raise ERROR_CLAN_JE_ZE_VPISAN()
+				raise ERROR.CLAN_JE_ZE_VPISAN()
 
 		# ! ERROR KONTAKT NI VALIDIRAN
 		kontakti = self._preveri_obstoj_kontaktov(*clan.kontakti)
@@ -178,7 +168,7 @@ class Pripravi_vclanitveni_postopek(UseCase):
 				if self._kontakt_obstaja(kontakt=kontakt):
 					kontakt.nivo_validiranosti = NivoValidiranosti.VALIDIRAN
 				else:
-					raise ERROR_VALIDACIJA_KONTAKTOV(kontakt)
+					raise ERROR.VALIDACIJA_KONTAKTOV(kontakt)
 				validirani_kontakti.append(kontakt)
 		return validirani_kontakti
 
@@ -206,14 +196,14 @@ class Zacni_vclanitveni_postopek(UseCase):
 
 		# ! V PRIMERU DA SE TOKEN NE MORA DEKODIRATI TAKOJ PREKINI
 		if token is None:
-			raise ERROR_NEVELJAVEN_TOKEN()
+			raise ERROR.NEVELJAVEN_TOKEN()
 
 		# * DEKODIRAJ TOKEN V JSONA IN GA PREVERI CE JE PRAVILNE OBLIKE?
 		vp = VpisniPodatki.decode(token.d)
 
 		# ! V PRIMERU DA SE VPISNI TOKEN NE MORA DEKODIRATI
 		if vp is None:
-			raise ERROR_VPISNI_PODATKI_DECODE()
+			raise ERROR.VPISNI_PODATKI_DECODE()
 
 		# ? NA TEJ TOCKI SE VALIDACIJA KONCA IN SE CELOTEN POSTOPEK MORA NAREDITI PA CEPRAV Z NAPAKAMI
 		# ? NAPAKE SE BODO RESEVALE NA ROKO!

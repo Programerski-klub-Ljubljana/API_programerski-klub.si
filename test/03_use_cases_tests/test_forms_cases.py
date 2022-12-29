@@ -10,9 +10,8 @@ from core.services.email_service import EmailService
 from core.services.phone_service import PhoneService
 from core.services.vcs_service import VcsService, VcsMemberRole
 from core.use_cases.auth_cases import TokenPart
-from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, Pripravi_vclanitveni_postopek, VpisniPodatki, ERROR_CLAN_JE_CHUCK_NORIS, \
-	ERROR_CLAN_JE_ZE_VPISAN, ERROR_VALIDACIJA_KONTAKTOV, \
-	ERROR_NEVELJAVEN_TOKEN, ERROR_VPISNI_PODATKI_DECODE, TipVpisnaInformacija, TipVpisnaNapaka
+from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, Pripravi_vclanitveni_postopek, VpisniPodatki, TipVpisnaInformacija, \
+	TipVpisnaNapaka, ERROR
 
 
 def vpisni_podatki(clan: Oseba, skrbnik: Oseba):
@@ -152,10 +151,10 @@ class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		return token
 
 	async def test_error_clan_je_chuck_noris(self):
-		with self.assertRaises(ERROR_CLAN_JE_CHUCK_NORIS):
+		with self.assertRaises(ERROR.CLAN_JE_CHUCK_NORIS):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.mladoletna_oseba)
 
-		with self.assertRaises(ERROR_CLAN_JE_CHUCK_NORIS):
+		with self.assertRaises(ERROR.CLAN_JE_CHUCK_NORIS):
 			await self._exe(clan=self.polnoletna_oseba, skrbnik=self.polnoletna_oseba)
 
 	async def test_error_clan_je_ze_vpisan(self):
@@ -166,48 +165,48 @@ class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			self.polnoletna_oseba.nov_vpis()
 			root.save(self.polnoletna_oseba)
 
-		with self.assertRaises(ERROR_CLAN_JE_ZE_VPISAN):
+		with self.assertRaises(ERROR.CLAN_JE_ZE_VPISAN):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
-		with self.assertRaises(ERROR_CLAN_JE_ZE_VPISAN):
+		with self.assertRaises(ERROR.CLAN_JE_ZE_VPISAN):
 			await self._exe(clan=self.polnoletna_oseba)
 
 	async def test_error_validacija_kontaktov(self):
 		# MLADOLETNIK
 		self.mladoletna_oseba.kontakti[0].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
 		self._setup()
 
 		self.mladoletna_oseba.kontakti[1].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
 		self._setup()
 
 		# SKRBNIK MLADOLETNIKA
 		self.skrbnik.kontakti[0].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
 		self._setup()
 
 		self.skrbnik.kontakti[1].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
 		self._setup()
 
 		# POLNOLETNIK
 		self.polnoletna_oseba.kontakti[0].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.polnoletna_oseba)
 
 		self._setup()
 
 		self.polnoletna_oseba.kontakti[1].data = 'xxx'
-		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
+		with self.assertRaises(ERROR.VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.polnoletna_oseba)
 
 	async def test_mladoletnik(self):
@@ -341,11 +340,11 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		return status
 
 	async def test_error_neveljaven_token(self):
-		with self.assertRaises(ERROR_NEVELJAVEN_TOKEN):
+		with self.assertRaises(ERROR.NEVELJAVEN_TOKEN):
 			await self.case.exe(token='xxx')
 
 	async def test_error_vpisni_podatki_decode(self):
-		with self.assertRaises(ERROR_VPISNI_PODATKI_DECODE):
+		with self.assertRaises(ERROR.VPISNI_PODATKI_DECODE):
 			await self.case.exe(token=self.case.auth.encode(token_data=TokenData(data='xxx'), expiration=CONST.auth_verification_token_life).data)
 
 	async def test_polnoletni_clan(self):
