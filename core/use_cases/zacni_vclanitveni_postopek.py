@@ -34,17 +34,6 @@ class ERROR:
 	class NEVELJAVEN_TOKEN(Exception): pass
 
 
-class TipPrekinitveVpisa(str, Enum):
-	ZE_VPISAN = auto()
-	NAPAKE = auto()  # UPORABNIK JE VNESEL PODATKE KI SO SIGURNO NAPACNE.
-	CHUCK_NORIS = auto()  # MUDEL JE CHUCK NORIS KER SAMO CHUCK NORIS JE LAHKO STARS SAMEMU SEBI
-	# ---- When Chuck Norris was born the doctor asked him to name his parents.
-	# ---- When Chuck Norris was a baby he farted for the first time, that is when the big bang first happened.
-	# ---- The day after Chuck Norris was born he drove his mother home, he wanted her to get some rest.
-	# ---- Chuck Norris built the hospital that he was born in.
-	HACKER = auto()  # UPORABNIK JE VNESEL VSE NAPACNE PODATKE.
-
-
 class TipVpisnaInformacija(str, Enum):
 	CLAN_JE_MLADOLETNIK = auto()
 	NIMA_VCS_PROFILA = auto()

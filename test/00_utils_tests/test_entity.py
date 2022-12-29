@@ -3,11 +3,14 @@ from dataclasses import Field, dataclass
 from datetime import datetime
 from typing import Callable
 
-from core.domain._entity import Elist, Entity, elist
+from core.domain._entity import Elist, Entity, elist, Log
+from core.domain._enums import LogLevel, LogTheme
+
 
 @dataclass
 class E(Entity):
 	value: int
+
 
 class test_Elist(unittest.TestCase):
 	@classmethod
@@ -94,6 +97,40 @@ class test_Entity(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		cls.entity: FakeEntity = FakeEntity(a='a')
+
+	def test_00_entity_logs(self):
+		before = datetime.now()
+		self.entity.a = 'value'
+		self.entity.b += 'value'
+		after = datetime.now()
+
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = value'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='b = bvalue')
+		])
+
+		count = 0
+		for log in self.entity._logs:
+			count += 1
+			self.assertTrue(before < log._created < after)
+		self.assertGreater(count, 0)
+
+	def test_01_entity_list_lost(self):
+		before = datetime.now()
+		self.entity.c.append(4)
+		self.entity.c[0] = 0
+		after = datetime.now()
+
+		self.assertEqual(self.entity.c._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="append(4)"),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="__setitem__(0, 0)")
+		])
+
+		count = 0
+		for log in self.entity.c._logs:
+			count += 1
+			self.assertTrue(before < log._created < after)
+		self.assertGreater(count, 0)
 
 	def test_properties(self):
 		self.assertTrue(self.entity.a, 'a')

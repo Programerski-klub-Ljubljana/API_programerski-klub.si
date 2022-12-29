@@ -30,6 +30,7 @@ class LogLevel(EntityEnum):
 
 
 class LogTheme(EntityEnum):
+	SPREMEMBA = auto()
 	OSNOVNOSOLSKI = auto()
 	SREDNJESOLSKI = auto()
 	GITHUB = auto()
