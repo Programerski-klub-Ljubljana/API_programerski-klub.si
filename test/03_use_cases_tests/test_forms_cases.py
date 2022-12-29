@@ -12,7 +12,7 @@ from core.services.vcs_service import VcsService, VcsMemberRole
 from core.use_cases.auth_cases import TokenPart
 from core.use_cases.zacni_vclanitveni_postopek import StatusVpisa, Pripravi_vclanitveni_postopek, VpisniPodatki, ERROR_CLAN_JE_CHUCK_NORIS, \
 	ERROR_CLAN_JE_ZE_VPISAN, ERROR_VALIDACIJA_KONTAKTOV, \
-	ERROR_NEVELJAVEN_TOKEN, ERROR_VPISNI_PODATKI_DECODE, TipVpisnaInformacija
+	ERROR_NEVELJAVEN_TOKEN, ERROR_VPISNI_PODATKI_DECODE, TipVpisnaInformacija, TipVpisnaNapaka
 
 
 def vpisni_podatki(clan: Oseba, skrbnik: Oseba):
@@ -98,9 +98,9 @@ class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 	def setUp(self) -> None:
 		APP.init(seed=False)
-		self._init()
+		self._setup()
 
-	def _init(self):
+	def _setup(self):
 		# MOCKS
 		self.phone_service: PhoneService = MagicMock(PhoneService, name='PhoneService')
 		self.email_service: EmailService = MagicMock(EmailService, name='EmailService')
@@ -129,26 +129,25 @@ class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		self.mladoletna_oseba = Oseba(ime='ime', priimek='priimek', rojen=date(year=self.today.year - 10, month=1, day=1), kontakti=[
 			Kontakt(data=CONST.emails.test_vcs_member, tip=TipKontakta.EMAIL), Kontakt(data=CONST.phones.test, tip=TipKontakta.PHONE)])
 
-		self.vp = None
-
 		# CLEAN DB
 		with self.case.db.transaction() as root:
 			root.oseba.clear()
 			assert len(root.oseba) == 0
 
 	async def _exe(self, clan: Oseba, skrbnik: Oseba = None):
-		token_parts = await self.case.exe(vp=vpisni_podatki(clan=clan, skrbnik=skrbnik))
+		vp_input = vpisni_podatki(clan=clan, skrbnik=skrbnik)
+		token_parts = await self.case.exe(vp=vp_input)
 
 		# * PREVERI ALI TOKEN PARTS DOBI ZACETNO STANJE
 		token = TokenPart.merge(token_parts)
 		body = json.loads(self.case.auth.decode(token).d)
-		vp = VpisniPodatki(*body)
-		self.assertEqual(vp, self.vp)
+		vp_output = VpisniPodatki(*body)
+		self.assertEqual(vp_input, vp_output)
 
 		# * PREVERI ALI JE TELEFON FORMATIRAN
-		self.assertTrue(vp.telefon.startswith('+'), vp.telefon)
+		self.assertTrue(vp_output.telefon.startswith('+'), vp_output.telefon)
 		if clan.mladoletnik:
-			self.assertTrue(vp.telefon_skrbnika.startswith('+'), vp.telefon_skrbnika)
+			self.assertTrue(vp_output.telefon_skrbnika.startswith('+'), vp_output.telefon_skrbnika)
 
 		return token
 
@@ -179,33 +178,33 @@ class Test_pripravi_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
-		self._init()
+		self._setup()
 
 		self.mladoletna_oseba.kontakti[1].data = 'xxx'
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
-		self._init()
+		self._setup()
 
 		# SKRBNIK MLADOLETNIKA
 		self.skrbnik.kontakti[0].data = 'xxx'
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
-		self._init()
+		self._setup()
 
 		self.skrbnik.kontakti[1].data = 'xxx'
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik)
 
-		self._init()
+		self._setup()
 
 		# POLNOLETNIK
 		self.polnoletna_oseba.kontakti[0].data = 'xxx'
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
 			await self._exe(clan=self.polnoletna_oseba)
 
-		self._init()
+		self._setup()
 
 		self.polnoletna_oseba.kontakti[1].data = 'xxx'
 		with self.assertRaises(ERROR_VALIDACIJA_KONTAKTOV):
@@ -224,7 +223,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 	validate_kontakts_ownerships = None
 	validate_kontakts_existances = None
 
-	def _init(self):
+	def _setup_mocks(self):
 		# MOCKS
 		self.vcs_service: VcsService = MagicMock(VcsService, name='VcsService')
 		# SETUP
@@ -236,7 +235,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 	def setUp(self) -> None:
 		APP.init(seed=False)
 
-		self._init()
+		self._setup_mocks()
 
 		self.today = date.today()
 		self.skrbnik = Oseba(ime='ime_skrbnika', priimek='priimek_skrbnika', rojen=None, kontakti=[
@@ -259,7 +258,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			elif isinstance(v, Oseba | MagicMock) and v is not None:
 				prop.append(k)
 
-		self.assertCountEqual(sorted(prop), sorted(expected))
+		self.assertEqual(sorted(prop), sorted(expected))
 
 	def _assertEqualOseba(self, original_oseba, status_oseba, vpis: bool = False, tip: TipOsebe = TipOsebe.CLAN):
 		# * MORA IMETI ENAKE INFORMACIJE
@@ -279,7 +278,7 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 
 		# * MORA BITI PRAVEGA TIPA
 		# ! self.assertIn(tip, status_oseba.tip_osebe)
-		print('asdf')
+		print()
 
 	async def _exe(self, clan: Oseba, skrbnik: Oseba = None, db_saved: bool = True, existing: bool = False):
 
@@ -357,14 +356,16 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
 			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
 
-		self._init()
+		self._setup_mocks()
 
 		status = await self._exe(clan=self.polnoletna_oseba, db_saved=True, existing=True)
-		self._assertEqualProperties(status, ['clan', 'informacije'])
+		self._assertEqualProperties(status, ['clan', 'informacije', 'napake'])
 		self.assertEqual(status.informacije, [
 			TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
 			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
+		self.assertEqual(status.napake, [
+			TipVpisnaNapaka.CLAN_JE_VPISAN,
+			TipVpisnaNapaka.PAYMENT_CUSTOMER_IS_SUBSCRIBED])
 
 	async def test_mladoletni_clan_s_skrbnikom(self):
 		status = await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True)
@@ -375,16 +376,18 @@ class Test_zacni_vclanitveni_postopek(unittest.IsolatedAsyncioTestCase):
 			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
 			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
 
-		self._init()
+		self._setup_mocks()
 
 		status = await self._exe(clan=self.mladoletna_oseba, skrbnik=self.skrbnik, db_saved=True, existing=True)
-		self._assertEqualProperties(status, ['clan', 'skrbnik', 'informacije'])
+		self._assertEqualProperties(status, ['clan', 'skrbnik', 'informacije', 'napake'])
 		self.assertEqual(status.informacije, [
 			TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE,
 			TipVpisnaInformacija.CLAN_JE_MLADOLETNIK,
 			TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE,
-			TipVpisnaInformacija.NAROCEN_NA_KLUBSKO_CLANARINO,
 			TipVpisnaInformacija.POVABLJEN_V_VCS_ORGANIZACIJO])
+		self.assertEqual(status.napake, [
+			TipVpisnaNapaka.CLAN_JE_VPISAN,
+			TipVpisnaNapaka.PAYMENT_CUSTOMER_IS_SUBSCRIBED])
 
 
 if __name__ == '__main__':

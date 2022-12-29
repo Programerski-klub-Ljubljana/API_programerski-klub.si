@@ -66,6 +66,8 @@ class TipVpisnaInformacija(str, Enum):
 
 
 class TipVpisnaNapaka(str, Enum):
+	CLAN_JE_VPISAN = auto()
+	PAYMENT_CUSTOMER_IS_SUBSCRIBED = auto()
 	VCS_INVITE_FAIL = auto()
 	PAYMENT_SUBSCRIPTION_FAIL = auto()
 	PAYMENT_CUSTOMER_FAIL = auto()
@@ -225,7 +227,11 @@ class Zacni_vclanitveni_postopek(UseCase):
 		self._merge_clana_in_skrbnika(status=status)
 
 		# * ZABELEZI NOV VPIS ZA CLANA
-		status.clan.nov_vpis()
+		if status.clan.vpisan:
+			status.napake.append(TipVpisnaNapaka.CLAN_JE_VPISAN)
+			await self.poslji_porocilo_napake.exe(naslov="Db service napaka", opis="Clan nebi smel biti vpisan!", clan=status.clan)
+		else:
+			status.clan.nov_vpis()
 
 		# * CE NI BILO NAPAK USTVARI PAYMENT CUSTOMERJA
 		await self._create_payment_customer(
@@ -247,7 +253,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 		db_oseba: Oseba
 		for db_oseba in self.db.find(entity=status.clan):
 			status.informacije.append(TipVpisnaInformacija.CLAN_SE_PONOVNO_VPISUJE)
-			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False) # ? Vpis se zgodi po mergu, zato to ni treba mergat
+			db_oseba.merge(status.clan, merge_kontakti=True, merge_vpisi_izpisi=False)  # ? Vpis se zgodi po mergu, zato to ni treba mergat
 			status.clan = db_oseba
 
 		# * USTVARI SKRBNIKA IN GA POVEZI V BAZO!
@@ -255,7 +261,7 @@ class Zacni_vclanitveni_postopek(UseCase):
 			status.informacije.append(TipVpisnaInformacija.CLAN_JE_MLADOLETNIK)
 			for db_oseba in self.db.find(entity=status.skrbnik):
 				status.informacije.append(TipVpisnaInformacija.SKRBNIK_SE_PONOVNO_VPISUJE)
-				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False) # ? Vpis se zgodi po mergu, zato to ni treba mergat.
+				db_oseba.merge(status.skrbnik, merge_kontakti=True, merge_vpisi_izpisi=False)  # ? Vpis se zgodi po mergu, zato to ni treba mergat.
 				status.skrbnik = db_oseba
 
 	async def _create_payment_customer(self, status: StatusVpisa, billing_phone: str, billing_email: str):
@@ -292,6 +298,12 @@ class Zacni_vclanitveni_postopek(UseCase):
 			case SubscriptionHistoryStatus.NEVER_SUBSCRIBED:
 				status.informacije.append(TipVpisnaInformacija.POSKUSNO_OBDOBJE)
 				trial_period_days = CONST.trial_period_days
+
+			case SubscriptionHistoryStatus.IS_SUBSCRIBED:
+				status.napake.append(TipVpisnaNapaka.PAYMENT_CUSTOMER_IS_SUBSCRIBED)
+				return await self.poslji_porocilo_napake.exe(
+					naslov="Payment service napaka", opis="Payment customer nebi smel biti naročen na naročnino!",
+					clan=status.clan, billing_phone=billing_phone, billing_email=billing_email, customer=customer)
 
 		# * CE NI ZE NAROCEN POTEM USTVARI SUBSCRIPTION NA KLUBSKO CLANARINO
 		subscription = self.payment.create_subscription(subscription=Subscription(
