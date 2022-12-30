@@ -30,39 +30,66 @@ class test_Elist(unittest.TestCase):
 
 	def test_setitem(self):
 		self.elist_int[1] = 10
-		self.assertEqual(self.elist_int, [0, 10, 2])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__setitem__(i=1, item=10)')])
+		self.elist_int[2] = "10"
+		self.assertEqual(self.elist_int, [0, 10, "10"])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__setitem__(i=1, item=10)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__setitem__(i=2, item="10")')
+		])
 
 	def test_add(self):
 		self.elist_int = self.elist_int + Elist([3, 4])
-		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__add__(other=[3, 4])')])
+		self.elist_int = self.elist_int + Elist([5, 6])
+		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4, 5, 6])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__add__(other=[3, 4])'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__add__(other=[5, 6])')
+		])
 
 	def test_radd(self):
 		self.elist_int = [-2, -1] + self.elist_int
-		self.assertEqual(self.elist_int, [-2, -1, 0, 1, 2])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__radd__(other=[-2, -1])')])
+		self.elist_int = [-4, -3] + self.elist_int
+		self.assertEqual(self.elist_int, [-4, -3, -2, -1, 0, 1, 2])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__radd__(other=[-2, -1])'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__radd__(other=[-4, -3])')
+		])
 
 	def test_iadd(self):
 		self.elist_int += [3, 4]
-		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__iadd__(other=[3, 4])')])
+		self.elist_int += [5, 6]
+		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4, 5, 6])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__iadd__(other=[3, 4])'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__iadd__(other=[5, 6])')
+		])
 
 	def test_mul(self):
-		self.elist_int = self.elist_int * 3
-		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__mul__(other=3)')])
+		self.elist_int = self.elist_int * 2
+		self.elist_int = self.elist_int * 2
+		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__mul__(other=2)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__mul__(other=2)')
+		])
 
 	def test_rmul(self):
-		self.elist_int = 3 * self.elist_int
-		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__rmul__(other=3)')])
+		self.elist_int = 2 * self.elist_int
+		self.elist_int = 2 * self.elist_int
+		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__rmul__(other=2)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__rmul__(other=2)')
+		])
 
 	def test_imul(self):
-		self.elist_int *= 3
-		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2])
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__imul__(other=3)')])
-		print(self.elist_int)
+		self.elist_int *= 2
+		self.elist_int *= 2
+		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+		self.assertEqual(self.elist_int._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__imul__(other=2)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__imul__(other=2)')
+		])
 
 	def test_contains(self):
 		self.assertTrue(1 not in self.elist_empty)
@@ -82,7 +109,8 @@ class test_Elist(unittest.TestCase):
 		self.elist_int.pop(0)
 		self.assertEqual(len(self.elist_int), 0)
 
-		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')])
+		self.assertEqual(self.elist_int._logs,
+		                 [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')])
 
 	def test_clear(self):
 		self.elist_int.clear()
@@ -220,6 +248,13 @@ class test_Entity(unittest.TestCase):
 
 		setattr(self.entity, 'a', 10)
 		self.assertEqual(self.entity.a, 10)
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "b"'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = 10')
+		])
+
+		# ! TEST PRIVATE PROPERTIES
+		self.entity._p_test = 123
 		self.assertEqual(self.entity._logs, [
 			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "b"'),
 			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = 10')

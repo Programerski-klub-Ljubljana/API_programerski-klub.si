@@ -39,36 +39,42 @@ class Elist(PersistentList):
 	def __add__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__add__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__add__, loc)
 		return elist
 
 	def __radd__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__radd__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__radd__, loc)
 		return elist
 
 	def __iadd__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__iadd__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__iadd__, loc)
 		return elist
 
 	def __mul__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__mul__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__mul__, loc)
 		return elist
 
 	def __rmul__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__rmul__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__rmul__, loc)
 		return elist
 
 	def __imul__(self, other):
 		loc = locals()
 		elist = super(Elist, self).__imul__(other)
+		elist._logs = self._logs
 		elist._log_call(self.__imul__, loc)
 		return elist
 
@@ -164,12 +170,11 @@ class Entity(Persistent):
 			setattr(self, k, v)
 
 	def __setattr__(self, key, value):
-		if not isinstance(self, Log):
-			if hasattr(self, '_logs'):
-				value_str = f'"{value}"' if isinstance(value, str) else str(value)
-				log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value_str}')
-				log.debug(f'{log_obj.msg} ... {self}')
-				self._logs.append(log_obj)
+		if not isinstance(self, Log) and hasattr(self, '_logs') and not key.startswith('_p_'):
+			value_str = f'"{value}"' if isinstance(value, str) else str(value)
+			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value_str}')
+			log.debug(f'{log_obj.msg} ... {self}')
+			self._logs.append(log_obj)
 		super(Entity, self).__setattr__(key, value)
 
 	def __delattr__(self, item):

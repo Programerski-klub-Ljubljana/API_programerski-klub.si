@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from enum import auto
 
-from unidecode import unidecode
-
 from core import cutils
 from core.domain._entity import elist, Elist, Entity
 from core.domain._enums import EntityEnum
@@ -128,16 +126,6 @@ class Oseba(Entity):
 		for status in statusi:
 			if status not in self.tip_osebe:
 				self.tip_osebe.append(status)
-
-	def __str__(self):
-		id = ''
-		if self.rojen is not None:
-			id = self.rojen.strftime("%d%m%Y")
-		else:
-			for k in self.kontakti:
-				if k.nivo_validiranosti == NivoValidiranosti.POTRJEN:
-					id = k.data.replace('+', '')
-		return unidecode(f'{self.ime}{self.priimek}_{id}'.replace(' ', '').lower())
 
 	def nov_vpis(self):
 		if not self.vpisan:
