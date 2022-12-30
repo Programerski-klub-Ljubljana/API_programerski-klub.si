@@ -26,7 +26,7 @@ class Elist(PersistentList):
 			kwargs = {}
 		if hasattr(self, '_logs'):
 			if 'self' in kwargs: del kwargs['self']
-			kwargs_str = ', '.join([f'"{v}"' if isinstance(v, str) else str(v) for k, v in kwargs.items() if not k.startswith('__')])
+			kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
 			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
 			log.debug(log_obj.msg)
 			self._logs.append(log_obj)
@@ -34,10 +34,6 @@ class Elist(PersistentList):
 	def __setitem__(self, i, item):
 		self._log_call(self.__setitem__, locals())
 		super(Elist, self).__setitem__(i, item)
-
-	def __delitem__(self, i):
-		self._log_call(self.__delitem__, locals())
-		super(Elist, self).__delitem__(i)
 
 	def __add__(self, other):
 		self._log_call(self.__add__, locals())
