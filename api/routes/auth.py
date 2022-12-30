@@ -20,10 +20,10 @@ class TokenResponse(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	login = APP.cases.vpisi_osebo()
-	token = login._exe(username=form_data.username, password=form_data.password)
+	# token = login._exe(username=form_data.username, password=form_data.password)
 
-	if token is not None:
-		return {'access_token': token.data, "token_type": token.type}
+	# if token is not None:
+	# 	return {'access_token': token.data, "token_type": token.type}
 
 	raise HTTPException(
 		status_code=HTTP_401_UNAUTHORIZED,

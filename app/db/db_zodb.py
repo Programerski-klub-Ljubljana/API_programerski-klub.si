@@ -19,7 +19,7 @@ class ZoDbRoot(DbRoot):
 
 	def save(self, *entities: Entity, unique=False):
 		for entity in entities:
-			table = getattr(self, entity.type)
+			table = getattr(self, entity._type)
 			if unique and entity not in table:  # TODO: Does this works???
 				table.append(entity)
 			elif not unique:
@@ -78,9 +78,8 @@ class DbZo(DbService):
 
 	def find(self, entity: Entity) -> list[Entity]:
 		# PREVERI MOZNO DUPLIKACIJO PODATKOV!
-		entity_type = entity.type
 		with self.transaction(note=f'Find {entity}') as root:
-			table = getattr(root, entity_type, None)
+			table = getattr(root, entity._type, None)
 			for old_entity in table:
 				if old_entity.equal(entity):
 					yield old_entity

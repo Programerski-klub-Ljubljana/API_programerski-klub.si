@@ -3,6 +3,8 @@ from dataclasses import Field, dataclass
 from datetime import datetime
 from typing import Callable
 
+import shortuuid
+
 from core.domain._entity import Elist, Entity, elist, Log
 from core.domain._enums import LogLevel, LogTheme
 
@@ -18,6 +20,28 @@ class test_Elist(unittest.TestCase):
 		cls.elist_100 = Elist([E(value=i) for i in range(10000)])
 		cls.elist = Elist([E(value=i) for i in range(6)])
 		cls.elist_empty = Elist([])
+		cls.elist_int = Elist([i for i in range(3)])
+
+	def test_setitem(self):
+		self.elist_int[1] = 10
+		self.assertEqual(self.elist_int, [0, 10, 2])
+
+	def test_delitem(self):
+		del self.elist[1]
+		self.assertEqual(self.elist_int, [0, 1, 2])
+
+	def test_add(self):
+		self.elist_int = self.elist_int + [3,4]
+		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
+
+	def test_addr(self):
+		self.elist_int = [-2,-1] + self.elist_int
+		self.assertEqual(self.elist_int, [-2, -1, 0, 1, 2])
+
+	def test_iadd(self):
+		self.elist_int += [3, 4]
+		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
+		raise Exception("YOU STAYED HERE!!!")
 
 	def test_contains(self):
 		self.assertTrue(1 not in self.elist_empty)
@@ -95,62 +119,114 @@ class FakeEntity(Entity):
 
 class test_Entity(unittest.TestCase):
 	@classmethod
-	def setUpClass(cls) -> None:
-		cls.entity: FakeEntity = FakeEntity(a='a')
+	def setUp(self) -> None:
+		self.before = datetime.now()
+		self.entity: FakeEntity = FakeEntity(a='a')
+		self.after = datetime.now()
 
-	def test_00_entity_logs(self):
-		before = datetime.now()
-		self.entity.a = 'value'
-		self.entity.b += 'value'
-		after = datetime.now()
-
-		self.assertEqual(self.entity._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = value'),
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='b = bvalue')
-		])
-
-		count = 0
-		for log in self.entity._logs:
-			count += 1
-			self.assertTrue(before < log._created < after)
-		self.assertGreater(count, 0)
-
-	def test_01_entity_list_lost(self):
-		before = datetime.now()
-		self.entity.c.append(4)
-		self.entity.c[0] = 0
-		after = datetime.now()
-
-		self.assertEqual(self.entity.c._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="append(4)"),
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="__setitem__(0, 0)")
-		])
-
-		count = 0
-		for log in self.entity.c._logs:
-			count += 1
-			self.assertTrue(before < log._created < after)
-		self.assertGreater(count, 0)
-
-	def test_properties(self):
+	def test_attr(self):
 		self.assertTrue(self.entity.a, 'a')
 		self.assertTrue(self.entity.b, 'b')
 		self.assertTrue(self.entity.c, Elist([1, 2, 3]))
-		self.assertEqual(len(self.entity._id), 22)
-		self.assertEqual(self.entity._type, 'FAKEENTITY')
-		self.assertLessEqual(self.entity._created, datetime.now())
-		self.assertLessEqual(self.entity._updated, datetime.now())
-		self.assertIsInstance(self.entity._logs, Elist)
+
+		self.assertEqual(len(self.entity._id), len(shortuuid.uuid()))
+		self.assertEqual(self.entity._type, "fakeentity")
+		self.assertTrue(self.before < self.entity._created < self.after)
+		self.assertTrue(self.before < self.entity._updated < self.after)
+
 		self.assertIsInstance(self.entity._connections, Elist)
+		self.assertEqual(self.entity._connections, [])
+
+		self.assertIsInstance(self.entity._logs, Elist)
+		self.assertEqual(self.entity._logs, [])
+
 		self.assertEqual(len(self.entity.__dict__), 9)
+
+	def test_setattr(self):
+		self.assertEqual(self.entity.a, 'a')
+		self.assertEqual(self.entity._logs, [])
+
+		self.entity.a = 'b'
+		self.assertEqual(self.entity.a, 'b')
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "b"'),
+		])
+
+		setattr(self.entity, 'a', 10)
+		self.assertEqual(self.entity.a, 10)
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "b"'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = 10')
+		])
+
+	def test_delattr(self):
+		with self.assertRaises(Exception):
+			del self.entity.a
+		with self.assertRaises(Exception):
+			delattr(self.entity, 'a')
+
+	def test_logs(self):
+		self.entity.a = 'b'
+		self.entity.c.append(4)
+		self.entity.c.append('4')
+		self.entity.c.remove('4')
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "b"')
+		])
+
+	def test_logs_property(self):
+		self.assertEqual(self.entity.logs, [])
+		self.entity.a = 'new a'
+		self.entity.c.append('new c')
+		self.entity.b = 'new b'
+		self.entity.c.append(123)
+		logs = self.entity.logs
+		self.assertEqual(logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "new a"'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append("new c")'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='b = "new b"'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append(123)')
+		])
+
+		for i in range(len(logs) - 1):
+			self.assertGreater(logs[i + 1]._created, logs[i]._created)
+
+	def test_log_call(self):
+		self.assertEqual(self.entity._logs, [])
+		self.entity.log_call(self.test_log_call, {'kwarg0': 'kwarg0', 'kwarg1': 123})
+		self.assertEqual(self.entity._logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(kwarg0="kwarg0", kwarg1=123)')
+		])
+
+	def test_equal(self):
+		equal_entity = FakeEntity('a')
+		not_equal_entity = FakeEntity('b')
+		self.assertEqual(self.entity, equal_entity)
+		self.assertNotEqual(self.entity, not_equal_entity)
+
+		self.assertTrue(self.entity.equal(self.entity))
+		self.assertTrue(self.entity.equal(equal_entity))
+		self.assertFalse(self.entity.equal(not_equal_entity))
 
 	def test_connect(self):
 		entity = FakeEntity(a='a')
 		entity1 = FakeEntity(a='b')
+
 		self.assertEqual(len(entity._connections), 0)
+		self.assertEqual(len(entity1._connections), 0)
+
 		entity.connect(entity1)
+
 		self.assertEqual(len(entity._connections), 1)
 		self.assertEqual(entity._connections[0], entity1)
+
+		self.assertEqual(len(entity1._connections), 1)
+		self.assertEqual(entity1._connections[0], entity)
+
+		self.assertEqual(entity.logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(FakeEntity(a='b', b='b', c=[1, 2, 3]))")])
+		self.assertEqual(entity1.logs, [
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(FakeEntity(a='a', b='b', c=[1, 2, 3]))")])
 
 
 if __name__ == '__main__':

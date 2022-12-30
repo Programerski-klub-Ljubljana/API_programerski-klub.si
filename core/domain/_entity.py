@@ -1,4 +1,5 @@
 import logging
+from copy import copy
 from dataclasses import dataclass, field
 from datetime import datetime
 from random import choices, choice
@@ -20,32 +21,47 @@ class Elist(PersistentList):
 			self._logs = Elist(None, logs=False)
 		super().__init__(data)
 
-	def _debug(self, method: Callable, locals: dict[str, any] = None):
-		print(method)
-		if locals is None:
-			locals = {}
+	def _log_call(self, method: Callable, kwargs: dict[str, any] = None):
+		if kwargs is None:
+			kwargs = {}
 		if hasattr(self, '_logs'):
-			if 'self' in locals: del locals['self']
-			kwargs_str = ', '.join([f'{v}' for k, v in locals.items() if not k.startswith('__')])
+			if 'self' in kwargs: del kwargs['self']
+			kwargs_str = ', '.join([f'"{v}"' if isinstance(v, str) else str(v) for k, v in kwargs.items() if not k.startswith('__')])
 			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
-			log.debug(f'{log_obj.msg}')
+			log.debug(log_obj.msg)
 			self._logs.append(log_obj)
 
 	def __setitem__(self, i, item):
-		self._debug(self.__setitem__, locals())
+		self._log_call(self.__setitem__, locals())
 		super(Elist, self).__setitem__(i, item)
 
 	def __delitem__(self, i):
-		self._debug(self.__delitem__, locals())
+		self._log_call(self.__delitem__, locals())
 		super(Elist, self).__delitem__(i)
 
-	def __iadd__(self, elist):
-		self._debug(self.__iadd__, locals())
-		super(Elist, self).__iadd__(elist)
+	def __add__(self, other):
+		self._log_call(self.__add__, locals())
+		return super(Elist, self).__add__(other)
 
-	def __imul__(self, elist):
-		self._debug(self.__imul__, locals())
-		super(Elist, self).__imul__(elist)
+	def __radd__(self, other):
+		self._log_call(self.__radd__, locals())
+		return super(Elist, self).__radd__(other)
+
+	def __iadd__(self, other):
+		self._log_call(self.__iadd__, locals())
+		return super(Elist, self).__iadd__(other)
+
+	def __mul__(self, other):
+		self._log_call(self.__mul__, locals())
+		return super(Elist, self).__mul__(other)
+
+	def __rmul__(self, other):
+		self._log_call(self.__rmul__, locals())
+		return super(Elist, self).__rmul__(other)
+
+	def __imul__(self, other):
+		self._log_call(self.__imul__, locals())
+		return super(Elist, self).__imul__(other)
 
 	def __contains__(self, item):
 		for ele in self:
@@ -56,37 +72,41 @@ class Elist(PersistentList):
 				return True
 		return False
 
-	def clear(self):
-		self._debug(self.clear)
-		super(Elist, self).clear()
-
-	def insert(self, i, item):
-		self._debug(self.insert, locals())
-		super(Elist, self).insert(i, item)
-
-	def pop(self, i=-1):
-		self._debug(self.pop, locals())
-		super(Elist, self).pop(i)
-
-	def remove(self, item):
-		self._debug(self.remove, locals())
-		super(Elist, self).remove(item)
-
-	def reverse(self):
-		self._debug(self.reverse, locals())
-		super(Elist, self).reverse()
-
-	def sort(self, *args, **kwargs):
-		self._debug(self.sort, locals())
-		super(Elist, self).sort(*args, **kwargs)
-
 	def append(self, item: object):
-		self._debug(self.append, locals())
+		self._log_call(self.append, locals())
 		if cutils.is_object(item):
 			for k, v in item.__dict__.items():
 				if isinstance(v, list | tuple):
 					setattr(item, k, PersistentList(v))
 		super(Elist, self).append(item)
+
+	def clear(self):
+		self._log_call(self.clear)
+		super(Elist, self).clear()
+
+	def insert(self, i, item):
+		self._log_call(self.insert, locals())
+		super(Elist, self).insert(i, item)
+
+	def pop(self, i=-1):
+		self._log_call(self.pop, locals())
+		return super(Elist, self).pop(i)
+
+	def remove(self, item):
+		self._log_call(self.remove, locals())
+		super(Elist, self).remove(item)
+
+	def reverse(self):
+		self._log_call(self.reverse, locals())
+		super(Elist, self).reverse()
+
+	def sort(self, *args, **kwargs):
+		self._log_call(self.sort, locals())
+		super(Elist, self).sort(*args, **kwargs)
+
+	def extend(self, other):
+		self._log_call(self.extend, locals())
+		super(Elist, self).extend(other)
 
 	def random(self, k: int = None):
 		return choice(self) if k is None else choices(self, k=k)
@@ -122,11 +142,11 @@ class Entity(Persistent):
 	def __post_init__(self):
 		attr = {
 			'_id': shortuuid.uuid(),
-			'_type': self.type.upper(),
+			'_type': self.__class__.__name__.lower(),
 			'_created': datetime.now(),
 			'_updated': datetime.now(),
 			'_connections': Elist(),
-			'_logs': Elist(),
+			'_logs': Elist(logs=False),
 		}
 		for k, v in attr.items():
 			setattr(self, k, v)
@@ -134,34 +154,36 @@ class Entity(Persistent):
 	def __setattr__(self, key, value):
 		if not isinstance(self, Log):
 			if hasattr(self, '_logs'):
-				self._debug(key, value)
+				value_str = f'"{value}"' if isinstance(value, str) else str(value)
+				log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value_str}')
+				log.debug(f'{log_obj.msg} ... {self}')
+				self._logs.append(log_obj)
 		self.__dict__[key] = value
 
-	def _debug(self, key, value):
-		log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value}')
+	def __delattr__(self, item):
+		raise Exception("Not allowed!")
+
+	@property
+	def logs(self):
+		lgs = copy(self._logs)
+		for k, v in self.__dict__.items():
+			if hasattr(v, '_logs'):
+				for l in copy(v._logs):
+					l.msg = f'{k}.{l.msg}'
+					lgs.append(l)
+		return sorted(lgs, key=lambda l: l._created)
+
+	def log_call(self, method: Callable, kwargs):
+		if 'self' in kwargs: del kwargs['self']
+		kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
+		log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
 		log.debug(f'{log_obj.msg} ... {self}')
 		self._logs.append(log_obj)
 
-	@property
-	def type(self):
-		return self.__class__.__name__.lower()
-
-	# TODO: Make this abstract
 	def equal(self, entity):
 		return self == entity
 
-	def merge(self, locals: dict[str, any]):
-		del locals['self']
-		kwargs_str = ', '.join([f'{v}' for k, v in locals.items() if not k.startswith('__')])
-		log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{self.merge.__name__}({kwargs_str})')
-		log.debug(f'{log_obj.msg}')
-		self._logs.append(log_obj)
-
 	def connect(self, *entity):
-		log_obj = Log(level=LogLevel.INFO, theme=LogTheme.SPREMEMBA, msg=f'{self.connect.__name__}({[str(e) for e in entity]})')
-		log.debug(f'{log_obj.msg} ... {self}')
-		self._logs.append(log_obj)
-
 		for e in entity:
 			if e not in self._connections:
 				self._connections.append(e)

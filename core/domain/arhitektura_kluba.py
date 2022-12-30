@@ -75,7 +75,7 @@ class Oseba(Entity):
 		return False
 
 	def merge(self, oseba, merge_kontakti: bool, merge_vpisi_izpisi: bool) -> bool:
-		super(Oseba, self).merge(locals())
+		self.log_call(self.merge, kwargs=locals())
 
 		# Save GUARD FOR STUPID DEVELOPERS!
 		if not self.equal(oseba):
