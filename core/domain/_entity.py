@@ -170,7 +170,7 @@ class Entity(Persistent):
 				log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value_str}')
 				log.debug(f'{log_obj.msg} ... {self}')
 				self._logs.append(log_obj)
-		self.__dict__[key] = value
+		super(Entity, self).__setattr__(key, value)
 
 	def __delattr__(self, item):
 		raise Exception("Not allowed!")
