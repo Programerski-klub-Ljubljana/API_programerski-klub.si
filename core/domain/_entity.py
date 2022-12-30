@@ -26,7 +26,8 @@ class Elist(PersistentList):
 			kwargs = {}
 		if hasattr(self, '_logs'):
 			if 'self' in kwargs: del kwargs['self']
-			kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
+			kwargs_str = ', '.join(
+				[f'{k}=' + (f'"{v}"' if isinstance(v, str) and not 'lambda' in v else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
 			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
 			log.debug(log_obj.msg)
 			self._logs.append(log_obj)
@@ -36,28 +37,40 @@ class Elist(PersistentList):
 		super(Elist, self).__setitem__(i, item)
 
 	def __add__(self, other):
-		self._log_call(self.__add__, locals())
-		return super(Elist, self).__add__(other)
+		loc = locals()
+		elist = super(Elist, self).__add__(other)
+		elist._log_call(self.__add__, loc)
+		return elist
 
 	def __radd__(self, other):
-		self._log_call(self.__radd__, locals())
-		return super(Elist, self).__radd__(other)
+		loc = locals()
+		elist = super(Elist, self).__radd__(other)
+		elist._log_call(self.__radd__, loc)
+		return elist
 
 	def __iadd__(self, other):
-		self._log_call(self.__iadd__, locals())
-		return super(Elist, self).__iadd__(other)
+		loc = locals()
+		elist = super(Elist, self).__iadd__(other)
+		elist._log_call(self.__iadd__, loc)
+		return elist
 
 	def __mul__(self, other):
-		self._log_call(self.__mul__, locals())
-		return super(Elist, self).__mul__(other)
+		loc = locals()
+		elist = super(Elist, self).__mul__(other)
+		elist._log_call(self.__mul__, loc)
+		return elist
 
 	def __rmul__(self, other):
-		self._log_call(self.__rmul__, locals())
-		return super(Elist, self).__rmul__(other)
+		loc = locals()
+		elist = super(Elist, self).__rmul__(other)
+		elist._log_call(self.__rmul__, loc)
+		return elist
 
 	def __imul__(self, other):
-		self._log_call(self.__imul__, locals())
-		return super(Elist, self).__imul__(other)
+		loc = locals()
+		elist = super(Elist, self).__imul__(other)
+		elist._log_call(self.__imul__, loc)
+		return elist
 
 	def __contains__(self, item):
 		for ele in self:
@@ -96,9 +109,12 @@ class Elist(PersistentList):
 		self._log_call(self.reverse, locals())
 		super(Elist, self).reverse()
 
-	def sort(self, *args, **kwargs):
-		self._log_call(self.sort, locals())
-		super(Elist, self).sort(*args, **kwargs)
+	def sort(self, reverse: bool = False, key: Callable = None):
+		loc = locals()
+		if isinstance(key, Callable):
+			loc['key'] = cutils.lambda_src(loc['key'])
+		self._log_call(self.sort, kwargs=loc)
+		super(Elist, self).sort(reverse=reverse, key=key)
 
 	def extend(self, other):
 		self._log_call(self.extend, locals())

@@ -1,8 +1,10 @@
+import ast
 import inspect
+import os
 from dataclasses import field
 from datetime import date
 from pathlib import Path
-from typing import Mapping, Union
+from typing import Mapping, Union, Callable
 
 from dateutil.relativedelta import *
 from faker import Faker
@@ -109,3 +111,39 @@ def call(func, **kwargs):
 
 def list_field(*values: any):
 	return field(default_factory=lambda: list(values))
+
+
+def lambda_src(func: Callable):
+	"""
+		https://gist.github.com/Xion/617c1496ff45f3673a5692c3b0e3f75a
+		http://xion.io/post/code/python-get-lambda-code.html
+	"""
+	try:
+		source_lines, _ = inspect.getsourcelines(func)
+	except (IOError, TypeError):
+		return None
+
+	if len(source_lines) != 1:
+		return None
+
+	source_text = os.linesep.join(source_lines).strip()
+
+	source_ast = ast.parse(source_text)
+	lambda_node = next((node for node in ast.walk(source_ast) if isinstance(node, ast.Lambda)), None)
+	if lambda_node is None:
+		return None
+
+	lambda_text = source_text[lambda_node.col_offset:]
+	lambda_body_text = source_text[lambda_node.body.col_offset:]
+	min_length = len('lambda:_')
+	while len(lambda_text) > min_length:
+		try:
+			code = compile(lambda_body_text, '<unused filename>', 'eval')
+			if len(code.co_code) == len(func.__code__.co_code):
+				return lambda_text
+		except SyntaxError:
+			pass
+		lambda_text = lambda_text[:-1]
+		lambda_body_text = lambda_body_text[:-1]
+
+	return None

@@ -17,7 +17,7 @@ class E(Entity):
 class test_Elist(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
-		cls.elist_100 = Elist([E(value=i) for i in range(10000)])
+		cls.elist_100 = Elist([E(value=i) for i in range(500)])
 
 	def setUp(self):
 		self.elist = Elist([E(value=i) for i in range(6)])
@@ -27,43 +27,36 @@ class test_Elist(unittest.TestCase):
 	def test_log_call(self):
 		self.elist_int._log_call(self.test_log_call, kwargs={'arg0': 'arg0', 'arg1': '123'})
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg0", arg1="123")')])
-		print(self.elist_int)
 
 	def test_setitem(self):
 		self.elist_int[1] = 10
 		self.assertEqual(self.elist_int, [0, 10, 2])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__setitem__(i=1, item=10)')])
-		print(self.elist_int)
 
 	def test_add(self):
 		self.elist_int = self.elist_int + Elist([3, 4])
 		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__add__(other=[3, 4])')])
-		print(self.elist_int)
 
 	def test_radd(self):
 		self.elist_int = [-2, -1] + self.elist_int
 		self.assertEqual(self.elist_int, [-2, -1, 0, 1, 2])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__radd__(other=[-2, -1])')])
-		print(self.elist_int)
 
 	def test_iadd(self):
 		self.elist_int += [3, 4]
 		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__iadd__(other=[3, 4])')])
-		print(self.elist_int)
 
 	def test_mul(self):
 		self.elist_int = self.elist_int * 3
 		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__mul__(other=3)')])
-		print(self.elist_int)
 
 	def test_rmul(self):
 		self.elist_int = 3 * self.elist_int
 		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='__rmul__(other=3)')])
-		print(self.elist_int)
 
 	def test_imul(self):
 		self.elist_int *= 3
@@ -80,68 +73,58 @@ class test_Elist(unittest.TestCase):
 			else:
 				self.assertTrue(E(value=i) not in self.elist)
 
-	def test_append_pop(self):
-		self.elist_empty.append(123)
-		self.assertEqual(self.elist_empty[-1], 123)
+	def test_append(self):
+		self.elist_int.append(123)
+		self.assertEqual(self.elist_int, [0, 1, 2, 123])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='append(item=123)')])
 
-		self.elist_empty.pop(0)
-		self.assertEqual(len(self.elist_empty), 0)
+	def test_pop(self):
+		self.elist_int.pop(0)
+		self.assertEqual(len(self.elist_int), 0)
 
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')])
 
 	def test_clear(self):
 		self.elist_int.clear()
 		self.assertEqual(self.elist_int, [])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='clear()')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='clear()')])
 
 	def test_insert(self):
 		self.elist_int.insert(1, 123)
 		self.assertEqual(self.elist_int, [0, 123, 1, 2])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='insert(i=1, item=123)')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='insert(i=1, item=123)')])
 
 	def test_pop(self):
 		self.elist_int.pop(1)
 		self.assertEqual(self.elist_int, [0, 2])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='pop(i=1)')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='pop(i=1)')])
 
 	def test_remove(self):
 		self.elist_int.remove(1)
 		self.assertEqual(self.elist_int, [0, 2])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='remove(item=1)')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='remove(item=1)')])
 
 	def test_reverse(self):
 		self.elist_int.reverse()
 		self.assertEqual(self.elist_int, [2, 1, 0])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='reverse()')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='reverse()')])
 
 	def test_sort(self):
 		self.elist_int.sort(key=lambda e: e, reverse=True)
 		self.assertEqual(self.elist_int, [2, 1, 0])
 		self.elist_int.sort(key=lambda e: e, reverse=False)
 		self.assertEqual(self.elist_int, [0, 1, 2])
-
+		self.elist_int.sort()
 		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='sort(reverse=True, key=lambda e: e)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='sort(reverse=False, key=lambda e: e)'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='sort(reverse=False, key=None)')
 		])
 
 	def test_extend(self):
 		self.elist_int.extend([2, 1, 0])
 		self.assertEqual(self.elist_int, [0, 1, 2, 2, 1, 0])
-		self.assertEqual(self.elist_int._logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='extend(other=[2, 1, 0])')
-		])
+		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='extend(other=[2, 1, 0])')])
 
 	def test_random(self):
 		for i in range(10):
@@ -153,8 +136,8 @@ class test_Elist(unittest.TestCase):
 
 	def test_random_k(self):
 		for i in range(10):
-			ele = self.elist_100.random(k=10)
-			self.assertEqual(len(ele), 10)
+			ele = self.elist_100.random(k=3)
+			self.assertEqual(len(ele), 3)
 
 			for i in range(0, len(ele) - 1):
 				e0 = ele[i]
@@ -266,9 +249,9 @@ class test_Entity(unittest.TestCase):
 		logs = self.entity.logs
 		self.assertEqual(logs, [
 			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='a = "new a"'),
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append("new c")'),
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append(item="new c")'),
 			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='b = "new b"'),
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append(123)')
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='c.append(item=123)')
 		])
 
 		for i in range(len(logs) - 1):
@@ -307,9 +290,9 @@ class test_Entity(unittest.TestCase):
 		self.assertEqual(entity1._connections[0], entity)
 
 		self.assertEqual(entity.logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(FakeEntity(a='b', b='b', c=[1, 2, 3]))")])
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(item=FakeEntity(a='b', b='b', c=[1, 2, 3]))")])
 		self.assertEqual(entity1.logs, [
-			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(FakeEntity(a='a', b='b', c=[1, 2, 3]))")])
+			Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="_connections.append(item=FakeEntity(a='a', b='b', c=[1, 2, 3]))")])
 
 
 if __name__ == '__main__':
