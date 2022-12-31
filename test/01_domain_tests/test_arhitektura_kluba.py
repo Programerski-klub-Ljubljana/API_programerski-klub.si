@@ -153,8 +153,19 @@ class test_oseba(unittest.TestCase):
 			Kontakt(data='xxx', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN),
 		], **kwargs)
 
-		self.assertEqual(str(o0), "janeznovak_24051992")
-		self.assertEqual(str(o1), "janeznovak_xxx")
+		self.assertEqual(str(o0),
+		                 "Oseba(ime='Janez', priimek='Novak', rojen=datetime.date(1992, 5, 24), geslo=None, tip_osebe=[], kontakti=[], vpisi=[], izpisi=[])")
+		self.assertEqual(str(o1),
+		                 "Oseba(ime='Janez', "
+		                 "priimek='Novak', "
+		                 "rojen=None, "
+		                 "geslo=None, "
+		                 "tip_osebe=[], "
+		                 "kontakti=["
+		                 "Kontakt(data='123', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.NI_VALIDIRAN: 'NI_VALIDIRAN'>), "
+		                 "Kontakt(data='xxx', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)], "
+		                 "vpisi=[], "
+		                 "izpisi=[])")
 
 	def test_nov_vpis_in_vpis(self):
 		o = Oseba(ime='Janez', priimek='Novak', tip_osebe=[], rojen=None)

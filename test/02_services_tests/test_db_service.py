@@ -5,7 +5,7 @@ from persistent.list import PersistentList
 
 from app import APP
 from core.domain._entity import Elist, Log
-from core.domain._enums import LogLevel, LogTheme
+from core.domain._enums import LogLevel, LogType
 from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, NivoValidiranosti
 from core.services.db_service import DbService
 
@@ -149,18 +149,30 @@ class test_db(unittest.TestCase):
 			root.oseba[0].tip_osebe[0] = 'setitem'
 			root.oseba[0].tip_osebe += ['add']
 			root.oseba[0].tip_osebe *= 2
+			root.oseba[0].log(type=LogType.ENTITY, level=LogLevel.DEBUG, msg='msg')
+			root.oseba[0].log_call(self.test_logs, kwargs={'arg0': 'arg0', 'arg1': 'arg2'})
+			root.oseba[0].log_info(type=LogType.ENTITY, msg='msg')
+			root.oseba[0].log_error(type=LogType.ENTITY, msg='msg')
 
 		with self.service.transaction() as root:
 			self.assertEqual(root.oseba[0].logs, [
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA,
-				    msg="kontakti = [Kontakt(data='data0', tip=<TipKontakta.EMAIL: '1'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: '3'>)]"),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='ime = "ime"'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.append(item="append")'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__setitem__(i=0, item="setitem")'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe.__iadd__(other=['add'])"),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'add']"),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__imul__(other=2)'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'add', 'setitem', 'add']")
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
+				    msg='__init__(ime="ime0", priimek="priimek0", rojen=None, geslo=None, tip_osebe=[], '
+				        "kontakti=[Kontakt(data='data0', tip=<TipKontakta.EMAIL: '1'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: '3'>)], "
+				        "vpisi=[], izpisi=[])"),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
+				    msg="kontakti = [Kontakt(data='data0', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)]"),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='ime = "ime"'),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.append(item="append")'),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.__setitem__(i=0, item="setitem")'),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.__iadd__(other=['add'])"),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="tip_osebe = ['setitem', 'add']"),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.__imul__(other=2)'),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="tip_osebe = ['setitem', 'add', 'setitem', 'add']"),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg'),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='test_logs(arg0="arg0", arg1="arg2")'),
+				Log(level=LogLevel.INFO, type=LogType.ENTITY, msg='msg'),
+				Log(level=LogLevel.ERROR, type=LogType.ENTITY, msg='msg')
 			])
 
 			self.assertEqual(root.oseba[0].tip_osebe, ['setitem', 'add', 'setitem', 'add'])

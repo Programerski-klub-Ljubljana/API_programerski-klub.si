@@ -1,15 +1,15 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum, auto
+from enum import Enum
 
 from core import cutils
 
 
 class SubscriptionHistoryStatus(str, Enum):
-	WAS_SUBSCRIBED = auto()
-	IS_SUBSCRIBED = auto()
-	NEVER_SUBSCRIBED = auto()
+	WAS_SUBSCRIBED = "WAS_SUBSCRIBED"
+	IS_SUBSCRIBED = "IS_SUBSCRIBED"
+	NEVER_SUBSCRIBED = "NEVER_SUBSCRIBED"
 
 
 class SubscriptionStatus(str, Enum):

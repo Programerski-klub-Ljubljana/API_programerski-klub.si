@@ -2,15 +2,15 @@ import logging
 from copy import copy
 from dataclasses import dataclass, field
 from datetime import datetime
-from random import choices, choice
-from typing import TypeVar, Callable
+from random import choice, choices
+from typing import Callable, TypeVar
 
 import shortuuid
 from persistent import Persistent
 from persistent.list import PersistentList
 
 from core import cutils
-from core.domain._enums import LogLevel, LogTheme
+from core.domain._enums import LogLevel, LogType
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class Elist(PersistentList):
 			if 'self' in kwargs: del kwargs['self']
 			kwargs_str = ', '.join(
 				[f'{k}=' + (f'"{v}"' if isinstance(v, str) and not 'lambda' in v else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
-			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
+			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg=f'{method.__name__}({kwargs_str})')
 			log.debug(log_obj.msg)
 			self._logs.append(log_obj)
 
@@ -166,36 +166,24 @@ class Entity(Persistent):
 			'_connections': Elist(),
 			'_logs': Elist(logs=False),
 		}
+
 		for k, v in attr.items():
 			setattr(self, k, v)
+
+		if not isinstance(self, Log):
+			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+			self.log_call(self.__init__, kwargs=kwargs)
 
 	def __setattr__(self, key, value):
 		if not isinstance(self, Log) and hasattr(self, '_logs') and not key.startswith('_p_'):
 			value_str = f'"{value}"' if isinstance(value, str) else str(value)
-			log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{key} = {value_str}')
+			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{key} = {value_str}')
 			log.debug(f'{log_obj.msg} ... {self}')
 			self._logs.append(log_obj)
 		super(Entity, self).__setattr__(key, value)
 
 	def __delattr__(self, item):
 		raise Exception("Not allowed!")
-
-	@property
-	def logs(self):
-		lgs = copy(self._logs)
-		for k, v in self.__dict__.items():
-			if hasattr(v, '_logs'):
-				for l in copy(v._logs):
-					l.msg = f'{k}.{l.msg}'
-					lgs.append(l)
-		return sorted(lgs, key=lambda l: l._created)
-
-	def log_call(self, method: Callable, kwargs):
-		if 'self' in kwargs: del kwargs['self']
-		kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
-		log_obj = Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg=f'{method.__name__}({kwargs_str})')
-		log.debug(f'{log_obj.msg} ... {self}')
-		self._logs.append(log_obj)
 
 	def equal(self, entity):
 		return self == entity
@@ -207,9 +195,41 @@ class Entity(Persistent):
 			if self not in e._connections:
 				e._connections.append(self)
 
+	@property
+	def logs(self):
+		lgs = copy(self._logs)
+		for k, v in self.__dict__.items():
+			if hasattr(v, '_logs'):
+				for l in copy(v._logs):
+					l.msg = f'{k}.{l.msg}'
+					lgs.append(l)
+		return sorted(lgs, key=lambda l: l._created)
+
+	def log(self, level: LogLevel, type: LogType, msg: str):
+		log_obj = Log(level=level, type=type, msg=msg)
+		log.debug(f'{log_obj.msg} ... {self}')
+		self._logs.append(log_obj)
+
+	def log_call(self, method: Callable, kwargs):
+		if 'self' in kwargs: del kwargs['self']
+		kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
+		self.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{method.__name__}({kwargs_str})')
+
+	def log_debug(self, type: LogType, msg: str):
+		self.log(level=LogLevel.DEBUG, type=type, msg=msg)
+
+	def log_info(self, type: LogType, msg: str):
+		self.log(level=LogLevel.INFO, type=type, msg=msg)
+
+	def log_warning(self, type: LogType, msg: str):
+		self.log(level=LogLevel.WARNING, type=type, msg=msg)
+
+	def log_error(self, type: LogType, msg: str):
+		self.log(level=LogLevel.ERROR, type=type, msg=msg)
+
 
 @dataclass
 class Log(Entity):
 	level: LogLevel
-	theme: LogTheme
+	type: LogType
 	msg: str

@@ -6,11 +6,11 @@ from core.domain._enums import EntityEnum
 
 
 class Tezavnost(EntityEnum):
-	PREPROSTA = auto()
-	LAHKA = auto()
-	NORMALNA = auto()
-	TEZKA = auto()
-	NEMOGOCA = auto()
+	PREPROSTA = 'PREPROSTA'
+	LAHKA = 'LAHKA'
+	NORMALNA = 'NORMALNA'
+	TEZKA = 'TEZKA'
+	NEMOGOCA = 'NEMOGOCA'
 
 
 @dataclass

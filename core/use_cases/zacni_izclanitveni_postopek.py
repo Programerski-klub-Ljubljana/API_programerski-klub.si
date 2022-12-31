@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class TipPrekinitveIzpisa(str, Enum):
-	NE_OBSTAJA = auto()
-	NI_VPISAN = auto()
+	NE_OBSTAJA = 'NE_OBSTAJA'
+	NI_VPISAN = 'NI_VPISAN'
 
 
 @dataclass

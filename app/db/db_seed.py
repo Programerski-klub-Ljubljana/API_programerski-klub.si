@@ -5,7 +5,7 @@ from autologging import traced
 
 from core.cutils import fake
 from core.domain._entity import Log
-from core.domain._enums import LogLevel, LogTheme
+from core.domain._enums import LogLevel, LogType
 from core.domain.arhitektura_kluba import Kontakt, TipKontakta, Oseba, Ekipa, Oddelek, Klub, NivoValidiranosti, TipOsebe
 from core.domain.bancni_racun import Transakcija, TipTransakcije, KategorijaTransakcije, Bancni_racun
 from core.domain.oznanila_sporocanja import Objava, TipObjave, Sporocilo
@@ -125,7 +125,7 @@ def logs(root, **kwargs):
 			for _ in range(randint(0, kwargs['logs'])):
 				log = Log(
 					level=LogLevel.random(),
-					theme=LogTheme.random(),
+					type=LogType.random(),
 					msg=fake.sentence(20))
 				root.save(log)
 				entity._logs.append(log)

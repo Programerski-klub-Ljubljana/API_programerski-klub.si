@@ -1,5 +1,5 @@
 import random
-from enum import Enum, auto
+from enum import Enum
 from functools import total_ordering
 
 
@@ -23,16 +23,12 @@ class EntityEnum(str, Enum):
 
 
 class LogLevel(EntityEnum):
-	DEBUG = auto()
-	INFO = auto()
-	WARNING = auto()
-	ERROR = auto()
+	DEBUG = "DEBUG"
+	INFO = "INFO"
+	WARNING = "WARNING"
+	ERROR = "ERROR"
 
 
-class LogTheme(EntityEnum):
-	SPREMEMBA = auto()
-	OSNOVNOSOLSKI = auto()
-	SREDNJESOLSKI = auto()
-	GITHUB = auto()
-	PREKRSEK = auto()
-	PROBLEM = auto()
+class LogType(EntityEnum):
+	ENTITY = "ENTITY"
+	ELIST = "ELIST"

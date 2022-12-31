@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime, date
-from enum import auto
 
 from core import cutils
 from core.domain._entity import elist, Elist, Entity
@@ -8,21 +7,21 @@ from core.domain._enums import EntityEnum
 
 
 class TipKontakta(EntityEnum):
-	EMAIL = auto()
-	PHONE = auto()
+	EMAIL = 'EMAIL'
+	PHONE = 'PHONE'
 
 
 class NivoValidiranosti(EntityEnum):
-	NI_VALIDIRAN = auto()
-	VALIDIRAN = auto()
-	POTRJEN = auto()
+	NI_VALIDIRAN = 'NI_VALIDIRAN'
+	VALIDIRAN = 'VALIDIRAN'
+	POTRJEN = 'POTRJEN'
 
 
 class TipOsebe(EntityEnum):
-	ADMIN = auto()
-	TRENER = auto()
-	CLAN = auto()
-	SKRBNIK = auto()
+	ADMIN = "ADMIN"
+	TRENER = "TRENER"
+	CLAN = "CLAN"
+	SKRBNIK = "SKRBNIK"
 
 	@classmethod
 	def dovoljenja(cls):
