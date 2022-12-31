@@ -147,8 +147,8 @@ class test_db(unittest.TestCase):
 			root.oseba[0].ime = 'ime'
 			root.oseba[0].tip_osebe.append('append')
 			root.oseba[0].tip_osebe[0] = 'setitem'
-			root.oseba[0].tip_osebe += 'add'
-			root.oseba[0].tip_osebe *= 1
+			root.oseba[0].tip_osebe += ['add']
+			root.oseba[0].tip_osebe *= 2
 
 		with self.service.transaction() as root:
 			self.assertEqual(root.oseba[0].logs, [
@@ -157,13 +157,13 @@ class test_db(unittest.TestCase):
 				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='ime = "ime"'),
 				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.append(item="append")'),
 				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__setitem__(i=0, item="setitem")'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__iadd__(other="add")'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'a', 'd', 'd']"),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__imul__(other=1)'),
-				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'a', 'd', 'd']")
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe.__iadd__(other=['add'])"),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'add']"),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__imul__(other=2)'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'add', 'setitem', 'add']")
 			])
 
-			self.assertEqual(root.oseba[0].tip_osebe, ['setitem', 'a', 'd', 'd'])
+			self.assertEqual(root.oseba[0].tip_osebe, ['setitem', 'add', 'setitem', 'add'])
 
 
 if __name__ == '__main__':
