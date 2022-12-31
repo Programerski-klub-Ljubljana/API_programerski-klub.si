@@ -105,13 +105,6 @@ class test_Elist(unittest.TestCase):
 		self.assertEqual(self.elist_int, [0, 1, 2, 123])
 		self.assertEqual(self.elist_int._logs, [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='append(item=123)')])
 
-	def test_pop(self):
-		self.elist_int.pop(0)
-		self.assertEqual(len(self.elist_int), 0)
-
-		self.assertEqual(self.elist_int._logs,
-		                 [Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='test_log_call(arg0="arg", arg1=123, arg2="arg2")')])
-
 	def test_clear(self):
 		self.elist_int.clear()
 		self.assertEqual(self.elist_int, [])

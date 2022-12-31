@@ -4,7 +4,8 @@ from random import randint
 from persistent.list import PersistentList
 
 from app import APP
-from core.domain._entity import Elist
+from core.domain._entity import Elist, Log
+from core.domain._enums import LogLevel, LogTheme
 from core.domain.arhitektura_kluba import Oseba, TipOsebe, Kontakt, TipKontakta, NivoValidiranosti
 from core.services.db_service import DbService
 
@@ -28,12 +29,12 @@ class test_db(unittest.TestCase):
 		with self.service.transaction() as root:
 			root.oseba.clear()
 
-	def test_root_properties(self):
-		with self.service.transaction() as root:
-			self.assertGreater(len(root.oseba), 0)
-			self.assertIsInstance(root.oseba, Elist)
+	# * TESTING DB SERVICE
 
-	def test_root_change(self):
+	def test_open(self):
+		self.assertRaises(Exception, lambda: (self.service.open(), self.service.open()))
+
+	def test_transaction(self):
 		new_ime = '12345'
 
 		with self.service.transaction() as root:
@@ -45,6 +46,42 @@ class test_db(unittest.TestCase):
 		with self.service.transaction() as root:
 			self.assertEqual(root.oseba[index].ime, new_ime)
 			root.oseba[index].ime = old_ime
+
+	def test_find(self):
+		oseba = Oseba(ime=f'ime8', priimek=f'priimek8', rojen=None, kontakti=[
+			Kontakt(data=f'data8', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
+
+		count = 0
+		for found_oseba in self.service.find(oseba):
+			self.assertEqual(found_oseba, oseba)
+			count += 1
+		self.assertEqual(count, 1)
+
+	def test_oseba_find(self):
+		oseba = None
+		data = None
+		with self.service.transaction() as root:
+			oseba = root.oseba[5]
+			data = oseba.kontakti[-1].data
+			self.assertGreater(len(data), 3)
+
+		for db_oseba in self.service.oseba_find(data):
+			self.assertTrue(db_oseba.equal(oseba))
+		for db_oseba in self.service.oseba_find(oseba._id):
+			self.assertTrue(db_oseba.equal(oseba))
+
+	def test_oseba_find_fail(self):
+		count = 0
+		for _ in self.service.oseba_find('asdfasfasdf'):
+			count += 1
+		self.assertEqual(count, 0)
+
+	# * TESTING DB ROOT
+
+	def test_root_properties(self):
+		with self.service.transaction() as root:
+			self.assertEqual(len(root.oseba), 10)
+			self.assertIsInstance(root.oseba, Elist)
 
 	def test_root_save(self):
 
@@ -93,7 +130,7 @@ class test_db(unittest.TestCase):
 			self.assertIsInstance(clan1.vpisi, PersistentList)
 			self.assertIsInstance(clan2.vpisi, PersistentList)
 
-	def test_save_unique(self):
+	def test_root_save_unique(self):
 		with self.service.transaction() as root:
 			root.oseba.clear()
 
@@ -105,37 +142,28 @@ class test_db(unittest.TestCase):
 
 			self.assertEqual(len(root.oseba), 1)
 
-	def test_oseba_find(self):
-		oseba = None
-		data = None
+	def test_logs(self):
 		with self.service.transaction() as root:
-			oseba = root.oseba[5]
-			data = oseba.kontakti[-1].data
-			self.assertGreater(len(data), 3)
+			root.oseba[0].ime = 'ime'
+			root.oseba[0].tip_osebe.append('append')
+			root.oseba[0].tip_osebe[0] = 'setitem'
+			root.oseba[0].tip_osebe += 'add'
+			root.oseba[0].tip_osebe *= 1
 
-		for db_oseba in self.service.oseba_find(data):
-			self.assertTrue(db_oseba.equal(oseba))
-		for db_oseba in self.service.oseba_find(oseba._id):
-			self.assertTrue(db_oseba.equal(oseba))
+		with self.service.transaction() as root:
+			self.assertEqual(root.oseba[0].logs, [
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA,
+				    msg="kontakti = [Kontakt(data='data0', tip=<TipKontakta.EMAIL: '1'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: '3'>)]"),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='ime = "ime"'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.append(item="append")'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__setitem__(i=0, item="setitem")'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__iadd__(other="add")'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'a', 'd', 'd']"),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg='tip_osebe.__imul__(other=1)'),
+				Log(level=LogLevel.DEBUG, theme=LogTheme.SPREMEMBA, msg="tip_osebe = ['setitem', 'a', 'd', 'd']")
+			])
 
-	def test_oseba_find_fail(self):
-		count = 0
-		for _ in self.service.oseba_find('asdfasfasdf'):
-			count += 1
-		self.assertEqual(count, 0)
-
-	def test_find(self):
-		oseba = Oseba(ime=f'ime8', priimek=f'priimek8', rojen=None, kontakti=[
-			Kontakt(data=f'data8', tip=TipKontakta.EMAIL, nivo_validiranosti=NivoValidiranosti.POTRJEN)])
-
-		count = 0
-		for found_oseba in self.service.find(oseba):
-			self.assertEqual(found_oseba, oseba)
-			count += 1
-		self.assertEqual(count, 1)
-
-	def test_open(self):
-		self.assertRaises(Exception, lambda: (self.service.open(), self.service.open()))
+			self.assertEqual(root.oseba[0].tip_osebe, ['setitem', 'a', 'd', 'd'])
 
 
 if __name__ == '__main__':
