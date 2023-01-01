@@ -27,16 +27,6 @@ class test_Elist(unittest.TestCase):
 		self.assertTrue(FakeEnum.NAME.equal(FakeEnum.NAME))
 		self.assertFalse(FakeEnum.NAME.equal(FakeEnum.AGE))
 
-	def test_comparisons(self):
-		self.assertLess(FakeEnum.NAME, FakeEnum.SURNAME)
-		self.assertLess(FakeEnum.NAME, FakeEnum.AGE)
-		self.assertLess(FakeEnum.NAME, FakeEnum.COUNTRY)
-
-		self.assertLess(FakeEnum.SURNAME, FakeEnum.AGE)
-		self.assertLess(FakeEnum.SURNAME, FakeEnum.COUNTRY)
-
-		self.assertRaises(Exception, lambda: FakeEnum.AGE < "asdf")
-
 
 if __name__ == '__main__':
 	unittest.main()

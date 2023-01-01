@@ -1,20 +1,21 @@
 from dataclasses import dataclass
 from datetime import date
+from enum import auto
 
 from core.domain._entity import Elist, elist, Entity
 from core.domain._enums import EntityEnum
 
 
 class TipTransakcije(EntityEnum):
-	PRIHODEK = 'PRIHODEK'
-	ODHODEK = 'ODHODEK'
+	PRIHODEK = auto()
+	ODHODEK = auto()
 
 
 class KategorijaTransakcije(EntityEnum):
-	CLANARINA = "CLANARINA"
-	PLACA = "PLACA"
-	STROSKI = "STROSKI"
-	OPREMA = "OPREMA"
+	CLANARINA = auto()
+	PLACA = auto()
+	STROSKI = auto()
+	OPREMA = auto()
 
 
 @dataclass

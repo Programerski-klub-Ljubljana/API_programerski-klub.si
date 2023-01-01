@@ -158,7 +158,7 @@ class test_db(unittest.TestCase):
 			self.assertEqual(root.oseba[0].logs, [
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
 				    msg='__init__(ime="ime0", priimek="priimek0", rojen=None, geslo=None, tip_osebe=[], '
-				        "kontakti=[Kontakt(data='data0', tip=<TipKontakta.EMAIL: '1'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: '3'>)], "
+				        "kontakti=[Kontakt(data='data0', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)], "
 				        "vpisi=[], izpisi=[])"),
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
 				    msg="kontakti = [Kontakt(data='data0', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)]"),

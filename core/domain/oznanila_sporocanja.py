@@ -1,13 +1,14 @@
 from dataclasses import dataclass
+from enum import auto
 
 from core.domain._entity import Entity
 from core.domain._enums import EntityEnum
 
 
 class TipObjave(EntityEnum):
-	ZAPOSLOVANJE = "ZAPOSLOVANJE"
-	NOTRANJA = "NOTRANJA"
-	ZUNANJA = "ZUNANJA"
+	ZAPOSLOVANJE = auto()
+	NOTRANJA = auto()
+	ZUNANJA = auto()
 
 
 @dataclass

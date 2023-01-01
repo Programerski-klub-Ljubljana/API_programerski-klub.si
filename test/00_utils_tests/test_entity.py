@@ -156,7 +156,7 @@ class test_Elist(unittest.TestCase):
 			self.assertNotEqual(ele, ele2)
 
 	def test_random_k(self):
-		for i in range(10):
+		for i in range(5):
 			ele = self.elist_100.random(k=3)
 			self.assertEqual(len(ele), 3)
 

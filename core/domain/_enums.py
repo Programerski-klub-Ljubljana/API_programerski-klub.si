@@ -1,5 +1,5 @@
 import random
-from enum import Enum
+from enum import Enum, auto
 from functools import total_ordering
 
 
@@ -16,19 +16,18 @@ class EntityEnum(str, Enum):
 	def equal(self, ele):
 		return self == ele
 
-	def __lt__(self, other):
-		if self.__class__ is other.__class__:
-			return self.value < other.value
-		raise Exception("Not implemented")
+	@staticmethod
+	def _generate_next_value_(name: str, start: int, count: int, last_values: list) -> str:
+		return name
 
 
 class LogLevel(EntityEnum):
-	DEBUG = "DEBUG"
-	INFO = "INFO"
-	WARNING = "WARNING"
-	ERROR = "ERROR"
+	DEBUG = auto()
+	INFO = auto()
+	WARNING = auto()
+	ERROR = auto()
 
 
 class LogType(EntityEnum):
-	ENTITY = "ENTITY"
-	ELIST = "ELIST"
+	ENTITY = auto()
+	ELIST = auto()

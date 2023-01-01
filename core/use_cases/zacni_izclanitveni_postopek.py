@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from enum import auto, Enum
+from enum import Enum, auto
 
 from core.cutils import list_field
 from core.domain.arhitektura_kluba import Oseba
@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class TipPrekinitveIzpisa(str, Enum):
-	NE_OBSTAJA = 'NE_OBSTAJA'
-	NI_VPISAN = 'NI_VPISAN'
+	NE_OBSTAJA = auto()
+	NI_VPISAN = auto()
 
 
 @dataclass
