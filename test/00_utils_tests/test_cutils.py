@@ -113,9 +113,9 @@ class test_validate(unittest.TestCase):
 			{'child': [], 'data': 4}
 		])
 
-	def test_filter_dict(self):
+	def test_call(self):
 		def test(a, b, c, d):
-			return a+b+c+d
+			return a + b + c + d
 
 		kwargs = {
 			'a': 'a',
@@ -135,6 +135,21 @@ class test_validate(unittest.TestCase):
 
 		dc = FakeDataclass()
 		self.assertCountEqual(dc.test, [1, 2, 3])
+
+	def test_lambda_src(self):
+		self.assertEqual("lambda x: x.test", cutils.lambda_src(lambda x: x.test))
+		self.assertEqual("lambda x, y: x.arg0 + y.arg1", cutils.lambda_src(lambda x, y: x.arg0 + y.arg1))
+		self.assertEqual("lambda: True", cutils.lambda_src(lambda: True))
+
+	def test_kwargs_str(self):
+		self.assertEqual(
+			"arg0='arg0', arg1='arg1', arg2=[1, True, 2.3, 'str'], arg3={'a': 1, 'c': 'd', 'e': 2.3}, arg4=lambda x: x.arg1",
+			cutils.kwargs_str(
+				self=123, arg0='arg0', arg1='arg1',
+				arg2=[1, True, 2.3, "str"],
+				arg3={'a': 1, 'c': 'd', 'e': 2.3},
+				arg4=lambda x: x.arg1
+			))
 
 
 if __name__ == '__main__':

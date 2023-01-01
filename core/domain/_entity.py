@@ -1,4 +1,3 @@
-import logging
 from copy import copy
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -8,74 +7,106 @@ from typing import Callable, TypeVar
 import shortuuid
 from persistent import Persistent
 from persistent.list import PersistentList
+from persistent.mapping import PersistentMapping
 
 from core import cutils
 from core.domain._enums import LogLevel, LogType
 
-log = logging.getLogger(__name__)
 
+class EPersists:
+	_logging: bool = True
 
-class Elist(PersistentList):
-	def __init__(self, data: list[any] = None, logs: bool = True):
-		if logs:
-			self._logs = Elist(None, logs=False)
-		super().__init__(data)
-
-	def _log_call(self, method: Callable, kwargs: dict[str, any] = None):
-		if kwargs is None:
-			kwargs = {}
-		if hasattr(self, '_logs'):
-			if 'self' in kwargs: del kwargs['self']
-			kwargs_str = ', '.join(
-				[f'{k}=' + (f'"{v}"' if isinstance(v, str) and not 'lambda' in v else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
-			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg=f'{method.__name__}({kwargs_str})')
-			log.debug(log_obj.msg)
+	def _log_call(self, method: Callable, **kwargs):
+		if self._logging and hasattr(self, '_logs'):
+			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})')
 			self._logs.append(log_obj)
 
-	def __setitem__(self, i, item):
-		self._log_call(self.__setitem__, locals())
-		super(Elist, self).__setitem__(i, item)
+	@staticmethod
+	def _field(cls, **kwargs):
+		def factory():
+			obj = cls(**kwargs)
+			if hasattr(obj, '_logs'):
+				obj._logs.clear()
+			return obj
 
-	def __add__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__add__(other)
+		return field(default_factory=factory)
+
+
+class Edict(EPersists, PersistentMapping):
+	def __init__(self, data: dict = None, logs: bool = True):
+		super().__init__(data)
+		if logs:
+			self._logs = Elist(logs=False)
+			self._log_call(method=self.__init__, **data)
+
+	@staticmethod
+	def field(data: dict = None, logs: bool = True):
+		return EPersists._field(cls=Edict, data=data, logs=logs)
+
+	def __setitem__(self, key, item):
+		self._log_call(method=self.__setitem__, key=key, item=item)
+		super(Edict, self).__setitem__(key=key, v=item)
+
+	def __delitem__(self, key):
+		self._log_call(method=self.__delitem__, key=key)
+		super(Edict, self).__delitem__(key=key)
+
+	def clear(self):
+		self._log_call(method=self.clear)
+		self._logging = False
+		super(Edict, self).clear()
+		self._logging = True
+
+
+class Elist(EPersists, PersistentList):
+	def __init__(self, data: list[any] = None, logs: bool = True):
+		if logs:
+			self._logs = Elist(logs=False)
+			self._log_call(method=self.__init__, args=data)
+		super(Elist, self).__init__(initlist=data)
+
+	@staticmethod
+	def field(data: list[any] = None, logs: bool = True):
+		return EPersists._field(cls=Elist, data=data, logs=logs)
+
+	def __setitem__(self, i, item):
+		self._log_call(method=self.__setitem__, i=i, item=item)
+		super(Elist, self).__setitem__(i=i, item=item)
+
+	def __add__(self, other: any):
+		elist = super(Elist, self).__add__(other=other)
 		elist._logs = self._logs
-		elist._log_call(self.__add__, loc)
+		elist._log_call(method=self.__add__, other=other)
 		return elist
 
 	def __radd__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__radd__(other)
+		elist = super(Elist, self).__radd__(other=other)
 		elist._logs = self._logs
-		elist._log_call(self.__radd__, loc)
+		elist._log_call(method=self.__radd__, other=other)
 		return elist
 
 	def __iadd__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__iadd__(other)
+		elist = super(Elist, self).__iadd__(other=other)
 		elist._logs = self._logs
-		elist._log_call(self.__iadd__, loc)
+		elist._log_call(method=self.__iadd__, other=other)
 		return elist
 
-	def __mul__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__mul__(other)
+	def __mul__(self, n):
+		elist = super(Elist, self).__mul__(n=n)
 		elist._logs = self._logs
-		elist._log_call(self.__mul__, loc)
+		elist._log_call(method=self.__mul__, n=n)
 		return elist
 
-	def __rmul__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__rmul__(other)
+	def __rmul__(self, n):
+		elist = super(Elist, self).__rmul__(n=n)
 		elist._logs = self._logs
-		elist._log_call(self.__rmul__, loc)
+		elist._log_call(method=self.__rmul__, n=n)
 		return elist
 
-	def __imul__(self, other):
-		loc = locals()
-		elist = super(Elist, self).__imul__(other)
+	def __imul__(self, n):
+		elist = super(Elist, self).__imul__(n=n)
 		elist._logs = self._logs
-		elist._log_call(self.__imul__, loc)
+		elist._log_call(method=self.__imul__, n=n)
 		return elist
 
 	def __contains__(self, item):
@@ -88,7 +119,7 @@ class Elist(PersistentList):
 		return False
 
 	def append(self, item: object):
-		self._log_call(self.append, locals())
+		self._log_call(method=self.append, item=item)
 		if cutils.is_object(item):
 			for k, v in item.__dict__.items():
 				if isinstance(v, list | tuple):
@@ -96,34 +127,31 @@ class Elist(PersistentList):
 		super(Elist, self).append(item)
 
 	def clear(self):
-		self._log_call(self.clear)
+		self._log_call(method=self.clear)
 		super(Elist, self).clear()
 
 	def insert(self, i, item):
-		self._log_call(self.insert, locals())
+		self._log_call(method=self.insert, i=i, item=item)
 		super(Elist, self).insert(i, item)
 
 	def pop(self, i=-1):
-		self._log_call(self.pop, locals())
+		self._log_call(method=self.pop, i=i)
 		return super(Elist, self).pop(i)
 
 	def remove(self, item):
-		self._log_call(self.remove, locals())
-		super(Elist, self).remove(item)
+		self._log_call(method=self.remove, item=item)
+		super(Elist, self).remove(item=item)
 
 	def reverse(self):
-		self._log_call(self.reverse, locals())
+		self._log_call(method=self.reverse)
 		super(Elist, self).reverse()
 
 	def sort(self, reverse: bool = False, key: Callable = None):
-		loc = locals()
-		if isinstance(key, Callable):
-			loc['key'] = cutils.lambda_src(loc['key'])
-		self._log_call(self.sort, kwargs=loc)
+		self._log_call(method=self.sort, reverse=reverse, key=key)
 		super(Elist, self).sort(reverse=reverse, key=key)
 
 	def extend(self, other):
-		self._log_call(self.extend, locals())
+		self._log_call(method=self.extend, other=other)
 		super(Elist, self).extend(other)
 
 	def random(self, k: int = None):
@@ -140,16 +168,13 @@ class Elist(PersistentList):
 		end = max_width * (page + 1)
 		return result[start:end] if cutils.is_iterable(result) else result
 
-	@staticmethod
-	def field(*values: any):
-		return field(default_factory=lambda: Elist(list(values)))
-
 
 T = TypeVar('T')
 elist = list[T] | Elist
+edict = list[T] | Edict
 
 
-class Entity(Persistent):
+class Entity(Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
 	_id: str | None
 	_type: str | None
 	_created: datetime | None
@@ -163,22 +188,25 @@ class Entity(Persistent):
 			'_type': self.__class__.__name__.lower(),
 			'_created': datetime.now(),
 			'_updated': datetime.now(),
-			'_connections': Elist(),
+			'_connections': Elist(logs=not isinstance(self, Log)),
 			'_logs': Elist(logs=False),
 		}
 
 		for k, v in attr.items():
 			setattr(self, k, v)
 
+		for k, v in self.__dict__.items():
+			if hasattr(v, '_logs'):
+				v._logs.clear()
+
 		if not isinstance(self, Log):
 			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
-			self.log_call(self.__init__, kwargs=kwargs)
+			self.log_call(self.__init__, **kwargs)
 
-	def __setattr__(self, key, value):
+	def __setattr__(self, key, value):  # TODO: Refactor this to EPersists
 		if not isinstance(self, Log) and hasattr(self, '_logs') and not key.startswith('_p_'):
-			value_str = f'"{value}"' if isinstance(value, str) else str(value)
+			value_str = f"'{value}'" if isinstance(value, str) else str(value)
 			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{key} = {value_str}')
-			log.debug(f'{log_obj.msg} ... {self}')
 			self._logs.append(log_obj)
 		super(Entity, self).__setattr__(key, value)
 
@@ -205,27 +233,24 @@ class Entity(Persistent):
 					lgs.append(l)
 		return sorted(lgs, key=lambda l: l._created)
 
-	def log(self, level: LogLevel, type: LogType, msg: str):
-		log_obj = Log(level=level, type=type, msg=msg)
-		log.debug(f'{log_obj.msg} ... {self}')
+	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
+		log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs))
 		self._logs.append(log_obj)
 
-	def log_call(self, method: Callable, kwargs):
-		if 'self' in kwargs: del kwargs['self']
-		kwargs_str = ', '.join([f'{k}=' + (f'"{v}"' if isinstance(v, str) else str(v)) for k, v in kwargs.items() if not k.startswith('__')])
-		self.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{method.__name__}({kwargs_str})')
+	def log_call(self, method: Callable, **kwargs):
+		self.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})')
 
-	def log_debug(self, type: LogType, msg: str):
-		self.log(level=LogLevel.DEBUG, type=type, msg=msg)
+	def log_debug(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.DEBUG, type=type, msg=msg, **kwargs)
 
-	def log_info(self, type: LogType, msg: str):
-		self.log(level=LogLevel.INFO, type=type, msg=msg)
+	def log_info(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.INFO, type=type, msg=msg, **kwargs)
 
-	def log_warning(self, type: LogType, msg: str):
-		self.log(level=LogLevel.WARNING, type=type, msg=msg)
+	def log_warning(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.WARNING, type=type, msg=msg, **kwargs)
 
-	def log_error(self, type: LogType, msg: str):
-		self.log(level=LogLevel.ERROR, type=type, msg=msg)
+	def log_error(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.ERROR, type=type, msg=msg, **kwargs)
 
 
 @dataclass
@@ -233,3 +258,4 @@ class Log(Entity):
 	level: LogLevel
 	type: LogType
 	msg: str
+	data: Edict = Edict.field(logs=False)

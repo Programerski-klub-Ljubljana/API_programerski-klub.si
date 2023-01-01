@@ -147,3 +147,17 @@ def lambda_src(func: Callable):
 		lambda_body_text = lambda_body_text[:-1]
 
 	return None
+
+
+def kwargs_str(**kwargs) -> str:
+	args = []
+	for k, v in kwargs.items():
+		if not k.startswith('__') and k not in ['self']:
+			if isinstance(v, Callable):
+				args.append(f"{k}={lambda_src(v)}")
+			elif isinstance(v, str):
+				args.append(f"{k}='{v}'")
+			else:
+				args.append(f"{k}={v}")
+
+	return ', '.join(args)

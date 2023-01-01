@@ -20,12 +20,16 @@ class test_Elist(unittest.TestCase):
 		self.assertNotEqual(rand.count(rand[0]), 0)
 
 	def test_eq(self):
-		self.assertNotEqual('FakeEnum.NAME', FakeEnum.NAME)
-		self.assertEqual('FakeEnum.NAME', str(FakeEnum.NAME))
+		self.assertEqual('NAME', FakeEnum.NAME)
+		self.assertEqual('NAME', str(FakeEnum.NAME))
 
 	def test_equal(self):
 		self.assertTrue(FakeEnum.NAME.equal(FakeEnum.NAME))
 		self.assertFalse(FakeEnum.NAME.equal(FakeEnum.AGE))
+
+	def test_str(self):
+		self.assertEqual('NAME', FakeEnum.NAME)
+		self.assertEqual("[NAME, AGE]", str([FakeEnum.NAME, FakeEnum.AGE]))
 
 
 if __name__ == '__main__':

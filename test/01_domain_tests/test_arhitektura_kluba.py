@@ -162,8 +162,8 @@ class test_oseba(unittest.TestCase):
 		                 "geslo=None, "
 		                 "tip_osebe=[], "
 		                 "kontakti=["
-		                 "Kontakt(data='123', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.NI_VALIDIRAN: 'NI_VALIDIRAN'>), "
-		                 "Kontakt(data='xxx', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)], "
+		                 "Kontakt(data='123', tip=EMAIL, nivo_validiranosti=NI_VALIDIRAN), "
+		                 "Kontakt(data='xxx', tip=EMAIL, nivo_validiranosti=POTRJEN)], "
 		                 "vpisi=[], "
 		                 "izpisi=[])")
 

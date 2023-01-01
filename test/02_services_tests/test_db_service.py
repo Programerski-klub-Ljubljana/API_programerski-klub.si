@@ -156,21 +156,23 @@ class test_db(unittest.TestCase):
 
 		with self.service.transaction() as root:
 			self.assertEqual(root.oseba[0].logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
-				    msg='__init__(ime="ime0", priimek="priimek0", rojen=None, geslo=None, tip_osebe=[], '
-				        "kontakti=[Kontakt(data='data0', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)], "
-				        "vpisi=[], izpisi=[])"),
-				Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
-				    msg="kontakti = [Kontakt(data='data0', tip=<TipKontakta.EMAIL: 'EMAIL'>, nivo_validiranosti=<NivoValidiranosti.POTRJEN: 'POTRJEN'>)]"),
-				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='ime = "ime"'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.append(item="append")'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.__setitem__(i=0, item="setitem")'),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=' '.join([
+					"__init__(ime='ime0', priimek='priimek0', rojen=None, geslo=None, tip_osebe=[],",
+					"kontakti=[Kontakt(data='data0', tip=EMAIL, nivo_validiranosti=POTRJEN)],",
+					"vpisi=[], izpisi=[])"
+				])),
+				# Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=' '.join([
+				# 	"kontakti = [Kontakt(data='data0', tip=EMAIL, nivo_validiranosti=POTRJEN)]"
+				# ])),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="ime = 'ime'"),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.append(item='append')"),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.__setitem__(i=0, item='setitem')"),
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.__iadd__(other=['add'])"),
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="tip_osebe = ['setitem', 'add']"),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.__imul__(other=2)'),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='tip_osebe.__imul__(n=2)'),
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="tip_osebe = ['setitem', 'add', 'setitem', 'add']"),
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg'),
-				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='test_logs(arg0="arg0", arg1="arg2")'),
+				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="test_logs(kwargs={'arg0': 'arg0', 'arg1': 'arg2'})"),
 				Log(level=LogLevel.INFO, type=LogType.ENTITY, msg='msg'),
 				Log(level=LogLevel.ERROR, type=LogType.ENTITY, msg='msg')
 			])
