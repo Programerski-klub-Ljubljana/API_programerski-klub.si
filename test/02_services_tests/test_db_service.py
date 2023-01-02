@@ -161,9 +161,6 @@ class test_db(unittest.TestCase):
 					"kontakti=[Kontakt(data='data0', tip=EMAIL, nivo_validiranosti=POTRJEN)],",
 					"vpisi=[], izpisi=[])"
 				])),
-				# Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=' '.join([
-				# 	"kontakti = [Kontakt(data='data0', tip=EMAIL, nivo_validiranosti=POTRJEN)]"
-				# ])),
 				Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="ime = 'ime'"),
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.append(item='append')"),
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="tip_osebe.__setitem__(i=0, item='setitem')"),
@@ -178,6 +175,18 @@ class test_db(unittest.TestCase):
 			])
 
 			self.assertEqual(root.oseba[0].tip_osebe, ['setitem', 'add', 'setitem', 'add'])
+
+	def test_root_list_logs(self):
+		self.maxDiff = None
+		with self.service.transaction() as root:
+			self.assertEqual(root.oseba._logs[:12], [
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=None)'),
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='clear()')] + [
+				Log(level=LogLevel.DEBUG, type=LogType.ELIST,
+					msg=f"append(item=Oseba(ime='ime{i}', priimek='priimek{i}', rojen=None, "
+						f"geslo=None, tip_osebe=[], kontakti=[Kontakt(data='data{i}', tip=EMAIL, "
+						'nivo_validiranosti=POTRJEN)], vpisi=[], izpisi=[]))') for i in range(10)
+			])
 
 
 if __name__ == '__main__':

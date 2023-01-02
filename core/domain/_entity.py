@@ -1,5 +1,5 @@
 from copy import copy
-from dataclasses import dataclass, field
+from dataclasses import field, dataclass
 from datetime import datetime
 from random import choice, choices
 from typing import Callable, TypeVar
@@ -13,35 +13,35 @@ from core import cutils
 from core.domain._enums import LogLevel, LogType
 
 
-class EPersists:
-	_logging: bool = True
+class EStructure:
+	_p_log: bool = True
+	_logs: 'Elist'
 
 	def _log_call(self, method: Callable, **kwargs):
-		if self._logging and hasattr(self, '_logs'):
+		if self.logging:
 			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})')
 			self._logs.append(log_obj)
 
+	@property
+	def logging(self):
+		return hasattr(self, '_logs') and self._p_log
+
 	@staticmethod
-	def _field(cls, **kwargs):
-		def factory():
-			obj = cls(**kwargs)
-			if hasattr(obj, '_logs'):
-				obj._logs.clear()
-			return obj
-
-		return field(default_factory=factory)
+	def _field(cls, data: any, logs: bool):
+		return field(default_factory=lambda: cls(data=data, logs=logs))
 
 
-class Edict(EPersists, PersistentMapping):
-	def __init__(self, data: dict = None, logs: bool = True):
-		super().__init__(data)
+class Edict(EStructure, PersistentMapping):
+
+	@staticmethod
+	def field(data: dict = {}, logs: bool = True):
+		return EStructure._field(cls=Edict, data=data, logs=logs)
+
+	def __init__(self, data: dict, logs: bool = True):
+		super(Edict, self).__init__(data)
 		if logs:
 			self._logs = Elist(logs=False)
 			self._log_call(method=self.__init__, **data)
-
-	@staticmethod
-	def field(data: dict = None, logs: bool = True):
-		return EPersists._field(cls=Edict, data=data, logs=logs)
 
 	def __setitem__(self, key, item):
 		self._log_call(method=self.__setitem__, key=key, item=item)
@@ -53,21 +53,22 @@ class Edict(EPersists, PersistentMapping):
 
 	def clear(self):
 		self._log_call(method=self.clear)
-		self._logging = False
+		self._p_log = False
 		super(Edict, self).clear()
-		self._logging = True
+		self._p_log = True
 
 
-class Elist(EPersists, PersistentList):
+class Elist(EStructure, PersistentList):
+
+	@staticmethod
+	def field(data: list[any] = [], logs: bool = True):
+		return EStructure._field(cls=Elist, data=data, logs=logs)
+
 	def __init__(self, data: list[any] = None, logs: bool = True):
+		super(Elist, self).__init__(initlist=data)
 		if logs:
 			self._logs = Elist(logs=False)
 			self._log_call(method=self.__init__, args=data)
-		super(Elist, self).__init__(initlist=data)
-
-	@staticmethod
-	def field(data: list[any] = None, logs: bool = True):
-		return EPersists._field(cls=Elist, data=data, logs=logs)
 
 	def __setitem__(self, i, item):
 		self._log_call(method=self.__setitem__, i=i, item=item)
@@ -174,7 +175,7 @@ elist = list[T] | Elist
 edict = list[T] | Edict
 
 
-class Entity(Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
+class Entity(EStructure, Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
 	_id: str | None
 	_type: str | None
 	_created: datetime | None
@@ -183,28 +184,35 @@ class Entity(Persistent):  # TODO: Try to add EPersists and refactor __post_init
 	_connections: elist | None
 
 	def __post_init__(self):
-		attr = {
-			'_id': shortuuid.uuid(),
-			'_type': self.__class__.__name__.lower(),
-			'_created': datetime.now(),
-			'_updated': datetime.now(),
-			'_connections': Elist(logs=not isinstance(self, Log)),
-			'_logs': Elist(logs=False),
-		}
+		# * SETUP ADDITIONAL PROPERTIES FOR EVERY ENTITIES!
+		self._id = shortuuid.uuid()
+		self._type = self.__class__.__name__.lower()
+		self._created = datetime.now()
+		self._updated = datetime.now()
+		self._connections = Elist(logs=not isinstance(self, Log))
+		self._logs = Elist(logs=False)
 
-		for k, v in attr.items():
-			setattr(self, k, v)
-
+		# ! GO ONLY ONE LAYER DEEP!!!!!!!!
+		# * CONVERT PROPERTIES OF (LIST, TUPLES, DICT) TO SAFE VARIANTS (Elist, Edict)
 		for k, v in self.__dict__.items():
-			if hasattr(v, '_logs'):
-				v._logs.clear()
+			if isinstance(v, list | tuple | set):
+				self.__dict__[k] = Elist(data=v)
+			elif isinstance(v, dict):
+				self.__dict__[k] = Edict(data=v)
 
+		# * CLEAN LOGS THAT HAS BEEN POLUTED BY __INIT__ METHOD.
+		for k, v in self.__dict__.items():
+			if getattr(v, '_logs', False):
+				self.__dict__[k]._logs.clear()
+
+		# * LOG __INIT__ METHOD FOR ENTITY
 		if not isinstance(self, Log):
 			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 			self.log_call(self.__init__, **kwargs)
 
-	def __setattr__(self, key, value):  # TODO: Refactor this to EPersists
-		if not isinstance(self, Log) and hasattr(self, '_logs') and not key.startswith('_p_'):
+	def __setattr__(self, key, value):
+		# * IF LOGGING IS ACTIVATED, HAS DIARY INSIDE, IS NOT ZOODB PROPERTY, DO NOT LOG SETTING _logging FLAG
+		if self.logging and not key.startswith('_p_'):
 			value_str = f"'{value}'" if isinstance(value, str) else str(value)
 			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{key} = {value_str}')
 			self._logs.append(log_obj)
@@ -233,7 +241,7 @@ class Entity(Persistent):  # TODO: Try to add EPersists and refactor __post_init
 					lgs.append(l)
 		return sorted(lgs, key=lambda l: l._created)
 
-	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
+	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs: dict):
 		log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs))
 		self._logs.append(log_obj)
 

@@ -20,7 +20,7 @@ class test_Entity(unittest.TestCase):
 	@classmethod
 	def setUp(self) -> None:
 		self.before = datetime.now()
-		self.entity: FakeEntity = FakeEntity(a='a')
+		self.entity: FakeEntity = FakeEntity(a='a', c=[1, 2, 3])
 		self.after = datetime.now()
 
 	def test_attr(self):
@@ -120,9 +120,14 @@ class test_Entity(unittest.TestCase):
 		self.entity.c.append(4)
 		self.entity.c.append('4')
 		self.entity.c.remove('4')
-		self.assertEqual(self.entity._logs, [
+		self.entity.d['x'] = 'y'
+		self.assertEqual(self.entity.logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
-			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="a = 'b'")
+			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="a = 'b'"),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='c.append(item=4)'),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="c.append(item='4')"),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="c.remove(item='4')"),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="d.__setitem__(key='x', item='y')")
 		])
 
 	def test_logs_property(self):

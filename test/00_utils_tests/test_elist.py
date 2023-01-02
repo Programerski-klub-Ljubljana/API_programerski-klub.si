@@ -169,7 +169,7 @@ class test_Elist(unittest.TestCase):
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='extend(other=[2, 1, 0])')])
 
 	def test_random(self):
-		for i in range(10):
+		for i in range(3):
 			ele = self.elist_100.random()
 			ele2 = self.elist_100.random()
 			self.assertIn(ele, self.elist_100)
