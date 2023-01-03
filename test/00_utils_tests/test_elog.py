@@ -1,20 +1,18 @@
 import unittest
-from dataclasses import dataclass
 
 from core.domain._entity import Log, Edict, Elist, Elog
 from core.domain._enums import LogLevel, LogType
 from test.tutils import EntitySmall
 
 
-@dataclass
 class E(Elog):
-	v: int
+	def __init__(self):
+		self._logs = []
 
 
 class test_Elog(unittest.TestCase):
 	def setUp(self) -> None:
-		self.elog = E(0)
-		self.elog._logs = []
+		self.elog = E()
 		self._assertEqualLogs(0)
 
 	def _assertEqualLogs(self, size: int):
