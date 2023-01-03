@@ -17,6 +17,23 @@ class Elog:
 	_p_log: bool = True
 	_logs: 'Elist'
 
+	@staticmethod
+	def init(data: any, logs: bool):
+		if isinstance(data, list | tuple | set):
+			iterator = enumerate(data)
+		elif isinstance(data, dict):
+			iterator = data.items()
+		else:
+			return data
+
+		for k, v in iterator:
+			if isinstance(v, list | tuple | set):
+				data[k] = Elist(data=v, logs=logs)
+			elif isinstance(v, dict):
+				data[k] = Edict(data=v, logs=logs)
+
+		return data
+
 	@property
 	def is_logging(self) -> bool:
 		return hasattr(self, '_logs') and self._p_log
@@ -35,22 +52,23 @@ class Elog:
 	@property
 	def log_type(self) -> LogType:
 		type_map = {
+			Elog: LogType.ENTITY,
 			Entity: LogType.ENTITY,
 			Edict: LogType.EDICT,
 			Elist: LogType.ELIST,
 		}
 
-		for cls, type in type_map.items():
+		for cls, typ in type_map.items():
 			if isinstance(self, cls):
-				return type
-
-	def _log_call(self, method: Callable, **kwargs):
-		self.log_call(method=method, type=self.log_type, **kwargs)
+				return typ
 
 	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
 		if self.is_logging:
 			log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs, logs=False))
 			self._logs.append(log_obj)
+
+	def _log_call(self, method: Callable, **kwargs):
+		self.log_call(method=method, type=self.log_type, **kwargs)
 
 	def log_call(self, method: Callable, type: LogType, **kwargs):
 		self.log(level=LogLevel.DEBUG, type=type, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})', **kwargs)
@@ -75,18 +93,14 @@ class Edict(Elog, PersistentMapping):
 		return field(default_factory=lambda: Edict(data=data, logs=logs))
 
 	def __init__(self, data: dict, logs: bool = True):
-		for k, v in data.items():
-			if isinstance(v, list | tuple | set):
-				data[k] = Elist(data=v, logs=logs)
-			elif isinstance(v, dict):
-				data[k] = Edict(data=v, logs=logs)
-
+		data = self.init(data=data, logs=logs)
 		super(Edict, self).__init__(data)
 		if logs:
 			self._logs = Elist(logs=False)
 			self._log_call(method=self.__init__, **data)
 
 	def __setitem__(self, key, item):
+		item = self.init(item, logs=True)
 		self._log_call(method=self.__setitem__, key=key, item=item)
 		super(Edict, self).__setitem__(key=key, v=item)
 
@@ -108,12 +122,7 @@ class Elist(Elog, PersistentList):
 		return field(default_factory=lambda: Elist(data=data, logs=logs))
 
 	def __init__(self, data: list[any] = None, logs: bool = True):
-		if data is not None:
-			for i, v in enumerate(data):
-				if isinstance(v, list | tuple | set):
-					data[i] = Elist(data=v)
-				elif isinstance(v, dict):
-					data[i] = Edict(data=v)
+		data = self.init(data=data, logs=logs)
 		super(Elist, self).__init__(initlist=data)
 		if logs:
 			self._logs = Elist(logs=False)
