@@ -1,6 +1,9 @@
+from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 from persistent.list import PersistentList
+
+from core.domain._entity import Entity, elist, edict, Edict, Elist
 
 
 class AsyncMock(MagicMock):
@@ -35,7 +38,7 @@ class SmallNode:
 		self._dnevnik = '_dnevnik'
 
 
-class Fixtures:
+class Cutils_fixtures:
 	dicts = [{'key': 1, 'key2': 'asdf'}, {}]
 	iterables = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
 	values = [None, True, 1, 1.2, "asdf"]
@@ -103,3 +106,60 @@ class Fixtures:
 		SmallNode(3, child=[]),
 		SmallNode(4, child=[]),
 	]
+
+
+class Entity_fixtures:
+	@staticmethod
+	def entity(cls, level=0):
+		if level >= 0:
+			return cls(
+				a=True, b=32, c=.23, d="asd",
+				e=Entity_fixtures.entity(cls, level - 1),
+				f=Entity_fixtures.list(cls, level - 1),
+				g=Entity_fixtures.dict(cls, level - 1),
+			)
+
+	@staticmethod
+	def list(cls, level=0) -> list:
+		if level >= 0:
+			return [
+				3.21, False, 321, "mata",
+				Entity_fixtures.entity(cls, level - 1),
+				Entity_fixtures.list(cls, level - 1),
+				Entity_fixtures.dict(cls, level - 1)
+			]
+
+	@staticmethod
+	def dict(cls, level=0) -> dict:
+		if level >= 0:
+			return {
+				'a': True, 'b': 123, 'c': 1.23, 'd': "data",
+				'e': Entity_fixtures.entity(cls, level - 1),
+				'f': Entity_fixtures.list(cls, level - 1),
+				'g': Entity_fixtures.dict(cls, level - 1)
+			}
+
+
+@dataclass
+class EntitySmall(Entity):
+	a: bool
+	b: int
+	c: float
+	d: str
+	e: 'EntityBig'
+	f: elist
+	g: edict
+
+
+@dataclass
+class EntityBig(Entity):
+	a: bool
+	b: int
+	c: float
+	d: str
+	e: 'EntityBig'
+	f: elist
+	g: edict
+	h: 'EntityBig' = Entity_fixtures.entity(EntitySmall, 2)
+	i: elist = Elist.field(data=Entity_fixtures.list(EntitySmall, 2))
+	j: edict = Edict.field(data=Entity_fixtures.dict(EntitySmall, 2))

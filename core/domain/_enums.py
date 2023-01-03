@@ -37,3 +37,4 @@ class LogLevel(EntityEnum):
 class LogType(EntityEnum):
 	ENTITY = auto()
 	ELIST = auto()
+	EDICT = auto()

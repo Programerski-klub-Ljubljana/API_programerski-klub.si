@@ -13,31 +13,74 @@ from core import cutils
 from core.domain._enums import LogLevel, LogType
 
 
-class EStructure:
+class Elog:
 	_p_log: bool = True
 	_logs: 'Elist'
 
-	def _log_call(self, method: Callable, **kwargs):
-		if self.logging:
-			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})')
-			self._logs.append(log_obj)
-
 	@property
-	def logging(self):
+	def is_logging(self) -> bool:
 		return hasattr(self, '_logs') and self._p_log
 
-	@staticmethod
-	def _field(cls, data: any, logs: bool):
-		return field(default_factory=lambda: cls(data=data, logs=logs))
+	@property
+	def logs(self):
+		# GETS LOGS 1 LEVEL DEEP
+		lgs = copy(self._logs)
+		for k, v in self.__dict__.items():
+			if hasattr(v, '_logs'):
+				for l in copy(v._logs):
+					l.msg = f'{k}.{l.msg}'
+					lgs.append(l)
+		return sorted(lgs, key=lambda l: l._created)
+
+	@property
+	def log_type(self) -> LogType:
+		type_map = {
+			Entity: LogType.ENTITY,
+			Edict: LogType.EDICT,
+			Elist: LogType.ELIST,
+		}
+
+		for cls, type in type_map.items():
+			if isinstance(self, cls):
+				return type
+
+	def _log_call(self, method: Callable, **kwargs):
+		self.log_call(method=method, type=self.log_type, **kwargs)
+
+	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
+		if self.is_logging:
+			log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs, logs=False))
+			self._logs.append(log_obj)
+
+	def log_call(self, method: Callable, type: LogType, **kwargs):
+		self.log(level=LogLevel.DEBUG, type=type, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})', **kwargs)
+
+	def log_debug(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.DEBUG, type=type, msg=msg, **kwargs)
+
+	def log_info(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.INFO, type=type, msg=msg, **kwargs)
+
+	def log_warning(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.WARNING, type=type, msg=msg, **kwargs)
+
+	def log_error(self, type: LogType, msg: str, **kwargs):
+		self.log(level=LogLevel.ERROR, type=type, msg=msg, **kwargs)
 
 
-class Edict(EStructure, PersistentMapping):
+class Edict(Elog, PersistentMapping):
 
 	@staticmethod
 	def field(data: dict = {}, logs: bool = True):
-		return EStructure._field(cls=Edict, data=data, logs=logs)
+		return field(default_factory=lambda: Edict(data=data, logs=logs))
 
 	def __init__(self, data: dict, logs: bool = True):
+		for k, v in data.items():
+			if isinstance(v, list | tuple | set):
+				data[k] = Elist(data=v, logs=logs)
+			elif isinstance(v, dict):
+				data[k] = Edict(data=v, logs=logs)
+
 		super(Edict, self).__init__(data)
 		if logs:
 			self._logs = Elist(logs=False)
@@ -58,13 +101,19 @@ class Edict(EStructure, PersistentMapping):
 		self._p_log = True
 
 
-class Elist(EStructure, PersistentList):
+class Elist(Elog, PersistentList):
 
 	@staticmethod
-	def field(data: list[any] = [], logs: bool = True):
-		return EStructure._field(cls=Elist, data=data, logs=logs)
+	def field(data: list = [], logs: bool = True):
+		return field(default_factory=lambda: Elist(data=data, logs=logs))
 
 	def __init__(self, data: list[any] = None, logs: bool = True):
+		if data is not None:
+			for i, v in enumerate(data):
+				if isinstance(v, list | tuple | set):
+					data[i] = Elist(data=v)
+				elif isinstance(v, dict):
+					data[i] = Edict(data=v)
 		super(Elist, self).__init__(initlist=data)
 		if logs:
 			self._logs = Elist(logs=False)
@@ -175,7 +224,7 @@ elist = list[T] | Elist
 edict = list[T] | Edict
 
 
-class Entity(EStructure, Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
+class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
 	_id: str | None
 	_type: str | None
 	_created: datetime | None
@@ -208,11 +257,11 @@ class Entity(EStructure, Persistent):  # TODO: Try to add EPersists and refactor
 		# * LOG __INIT__ METHOD FOR ENTITY
 		if not isinstance(self, Log):
 			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
-			self.log_call(self.__init__, **kwargs)
+			self._log_call(self.__init__, **kwargs)
 
 	def __setattr__(self, key, value):
 		# * IF LOGGING IS ACTIVATED, HAS DIARY INSIDE, IS NOT ZOODB PROPERTY, DO NOT LOG SETTING _logging FLAG
-		if self.logging and not key.startswith('_p_'):
+		if self.is_logging and not key.startswith('_p_'):
 			value_str = f"'{value}'" if isinstance(value, str) else str(value)
 			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{key} = {value_str}')
 			self._logs.append(log_obj)
@@ -231,39 +280,10 @@ class Entity(EStructure, Persistent):  # TODO: Try to add EPersists and refactor
 			if self not in e._connections:
 				e._connections.append(self)
 
-	@property
-	def logs(self):
-		lgs = copy(self._logs)
-		for k, v in self.__dict__.items():
-			if hasattr(v, '_logs'):
-				for l in copy(v._logs):
-					l.msg = f'{k}.{l.msg}'
-					lgs.append(l)
-		return sorted(lgs, key=lambda l: l._created)
-
-	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs: dict):
-		log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs))
-		self._logs.append(log_obj)
-
-	def log_call(self, method: Callable, **kwargs):
-		self.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})')
-
-	def log_debug(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.DEBUG, type=type, msg=msg, **kwargs)
-
-	def log_info(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.INFO, type=type, msg=msg, **kwargs)
-
-	def log_warning(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.WARNING, type=type, msg=msg, **kwargs)
-
-	def log_error(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.ERROR, type=type, msg=msg, **kwargs)
-
 
 @dataclass
 class Log(Entity):
 	level: LogLevel
 	type: LogType
 	msg: str
-	data: Edict = Edict.field(logs=False)
+	data: Edict = Edict.field(logs=False)  # Todo: test if changes in data propagate to db elements.
