@@ -117,6 +117,7 @@ class Entity_fixtures:
 				e=Entity_fixtures.entity(cls, level - 1),
 				f=Entity_fixtures.list(cls, level - 1),
 				g=Entity_fixtures.dict(cls, level - 1),
+				h=Entity_fixtures.tuple(cls, level - 1)
 			)
 
 	@staticmethod
@@ -126,8 +127,20 @@ class Entity_fixtures:
 				3.21, False, 321, "mata",
 				Entity_fixtures.entity(cls, level - 1),
 				Entity_fixtures.list(cls, level - 1),
-				Entity_fixtures.dict(cls, level - 1)
+				Entity_fixtures.dict(cls, level - 1),
+				Entity_fixtures.tuple(cls, level - 1)
 			]
+
+	@staticmethod
+	def tuple(cls, level=0) -> list:
+		if level >= 0:
+			return (
+				3.21, False, 321, "mata",
+				Entity_fixtures.entity(cls, level - 1),
+				Entity_fixtures.list(cls, level - 1),
+				Entity_fixtures.dict(cls, level - 1),
+				Entity_fixtures.tuple(cls, level - 1)
+			)
 
 	@staticmethod
 	def dict(cls, level=0) -> dict:
@@ -136,7 +149,8 @@ class Entity_fixtures:
 				'a': True, 'b': 123, 'c': 1.23, 'd': "data",
 				'e': Entity_fixtures.entity(cls, level - 1),
 				'f': Entity_fixtures.list(cls, level - 1),
-				'g': Entity_fixtures.dict(cls, level - 1)
+				'g': Entity_fixtures.dict(cls, level - 1),
+				'h': Entity_fixtures.tuple(cls, level - 1)
 			}
 
 
@@ -149,6 +163,7 @@ class EntitySmall(Entity):
 	e: 'EntityBig'
 	f: elist
 	g: edict
+	h: elist
 
 
 @dataclass
@@ -160,6 +175,7 @@ class EntityBig(Entity):
 	e: 'EntityBig'
 	f: elist
 	g: edict
-	h: 'EntityBig' = Entity_fixtures.entity(EntitySmall, 2)
-	i: elist = Elist.field(data=Entity_fixtures.list(EntitySmall, 2))
-	j: edict = Edict.field(data=Entity_fixtures.dict(EntitySmall, 2))
+	h: elist
+	j: 'EntityBig' = Entity_fixtures.entity(EntitySmall, 2)
+	k: elist = Elist.field(data=Entity_fixtures.list(EntitySmall, 2))
+	l: edict = Edict.field(data=Entity_fixtures.dict(EntitySmall, 2))

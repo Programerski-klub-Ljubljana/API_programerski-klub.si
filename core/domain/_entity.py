@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from dataclasses import field, dataclass
 from datetime import datetime
 from random import choice, choices
@@ -20,6 +20,7 @@ class Elog:
 	@staticmethod
 	def init(data: any, logs: bool):
 		if isinstance(data, list | tuple | set):
+			data = list(data)
 			iterator = enumerate(data)
 		elif isinstance(data, dict):
 			iterator = data.items()
@@ -28,7 +29,7 @@ class Elog:
 
 		for k, v in iterator:
 			if isinstance(v, list | tuple | set):
-				data[k] = Elist(data=v, logs=logs)
+				data[k] = Elist(data=list(v), logs=logs)
 			elif isinstance(v, dict):
 				data[k] = Edict(data=v, logs=logs)
 
@@ -41,12 +42,13 @@ class Elog:
 	@property
 	def logs(self):
 		# GETS LOGS 1 LEVEL DEEP
-		lgs = copy(self._logs)
+		lgs = deepcopy(self._logs)
 		for k, v in self.__dict__.items():
-			if hasattr(v, '_logs'):
-				for l in copy(v._logs):
-					l.msg = f'{k}.{l.msg}'
-					lgs.append(l)
+			if k not in ['_logs']:
+				if hasattr(v, '_logs'):
+					for l in deepcopy(v._logs):
+						l.msg = f'{k}.{l.msg}'
+						lgs.append(l)
 		return sorted(lgs, key=lambda l: l._created)
 
 	@property
