@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import field, dataclass
 from datetime import datetime
 from random import choice, choices
@@ -30,8 +30,15 @@ class Elog:
 		for k, v in iterator:
 			if isinstance(v, list | tuple | set):
 				data[k] = Elist(data=list(v), logs=logs)
+				if logs:
+					data[k]._logs.clear()
 			elif isinstance(v, dict):
 				data[k] = Edict(data=v, logs=logs)
+				if logs:
+					data[k]._logs.clear()
+			elif isinstance(v, Entity):
+				if v.is_logging:
+					v._logs.clear()
 
 		return data
 
@@ -42,22 +49,35 @@ class Elog:
 	@property
 	def logs(self):
 		# GETS LOGS 1 LEVEL DEEP
+		iterator = []
+		key_formator = lambda key: key
+		match self.log_type:
+			case LogType.EDICT:
+				iterator = self.data.items()
+				key_formator = lambda key: f"['{key}']"
+			case LogType.ELIST:
+				iterator = enumerate(self.data)
+				key_formator = lambda key: f"[{key}]"
+			case LogType.ENTITY:
+				iterator = self.data.__dict__.items()
+				key_formator = lambda key: f'{key}'
+
 		lgs = deepcopy(self._logs)
-		for k, v in self.__dict__.items():
+		for k, v in iterator:
 			if k not in ['_logs']:
 				if hasattr(v, '_logs'):
 					for l in deepcopy(v._logs):
-						l.msg = f'{k}.{l.msg}'
+						l.msg = f'{key_formator(k)}.{l.msg}'
 						lgs.append(l)
 		return sorted(lgs, key=lambda l: l._created)
 
 	@property
 	def log_type(self) -> LogType:
 		type_map = {
-			Elog: LogType.ENTITY,
-			Entity: LogType.ENTITY,
 			Edict: LogType.EDICT,
 			Elist: LogType.ELIST,
+			Entity: LogType.ENTITY,
+			Elog: LogType.ENTITY,
 		}
 
 		for cls, typ in type_map.items():
@@ -96,7 +116,9 @@ class Edict(Elog, PersistentMapping):
 
 	def __init__(self, data: dict, logs: bool = True):
 		data = self.init(data=data, logs=logs)
+
 		super(Edict, self).__init__(data)
+
 		if logs:
 			self._logs = Elist(logs=False)
 			self._log_call(method=self.__init__, **data)
@@ -262,7 +284,7 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 
 		# * CLEAN LOGS THAT HAS BEEN POLUTED BY __INIT__ METHOD.
 		for k, v in self.__dict__.items():
-			if getattr(v, '_logs', False):
+			if hasattr(v, '_logs'):
 				self.__dict__[k]._logs.clear()
 
 		# * LOG __INIT__ METHOD FOR ENTITY

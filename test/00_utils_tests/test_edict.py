@@ -1,25 +1,34 @@
 import unittest
 
-from core.domain._entity import Edict, Elist
-from test.tutils import Entity_fixtures, EntityBig
+from core.domain._entity import Edict, Elist, Elog, Log
+from core.domain._enums import LogType, LogLevel
+from test.tutils import Entity_fixtures, EntityBig, EntitySmall
 
 
 class test_Edict(unittest.TestCase):
-	def setUp(cls) -> None:
-		data = Entity_fixtures.dict(EntityBig, level=2)
-		cls.edict = Edict(data=data)
-		cls._assertEqualLogs(1)
 
 	def _assertEqualLogs(self, size: int):
 		self.assertEqual(len(self.edict._logs), size)
 		self.assertEqual(len(self.edict.logs), size)
 		self.assertEqual(self.edict.logs, self.edict._logs)
 
+	def setUp(self) -> None:
+		data = Entity_fixtures.dict(EntityBig, level=2)
+		self.edict = Edict(data=data)
+		self._assertEqualLogs(1)
+
+	def test_is_logging(self):
+		self.assertTrue(self.edict.is_logging)
+
 	def test_logs(self):
 		self.assertEqual(
 			self.edict._logs[0].msg[:100], "__init__(a=True, b=123, c=1.23, d='data', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=T")
-		self.assertEqual(
-			self.edict._logs[0].msg[-100:], ", None, None], 'g': {'a': True, 'b': 123, 'c': 1.23, 'd': 'data', 'e': None, 'f': None, 'g': None}})")
+
+	def test_log_type(self):
+		self.assertEqual(self.edict.log_type, LogType.EDICT)
+
+	def test_is_elog_instance(self):
+		self.assertIsInstance(self.edict, Elog)
 
 	def test_init(self):
 		# * LEVEL 0
@@ -44,9 +53,6 @@ class test_Edict(unittest.TestCase):
 		# * LEVEL 2: -> TUPLE
 		self.assertIsInstance(self.edict['e'].h, Elist)
 		self.assertEqual(self.edict['e'].f[0], 3.21)
-		# * LEVEL 2: -> SET
-		self.assertIsInstance(self.edict['e'].i, Elist)
-		self.assertEqual(self.edict['e'].f[3], "mata")
 
 		# * LEVEL 1: ELIST
 		self.assertIsInstance(self.edict['f'], Elist)
@@ -61,6 +67,9 @@ class test_Edict(unittest.TestCase):
 		# * LEVEL 2: -> EDICT
 		self.assertIsInstance(self.edict['f'][6], Edict)
 		self.assertEqual(self.edict['f'][6]['b'], 123)
+		# * LEVEL 2: -> TUPLE
+		self.assertIsInstance(self.edict['f'][7], Elist)
+		self.assertEqual(self.edict['f'][7][2], 321)
 
 		# * LEVEL 1: EDICT
 		self.assertIsInstance(self.edict['g'], Edict)
@@ -75,75 +84,129 @@ class test_Edict(unittest.TestCase):
 		# * LEVEL 2: -> EDICT
 		self.assertIsInstance(self.edict['g']['g'], Edict)
 		self.assertEqual(self.edict['g']['g']['b'], 123)
+		# * LEVEL 2: -> TUPLE
+		self.assertIsInstance(self.edict['g']['h'], Elist)
+		self.assertEqual(self.edict['g']['h'][2], 321)
 
 	def test_setitem(self):
-		self.edict['a'] = False
+		# * LEVEL 1 (SHOULD LOGS)
 		self.edict['b'] = 321
-		self.edict['c'] = 32.1
-		self.edict['d'] = 'hehe'
+		self.edict['e'] = EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None)
 
-	# ! CE UPORABNIK NASTAVI VREDNOSTI PREKO METOD JE POTREBNO NOTRANJO STRUKTURO TUDI PRETVORITI V EDICT, ELIST OBLIKO
+		self.assertEqual(self.edict['b'], 321)
+		self.assertEqual(self.edict['e'].b, 1234)
 
-	"""
-		def test_setitem(self):
-			self.edict['d'] = E(4)
-			self.assertEqual(self.edict, {'a': E(1), 'b': E(2), 'c': E(3), 'd': E(4)})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__setitem__(key='d', item=E(value=4))")
-			])
-	
-		def test_delitem(self):
-			del self.edict['a']
-			self.assertEqual(self.edict, {'b': E(2), 'c': E(3)})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__delitem__(key='a')")
-			])
-	
-		def test_clear(self):
-			self.edict.clear()
-			self.assertEqual(self.edict, {})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="clear()")
-			])
-	
-		def test_update(self):
-			self.edict.update(c='4', d=E(5))
-			self.assertEqual(self.edict, {'a': E(1), 'b': E(2), 'c': '4', 'd': E(5)})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__setitem__(key='c', item='4')"),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__setitem__(key='d', item=E(value=5))")
-			])
-	
-		def test_setdefault(self):
-			self.assertEqual(E(value=1), self.edict.setdefault('a', 'value'))
-			self.assertEqual('value', self.edict.setdefault('x', 'value'))
-	
-			self.assertEqual(self.edict, {'a': E(1), 'b': E(2), 'c': E(3), 'x': 'value'})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__setitem__(key='x', item='value')")
-			])
-	
-		def test_pop(self):
-			self.assertEqual(E(value=1), self.edict.pop('a'))
-			self.assertEqual(self.edict, {'b': E(2), 'c': E(3)})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__delitem__(key='a')")
-			])
-	
-		def test_popitem(self):
-			self.assertEqual(('a', E(value=1)), self.edict.popitem())
-			self.assertEqual(self.edict, {'b': E(2), 'c': E(3)})
-			self.assertEqual(self.edict._logs, [
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(a=E(value=1), b=E(value=2), c=E(value=3))'),
-				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__delitem__(key='a')")
-			])
-	"""
+		# * LEVEL 2 (SHOULD LOGS)
+		self.edict['f'][0] = 12.3
+		self.edict['g']['b'] = 987
 
-	if __name__ == '__main__':
-		unittest.main()
+		self.assertEqual(self.edict['f'][0], 12.3)
+		self.assertEqual(self.edict['g']['b'], 987)
+
+		# * LEVEL 3 (SHOULD NOT LOGS)
+		self.edict['h'][4].b = 983
+		self.edict['h'][5][3] = 'asdfasd'
+
+		self.assertEqual(self.edict['h'][4].b, 983)
+		self.assertEqual(self.edict['h'][5][3], 'asdfasd')
+
+		self.assertEqual(len(self.edict._logs), 3)
+		self.assertEqual(len(self.edict.logs), 5)
+
+		all_logs = [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.EDICT,
+				msg="__setitem__(key='b', item=321)", data=Edict({'key': 'b', 'item': 321})),
+			Log(
+				level=LogLevel.DEBUG, type=LogType.EDICT,
+				msg="__setitem__(key='e', item=EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None))",
+				data=Edict({'item': EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None), 'key': 'e'})),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="['f'].__setitem__(i=0, item=12.3)", data=Edict({'i': 0, 'item': 12.3})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="['g'].__setitem__(key='b', item=987)", data=Edict({'key': 'b', 'item': 987}))
+		]
+
+		self.assertEqual(self.edict._logs[1:], all_logs[:2])
+		self.assertEqual(self.edict.logs[1:], all_logs)
+
+	def test_delitem(self):
+		self.assertTrue('b' in self.edict)
+		self.assertTrue('e' in self.edict)
+
+		del self.edict['b']
+		del self.edict['e']
+
+		self.assertTrue('b' not in self.edict)
+		self.assertTrue('e' not in self.edict)
+
+		self._assertEqualLogs(3)
+
+		self.assertEqual(self.edict.logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", data=Edict({'key': 'b'})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='e')", data=Edict({'key': 'e'})),
+		])
+
+	def test_clear(self):
+		self.assertGreater(len(self.edict.data), 3)
+		self.edict.clear()
+		self.assertEqual(self.edict, {})
+
+		self._assertEqualLogs(2)
+
+		self.assertEqual(self.edict._logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="clear()")
+		])
+
+	def test_update(self):
+		self.assertTrue('x' not in self.edict)
+		self.assertTrue('d' in self.edict)
+		self.assertEqual(self.edict['d'], 'data')
+		self.edict.update(x='4', d=5)
+		self.assertEqual(self.edict['x'], '4')
+		self.assertEqual(self.edict['d'], 5)
+
+		self._assertEqualLogs(3)
+
+		self.assertEqual(self.edict._logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='4')", data=Edict({'key': 'x', 'item': '4'})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='d', item=5)", data=Edict({'key': 'd', 'item': 5}))
+		])
+
+	def test_setdefault(self):
+		self.assertEqual(self.edict['a'], True)
+
+		self.assertEqual(self.edict.setdefault('a', 'value'), True)
+		self.assertEqual('value', self.edict.setdefault('x', 'value'))
+
+		self.assertEqual(self.edict['a'], True)
+		self.assertEqual(self.edict['x'], 'value')
+
+		self._assertEqualLogs(2)
+
+		self.assertEqual(self.edict._logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='value')", data=Edict({'key': 'x', 'item': 'value'}))
+		])
+
+	def test_pop(self):
+		self.assertEqual(self.edict['b'], 123)
+		self.assertEqual(123, self.edict.pop('b'))
+		self.assertTrue('b' not in self.edict)
+
+		self._assertEqualLogs(2)
+
+		self.assertEqual(self.edict._logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", data=Edict({'key': 'b'}))
+		])
+
+	def test_popitem(self):
+		self.assertEqual(('a', True), self.edict.popitem())
+		self.assertTrue('a' not in self.edict)
+
+		self._assertEqualLogs(2)
+
+		self.assertEqual(self.edict._logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='a')", data=Edict({'key': 'a'}))
+		])
+
+
+if __name__ == '__main__':
+	unittest.main()

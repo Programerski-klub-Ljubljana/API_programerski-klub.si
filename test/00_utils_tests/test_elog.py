@@ -10,19 +10,25 @@ class E(Elog):
 		self._logs = Elist(logs=False)
 		self.v = v
 
+	@property
+	def data(self):
+		return self
+
+	@property
+	def __dict__(self):
+		return {'v': self.v}
+
 
 class test_Elog(unittest.TestCase):
-	def setUp(self) -> None:
-		self.elog = E()
-		self._assertEqualLogs(0)
 
 	def _assertEqualLogs(self, size: int):
 		self.assertEqual(len(self.elog._logs), size)
 		self.assertEqual(len(self.elog.logs), size)
 		self.assertEqual(self.elog.logs, self.elog._logs)
 
-	def test_subclass(self):
-		self.assertIsInstance(self.elog, Elog)
+	def setUp(self) -> None:
+		self.elog = E()
+		self._assertEqualLogs(0)
 
 	def test_init_with_dict(self):
 		data = {
@@ -149,6 +155,9 @@ class test_Elog(unittest.TestCase):
 		self.assertIsInstance(data_out[2]['e'], Elist)
 		self.assertIsInstance(data_out[3], Elist)
 		self.assertIsInstance(data_out[4], Elist)
+
+	def test_subclass(self):
+		self.assertIsInstance(self.elog, Elog)
 
 	def test_log(self):
 		entity = EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3))
