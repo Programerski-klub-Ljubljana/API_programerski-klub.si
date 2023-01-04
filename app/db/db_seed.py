@@ -128,7 +128,7 @@ def logs(root, **kwargs):
 					type=LogType.random(),
 					msg=fake.sentence(20))
 				root.save(log)
-				entity._logs.append(log)
+				entity._p_logs.append(log)
 
 
 @traced

@@ -14,11 +14,21 @@ from core.domain._enums import LogLevel, LogType
 
 
 class Elog:
-	_p_log: bool = True
-	_logs: 'Elist'
+	_p_log: bool = None
+	_p_logs: PersistentList = None  # * YOU DONT WANT TO LOG LOGS ON STRUCTURE THAT LOGS LOGS xD
+	_p_updated: datetime = None  # * NE SPREMINJAJ KER JE UPDATED VEZAN NA LOGSE!
+	_created: datetime = None
+
+	def __post_init__(self):
+		# * SETUP ADDITIONAL PROPERTIES FOR EVERY ENTITIES!
+		self._p_log = True
+		self._p_logs = PersistentList()
+		self._p_updated = datetime.now()
+
+		self._created = datetime.now()
 
 	@staticmethod
-	def init(data: any, logs: bool):
+	def init(data: any):
 		if isinstance(data, list | tuple | set):
 			data = list(data)
 			iterator = enumerate(data)
@@ -29,21 +39,17 @@ class Elog:
 
 		for k, v in iterator:
 			if isinstance(v, list | tuple | set):
-				data[k] = Elist(data=list(v), logs=logs)
+				data[k] = Elist(data=list(v))
 			elif isinstance(v, dict):
-				data[k] = Edict(data=v, logs=logs)
+				data[k] = Edict(data=v)
 
 		return data
 
 	@property
-	def is_logging(self) -> bool:
-		return hasattr(self, '_logs') and self._p_log
-
-	@property
 	def logs(self):
-		# GETS LOGS 1 LEVEL DEEP
 		iterator = []
 		key_formator = lambda key: key
+
 		match self.log_type:
 			case LogType.EDICT:
 				iterator = self.data.items()
@@ -55,14 +61,14 @@ class Elog:
 				iterator = self.data.__dict__.items()
 				key_formator = lambda key: f'{key}'
 
-		lgs = deepcopy(self._logs)
+		logs = deepcopy(self._p_logs)
 		for k, v in iterator:
-			if k not in ['_logs'] and hasattr(v, '_logs'):  # ! IGNORE LOGS IN _LOGS
-				for l in deepcopy(v._logs):  # ! ORIGINALNIH LOGOV SE NE SME SPREMINJATI!
+			if isinstance(v, Elog):
+				for l in deepcopy(v._p_logs):  # ! ORIGINALNIH LOGOV SE NE SME SPREMINJATI!
 					if l.type not in [LogType.EDICT_INIT, LogType.ELIST_INIT, LogType.ENTITY_INIT]:  # ! IGNORE INIT LOGS IN SECOND LEVEL.
 						l.msg = f'{key_formator(k)}.{l.msg}'
-						lgs.append(l)
-		return sorted(lgs, key=lambda l: l._created)
+						logs.append(l)
+		return sorted(logs, key=lambda l: l.created)
 
 	@property
 	def log_type(self) -> LogType:
@@ -78,10 +84,10 @@ class Elog:
 				return typ
 
 	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
-		if self.is_logging:
-			# ! ZA LOGS DATA JE POTREBNO NAREDITI KOPIJE SAJ NOCES DA PROGRAM MODIFICIRA LOGE MED IZVAJANJEM
-			log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=deepcopy(kwargs), logs=False))
-			self._logs.append(log_obj)
+		self._p_updated = datetime.now()  # * IF LOGS THEN IT WAS UPDATED
+		if self._p_log:
+			log_obj = Log(level=level, type=type, msg=msg, data=kwargs)  # * DEEP COPY SE NAREDI V LOGSU
+			self._p_logs.append(log_obj)
 
 	def _log_call(self, method: Callable, **kwargs):
 		self.log_call(method=method, type=self.log_type, **kwargs)
@@ -104,21 +110,17 @@ class Elog:
 
 class Edict(Elog, PersistentMapping):
 
-	@staticmethod
-	def field(data: dict = {}, logs: bool = True):
-		return field(default_factory=lambda: Edict(data=data, logs=logs))
-
-	def __init__(self, data: dict, logs: bool = True):
-		data = self.init(data=data, logs=logs)
-
+	def __init__(self, data: dict):
+		data = self.init(data=data)
 		super(Edict, self).__init__(data)
+		super(Edict, self).__post_init__()
 
-		if logs:
-			self._logs = Elist(logs=False)
-			self.log_call(method=self.__init__, type=LogType.EDICT_INIT, **data)
+	@staticmethod
+	def field(data: dict = {}):
+		return field(default_factory=lambda: Edict(data=data))
 
 	def __setitem__(self, key, item):
-		item = self.init(item, logs=True)
+		item = self.init(item)
 		self._log_call(method=self.__setitem__, key=key, item=item)
 		super(Edict, self).__setitem__(key=key, v=item)
 
@@ -136,16 +138,14 @@ class Edict(Elog, PersistentMapping):
 
 class Elist(Elog, PersistentList):
 
-	@staticmethod
-	def field(data: list = [], logs: bool = True):
-		return field(default_factory=lambda: Elist(data=data, logs=logs))
-
-	def __init__(self, data: list[any] = None, logs: bool = True):
-		data = self.init(data=data, logs=logs)
+	def __init__(self, data: list[any] = None):
+		data = self.init(data=data)
 		super(Elist, self).__init__(initlist=data)
-		if logs:
-			self._logs = Elist(logs=False)
-			self.log_call(method=self.__init__, type=LogType.ELIST_INIT, args=data)
+		super(Elist, self).__post_init__()
+
+	@staticmethod
+	def field(data: list = []):
+		return field(default_factory=lambda: Elist(data=data))
 
 	def __setitem__(self, i, item):
 		self._log_call(method=self.__setitem__, i=i, item=item)
@@ -153,37 +153,37 @@ class Elist(Elog, PersistentList):
 
 	def __add__(self, other: any):
 		elist = super(Elist, self).__add__(other=other)
-		elist._logs = self._logs
+		elist._p_logs = self._p_logs
 		elist._log_call(method=self.__add__, other=other)
 		return elist
 
 	def __radd__(self, other):
 		elist = super(Elist, self).__radd__(other=other)
-		elist._logs = self._logs
+		elist._p_logs = self._p_logs
 		elist._log_call(method=self.__radd__, other=other)
 		return elist
 
 	def __iadd__(self, other):
 		elist = super(Elist, self).__iadd__(other=other)
-		elist._logs = self._logs
+		elist._logs = self._p_logs
 		elist._log_call(method=self.__iadd__, other=other)
 		return elist
 
 	def __mul__(self, n):
 		elist = super(Elist, self).__mul__(n=n)
-		elist._logs = self._logs
+		elist._p_logs = self._p_logs
 		elist._log_call(method=self.__mul__, n=n)
 		return elist
 
 	def __rmul__(self, n):
 		elist = super(Elist, self).__rmul__(n=n)
-		elist._logs = self._logs
+		elist._p_logs = self._p_logs
 		elist._log_call(method=self.__rmul__, n=n)
 		return elist
 
 	def __imul__(self, n):
 		elist = super(Elist, self).__imul__(n=n)
-		elist._logs = self._logs
+		elist._logs = self._p_logs
 		elist._log_call(method=self.__imul__, n=n)
 		return elist
 
@@ -235,12 +235,7 @@ class Elist(Elog, PersistentList):
 	def random(self, k: int = None):
 		return choice(self) if k is None else choices(self, k=k)
 
-	def path(
-			self,
-			path: str | None = None,
-			page: int = 0,
-			max_width: int = 10) -> any:
-
+	def path(self, path: str = None, page: int = 0, max_width: int = 10) -> any:
 		result = cutils.object_path(self, path)
 		start = max_width * page
 		end = max_width * (page + 1)
@@ -253,23 +248,17 @@ edict = list[T] | Edict
 
 
 class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
-	_id: str | None
-	_type: str | None
-	_created: datetime | None
-	_updated: datetime | None
-	_logs: elist | None
-	_connections: elist | None
+	_id: str = None
+	_type: str = None
+	_connections: Elist = None
 
 	def __post_init__(self):
-		# * SETUP ADDITIONAL PROPERTIES FOR EVERY ENTITIES!
+		super(Entity, self).__post_init__()
+
 		self._id = shortuuid.uuid()
 		self._type = self.__class__.__name__.lower()
-		self._created = datetime.now()
-		self._updated = datetime.now()
-		self._connections = Elist(logs=not isinstance(self, Log))
-		self._logs = Elist(logs=False)
+		self._connections = Elist()
 
-		# ! GO ONLY ONE LAYER DEEP!!!!!!!!
 		# * CONVERT PROPERTIES OF (LIST, TUPLES, DICT) TO SAFE VARIANTS (Elist, Edict)
 		for k, v in self.__dict__.items():
 			if isinstance(v, list | tuple | set):
@@ -277,26 +266,15 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 			elif isinstance(v, dict):
 				self.__dict__[k] = Edict(data=v)
 
-		# * CLEAN LOGS THAT HAS BEEN POLUTED BY __INIT__ METHOD.
-		for k, v in self.__dict__.items():
-			if hasattr(v, '_logs'):
-				self.__dict__[k]._logs.clear()
-
 		# * LOG __INIT__ METHOD FOR ENTITY
 		if not isinstance(self, Log):
 			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 			self.log_call(method=self.__init__, type=LogType.ENTITY_INIT, **kwargs)
 
 	def __setattr__(self, key, value):
-		# * IF LOGGING IS ACTIVATED, HAS DIARY INSIDE, IS NOT ZOODB PROPERTY, DO NOT LOG SETTING _logging FLAG
-		if self.is_logging and not key.startswith('_p_'):
-			value_str = f"'{value}'" if isinstance(value, str) else str(value)
-			log_obj = Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg=f'{key} = {value_str}')
-			self._logs.append(log_obj)
 		super(Entity, self).__setattr__(key, value)
-
-	def __delattr__(self, item):
-		raise Exception("Not allowed!")
+		if not key.startswith('_p_'):
+			self._log_call(method=self.__setattr__, key=key, value=value)
 
 	def equal(self, entity):
 		return self == entity
@@ -309,9 +287,15 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 				e._connections.append(self)
 
 
+# ! THIS SHALL BE INDEPENDENT ELEMENT FOR SIMPLICITY SAKE!
 @dataclass
-class Log(Entity):
+class Log(Persistent):
 	level: LogLevel
 	type: LogType
 	msg: str
-	data: Edict = Edict.field(logs=False)  # Todo: test if changes in data propagate to db elements.
+	data: dict = None  # ! It will never happend that you want to change logs.data
+	created: datetime = datetime.now()
+
+	def __post_init__(self):
+		if isinstance(self.data, dict):
+			self.data = deepcopy(self.data)

@@ -23,7 +23,7 @@ class test_Elist(unittest.TestCase):
 
 	def test_log_call(self):
 		self.elist_int._log_call(self.test_log_call, arg0='arg0', arg1='123')
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="test_log_call(arg0='arg0', arg1='123')")])
 
@@ -31,7 +31,7 @@ class test_Elist(unittest.TestCase):
 		self.elist_int[1] = 10
 		self.elist_int[2] = "10"
 		self.assertEqual(self.elist_int, [0, 10, "10"])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__setitem__(i=1, item=10)'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="__setitem__(i=2, item='10')")
@@ -61,7 +61,7 @@ class test_Elist(unittest.TestCase):
 		self.elist_int += [3, 4]
 		self.elist_int += [5, 6]
 		self.assertEqual(self.elist_int, [0, 1, 2, 3, 4, 5, 6])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__iadd__(other=[3, 4])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__iadd__(other=[5, 6])')
@@ -91,7 +91,7 @@ class test_Elist(unittest.TestCase):
 		self.elist_int *= 2
 		self.elist_int *= 2
 		self.assertEqual(self.elist_int, [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__imul__(n=2)'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__imul__(n=2)')
@@ -109,42 +109,42 @@ class test_Elist(unittest.TestCase):
 	def test_append(self):
 		self.elist_int.append(123)
 		self.assertEqual(self.elist_int, [0, 1, 2, 123])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='append(item=123)')])
 
 	def test_clear(self):
 		self.elist_int.clear()
 		self.assertEqual(self.elist_int, [])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='clear()')])
 
 	def test_insert(self):
 		self.elist_int.insert(1, 123)
 		self.assertEqual(self.elist_int, [0, 123, 1, 2])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='insert(i=1, item=123)')])
 
 	def test_pop(self):
 		self.elist_int.pop(1)
 		self.assertEqual(self.elist_int, [0, 2])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='pop(i=1)')])
 
 	def test_remove(self):
 		self.elist_int.remove(1)
 		self.assertEqual(self.elist_int, [0, 2])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='remove(item=1)')])
 
 	def test_reverse(self):
 		self.elist_int.reverse()
 		self.assertEqual(self.elist_int, [2, 1, 0])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='reverse()')])
 
@@ -154,7 +154,7 @@ class test_Elist(unittest.TestCase):
 		self.elist_int.sort(key=lambda e: e, reverse=False)
 		self.assertEqual(self.elist_int, [0, 1, 2])
 		self.elist_int.sort()
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='sort(reverse=True, key=lambda e: e)'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='sort(reverse=False, key=lambda e: e)'),
@@ -164,7 +164,7 @@ class test_Elist(unittest.TestCase):
 	def test_extend(self):
 		self.elist_int.extend([2, 1, 0])
 		self.assertEqual(self.elist_int, [0, 1, 2, 2, 1, 0])
-		self.assertEqual(self.elist_int._logs, [
+		self.assertEqual(self.elist_int._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=[0, 1, 2])'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='extend(other=[2, 1, 0])')])
 

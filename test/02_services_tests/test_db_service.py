@@ -179,7 +179,7 @@ class test_db(unittest.TestCase):
 	def test_root_list_logs(self):
 		self.maxDiff = None
 		with self.service.transaction() as root:
-			self.assertEqual(root.oseba._logs[:12], [
+			self.assertEqual(root.oseba._p_logs[:12], [
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='__init__(args=None)'),
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='clear()')] + [
 				Log(level=LogLevel.DEBUG, type=LogType.ELIST,

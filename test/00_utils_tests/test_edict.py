@@ -8,9 +8,9 @@ from test.tutils import Entity_fixtures, EntityBig, EntitySmall
 class test_Edict(unittest.TestCase):
 
 	def _assertEqualLogs(self, size: int):
-		self.assertEqual(len(self.edict._logs), size)
+		self.assertEqual(len(self.edict._p_logs), size)
 		self.assertEqual(len(self.edict.logs), size)
-		self.assertEqual(self.edict.logs, self.edict._logs)
+		self.assertEqual(self.edict.logs, self.edict._p_logs)
 
 	def setUp(self) -> None:
 		data = Entity_fixtures.dict(EntityBig, level=2)
@@ -22,8 +22,8 @@ class test_Edict(unittest.TestCase):
 
 	def test_logs(self):
 		self.assertEqual(
-			self.edict._logs[0].msg[:100], "__init__(a=True, b=123, c=1.23, d='data', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=T")
-		self.assertEqual(self.edict._logs[0].type, LogType.EDICT_INIT)
+			self.edict._p_logs[0].msg[:100], "__init__(a=True, b=123, c=1.23, d='data', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=T")
+		self.assertEqual(self.edict._p_logs[0].type, LogType.EDICT_INIT)
 
 	def test_log_type(self):
 		self.assertEqual(self.edict.log_type, LogType.EDICT)
@@ -111,7 +111,7 @@ class test_Edict(unittest.TestCase):
 		self.assertEqual(self.edict['h'][4].b, 983)
 		self.assertEqual(self.edict['h'][5][3], 'asdfasd')
 
-		self.assertEqual(len(self.edict._logs), 3)
+		self.assertEqual(len(self.edict._p_logs), 3)
 		self.assertEqual(len(self.edict.logs), 5)
 
 		all_logs = [
@@ -126,7 +126,7 @@ class test_Edict(unittest.TestCase):
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="['g'].__setitem__(key='b', item=987)", data=Edict({'key': 'b', 'item': 987}))
 		]
 
-		self.assertEqual(self.edict._logs[1:], all_logs[:2])
+		self.assertEqual(self.edict._p_logs[1:], all_logs[:2])
 		self.assertEqual(self.edict.logs[1:], all_logs)
 
 	def test_delitem(self):
@@ -153,7 +153,7 @@ class test_Edict(unittest.TestCase):
 
 		self._assertEqualLogs(2)
 
-		self.assertEqual(self.edict._logs[1:], [
+		self.assertEqual(self.edict._p_logs[1:], [
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="clear()")
 		])
 
@@ -167,7 +167,7 @@ class test_Edict(unittest.TestCase):
 
 		self._assertEqualLogs(3)
 
-		self.assertEqual(self.edict._logs[1:], [
+		self.assertEqual(self.edict._p_logs[1:], [
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='4')", data=Edict({'key': 'x', 'item': '4'})),
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='d', item=5)", data=Edict({'key': 'd', 'item': 5}))
 		])
@@ -183,7 +183,7 @@ class test_Edict(unittest.TestCase):
 
 		self._assertEqualLogs(2)
 
-		self.assertEqual(self.edict._logs[1:], [
+		self.assertEqual(self.edict._p_logs[1:], [
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='value')", data=Edict({'key': 'x', 'item': 'value'}))
 		])
 
@@ -194,7 +194,7 @@ class test_Edict(unittest.TestCase):
 
 		self._assertEqualLogs(2)
 
-		self.assertEqual(self.edict._logs[1:], [
+		self.assertEqual(self.edict._p_logs[1:], [
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", data=Edict({'key': 'b'}))
 		])
 
@@ -204,7 +204,7 @@ class test_Edict(unittest.TestCase):
 
 		self._assertEqualLogs(2)
 
-		self.assertEqual(self.edict._logs[1:], [
+		self.assertEqual(self.edict._p_logs[1:], [
 			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='a')", data=Edict({'key': 'a'}))
 		])
 

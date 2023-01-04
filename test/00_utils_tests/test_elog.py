@@ -1,14 +1,17 @@
 import unittest
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from persistent.list import PersistentList
 
 from core.domain._entity import Edict, Elist, Elog, Log
 from core.domain._enums import LogLevel, LogType
 from test.tutils import EntitySmall
 
 
+@dataclass
 class E(Elog):
-	def __init__(self, v=None):
-		self._logs = Elist(logs=False)
-		self.v = v
+	v: int
 
 	@property
 	def data(self):
@@ -22,13 +25,25 @@ class E(Elog):
 class test_Elog(unittest.TestCase):
 
 	def _assertEqualLogs(self, size: int):
-		self.assertEqual(len(self.elog._logs), size)
+		self.assertEqual(len(self.elog._p_logs), size)
 		self.assertEqual(len(self.elog.logs), size)
-		self.assertEqual(self.elog.logs, self.elog._logs)
+		self.assertEqual(self.elog.logs, self.elog._p_logs)
 
 	def setUp(self) -> None:
-		self.elog = E()
+		before = datetime.now() - timedelta(seconds=2)
+		self.elog = E(0)
+		after = datetime.now() + timedelta(seconds=2)
+
+		self.assertTrue(before < self.elog._created < after)
+		self.assertTrue(before < self.elog._p_updated < after)
 		self._assertEqualLogs(0)
+
+	def test_inheritance(self):
+		self.assertIsInstance(self.elog, Elog)
+		self.assertEqual(self.elog._p_log, True)
+		self.assertEqual(self.elog._p_logs, PersistentList())
+		self.assertIsInstance(self.elog._created, datetime)
+		self.assertIsInstance(self.elog._p_updated, datetime)
 
 	def test_init_with_dict(self):
 		data = {
@@ -59,7 +74,7 @@ class test_Elog(unittest.TestCase):
 			'd': (1, 2, 3),
 			'e': {1, 2, 3},
 		}
-		data_out = Elog.init(data=data, logs=True)
+		data_out = Elog.init(data=data)
 
 		self.assertEqual(data_out['b'][0]['b']['a'], data['b'][0]['b']['a'])
 		self.assertEqual(data_out['b'][0]['c'][-1], data['b'][0]['c'][-1])
@@ -122,7 +137,7 @@ class test_Elog(unittest.TestCase):
 			(1, 2, 3),
 			{1, 2, 3}
 		]
-		data_out = Elog.init(data=data, logs=True)
+		data_out = Elog.init(data=data)
 
 		self.assertEqual(data_out[1][0]['b']['a'], data[1][0]['b']['a'])
 		self.assertEqual(data_out[1][0]['c'][-1], data[1][0]['c'][-1])
@@ -156,14 +171,6 @@ class test_Elog(unittest.TestCase):
 		self.assertIsInstance(data_out[3], Elist)
 		self.assertIsInstance(data_out[4], Elist)
 
-	def test_properties(self):
-		# TODO: ADD MORE TESTS FOR 1.LEVEL AND 2.LEVEL
-		self.assertTrue('_logs' in self.elog)
-
-
-	def test_subclass(self):
-		self.assertIsInstance(self.elog, Elog)
-
 	def test_log(self):
 		entity = EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3))
 
@@ -178,12 +185,11 @@ class test_Elog(unittest.TestCase):
 
 		self.assertEqual(self.elog.logs[0], Log(
 			level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg0',
-			data=Edict(data={
+			data={
 				'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
 				'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
 				'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (1, 2, 3)
-			})
-		))
+			}))
 
 	def test_log_outside_scope(self):
 		e0 = E(0)
@@ -200,7 +206,7 @@ class test_Elog(unittest.TestCase):
 		# * SHOULD LOGS ON SECOND LEVEL
 		self.elog.v.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg1', a='a', b='b')
 		self.assertEqual(len(self.elog.logs), 2)
-		self.assertEqual(len(self.elog._logs), len(self.elog.logs) - 1)
+		self.assertEqual(len(self.elog._p_logs), len(self.elog.logs) - 1)
 		self.assertEqual(self.elog.logs[-1], Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='v.msg1', data=Edict(data={'a': 'a', 'b': 'b'})))
 
 		# * SHOULD NOT LOGS ON THIRD LEVEL
@@ -229,11 +235,11 @@ class test_Elog(unittest.TestCase):
 					"f=[1, 2, 3], ",
 					"g={'a': 'b'}, h=(1, 2, 3))"
 				]),
-				data=Edict(data={
+				data={
 					'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
 					'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
-					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': [1, 2, 3]
-				})))
+					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (1, 2, 3)
+				}))
 
 	def test_log_call_outside_scope(self):
 		e0 = E(0)
@@ -251,7 +257,7 @@ class test_Elog(unittest.TestCase):
 		# * SHOULD LOGS ON SECOND LEVEL
 		self.elog.v.log_call(method=self.test_log_outside_scope, type=LogType.ENTITY, a='c', b='d')
 		self.assertEqual(len(self.elog.logs), 2)
-		self.assertEqual(len(self.elog._logs), len(self.elog.logs) - 1)
+		self.assertEqual(len(self.elog._p_logs), len(self.elog.logs) - 1)
 		self.assertEqual(self.elog.logs[-1], Log(
 			level=LogLevel.DEBUG, type=LogType.ENTITY, msg="v.test_log_outside_scope(a='c', b='d')", data=Edict(data={'a': 'c', 'b': 'd'})))
 
@@ -289,11 +295,11 @@ class test_Elog(unittest.TestCase):
 				level=log_level,
 				type=LogType.EDICT,
 				msg='msg',
-				data=Edict(data={
+				data={
 					'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
 					'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
 					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (3, 2, 1)
-				})))
+				}))
 		count = len(LogLevel.values())
 		self.assertGreater(count, 3)
 		self._assertEqualLogs(count)

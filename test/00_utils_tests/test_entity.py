@@ -32,13 +32,13 @@ class test_Entity(unittest.TestCase):
 		self.assertEqual(len(self.entity._id), len(shortuuid.uuid()))
 		self.assertEqual(self.entity._type, "fakeentity")
 		self.assertTrue(self.before < self.entity._created < self.after)
-		self.assertTrue(self.before < self.entity._updated < self.after)
+		self.assertTrue(self.before < self.entity._p_updated < self.after)
 
 		self.assertIsInstance(self.entity._connections, Elist)
 		self.assertEqual(self.entity._connections, [])
 
-		self.assertIsInstance(self.entity._logs, Elist)
-		self.assertEqual(self.entity._logs, [
+		self.assertIsInstance(self.entity._p_logs, Elist)
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})")
 		])
 
@@ -46,20 +46,20 @@ class test_Entity(unittest.TestCase):
 
 	def test_setattr(self):
 		self.assertEqual(self.entity.a, 'a')
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})")
 		])
 
 		self.entity.a = 'b'
 		self.assertEqual(self.entity.a, 'b')
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="a = 'b'"),
 		])
 
 		setattr(self.entity, 'a', 10)
 		self.assertEqual(self.entity.a, 10)
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="a = 'b'"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='a = 10')
@@ -67,7 +67,7 @@ class test_Entity(unittest.TestCase):
 
 		# ! TEST PRIVATE PROPERTIES
 		self.entity._p_test = 123
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="a = 'b'"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='a = 10')
@@ -156,7 +156,7 @@ class test_Entity(unittest.TestCase):
 		self.entity.log(level=LogLevel.WARNING, type=LogType.ENTITY, msg='msg2')
 		self.entity.log(level=LogLevel.ERROR, type=LogType.ELIST, msg='msg3')
 
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0'),
 			Log(level=LogLevel.INFO, type=LogType.ELIST, msg='msg1'),
@@ -165,11 +165,11 @@ class test_Entity(unittest.TestCase):
 		])
 
 	def test_log_call(self):
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})")
 		])
 		self.entity.log_call(self.test_log_call, kwarg0='kwarg0', kwarg1=123)
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="test_log_call(kwarg0='kwarg0', kwarg1=123)")
 		])
@@ -178,7 +178,7 @@ class test_Entity(unittest.TestCase):
 		self.entity.log_debug(type=LogType.ENTITY, msg='msg0')
 		self.entity.log_debug(type=LogType.ELIST, msg='msg1')
 
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0'),
 			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg1'),
@@ -188,7 +188,7 @@ class test_Entity(unittest.TestCase):
 		self.entity.log_info(type=LogType.ENTITY, msg='msg0')
 		self.entity.log_info(type=LogType.ELIST, msg='msg1')
 
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.INFO, type=LogType.ENTITY, msg='msg0'),
 			Log(level=LogLevel.INFO, type=LogType.ELIST, msg='msg1'),
@@ -198,7 +198,7 @@ class test_Entity(unittest.TestCase):
 		self.entity.log_warning(type=LogType.ENTITY, msg='msg0')
 		self.entity.log_warning(type=LogType.ELIST, msg='msg1')
 
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.WARNING, type=LogType.ENTITY, msg='msg0'),
 			Log(level=LogLevel.WARNING, type=LogType.ELIST, msg='msg1'),
@@ -208,7 +208,7 @@ class test_Entity(unittest.TestCase):
 		self.entity.log_error(type=LogType.ENTITY, msg='msg0')
 		self.entity.log_error(type=LogType.ELIST, msg='msg1')
 
-		self.assertEqual(self.entity._logs, [
+		self.assertEqual(self.entity._p_logs, [
 			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="__init__(a='a', b='b', c=[1, 2, 3], d={'a': 'a', 'b': 1})"),
 			Log(level=LogLevel.ERROR, type=LogType.ENTITY, msg='msg0'),
 			Log(level=LogLevel.ERROR, type=LogType.ELIST, msg='msg1'),
