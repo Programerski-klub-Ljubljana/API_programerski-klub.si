@@ -127,6 +127,7 @@ class Edict(Elog, PersistentMapping):
 		super(Edict, self).__delitem__(key=key)
 
 	def clear(self):
+		# ! DO NOT LOGS EVERY SINGLE __DELITEM__ THAT HAPPEND IN CLEAR METHOD
 		self._log_call(method=self.clear)
 		self._p_log = False
 		super(Edict, self).clear()

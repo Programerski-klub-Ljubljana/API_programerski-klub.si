@@ -156,6 +156,11 @@ class test_Elog(unittest.TestCase):
 		self.assertIsInstance(data_out[3], Elist)
 		self.assertIsInstance(data_out[4], Elist)
 
+	def test_properties(self):
+		# TODO: ADD MORE TESTS FOR 1.LEVEL AND 2.LEVEL
+		self.assertTrue('_logs' in self.elog)
+
+
 	def test_subclass(self):
 		self.assertIsInstance(self.elog, Elog)
 
