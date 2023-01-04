@@ -160,7 +160,7 @@ class EntitySmall(Entity):
 	b: int
 	c: float
 	d: str
-	e: 'EntityBig'
+	e: 'EntityBig | EntitySmall | None'
 	f: elist
 	g: edict
 	h: elist

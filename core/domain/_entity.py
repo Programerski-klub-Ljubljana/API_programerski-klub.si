@@ -14,18 +14,22 @@ from core.domain._enums import LogLevel, LogType
 
 
 class Elog:
-	_p_log: bool = None
-	_p_logs: PersistentList = None  # * YOU DONT WANT TO LOG LOGS ON STRUCTURE THAT LOGS LOGS xD
-	_p_updated: datetime = None  # * NE SPREMINJAJ KER JE UPDATED VEZAN NA LOGSE!
-	_created: datetime = None
+	# * STRICT PRIVATE (DO NOT LOGS THIS)
+	_p_log: bool
+	_p_logs: PersistentList
+	_p_updated: datetime
+	_p_created: datetime
 
-	def __post_init__(self):
+	def __post_init__(self, *args, **kwargs):
 		# * SETUP ADDITIONAL PROPERTIES FOR EVERY ENTITIES!
-		self._p_log = True
+		self._p_log = False
 		self._p_logs = PersistentList()
+		self._p_created = datetime.now()
 		self._p_updated = datetime.now()
+		self._p_log = True
 
-		self._created = datetime.now()
+		type = getattr(LogType, f'{self.log_type}_INIT')
+		self.log_call(method=self.__init__, type=type, args=args, **kwargs)
 
 	@staticmethod
 	def init(data: any):
@@ -58,7 +62,7 @@ class Elog:
 				iterator = enumerate(self.data)
 				key_formator = lambda key: f"[{key}]"
 			case LogType.ENTITY:
-				iterator = self.data.__dict__.items()
+				iterator = self.__dict__.items()
 				key_formator = lambda key: f'{key}'
 
 		logs = deepcopy(self._p_logs)
@@ -83,37 +87,46 @@ class Elog:
 			if isinstance(self, cls):
 				return typ
 
-	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
-		self._p_updated = datetime.now()  # * IF LOGS THEN IT WAS UPDATED
-		if self._p_log:
-			log_obj = Log(level=level, type=type, msg=msg, data=kwargs)  # * DEEP COPY SE NAREDI V LOGSU
+	def log(self, level: LogLevel, type: LogType, msg: str, args=(), **kwargs):
+		if hasattr(self, '_p_updated'):
+			self._p_updated = datetime.now()  # * IF LOGS THEN IT WAS UPDATED
+		if getattr(self, '_p_log', False):
+			log_obj = Log(level=level, type=type, msg=msg, args=args, kwargs=kwargs)  # * DEEP COPY SE NAREDI V LOGSU
 			self._p_logs.append(log_obj)
 
-	def _log_call(self, method: Callable, **kwargs):
-		self.log_call(method=method, type=self.log_type, **kwargs)
+	def _log_call(self, method: Callable, args=(), **kwargs):
+		self.log_call(method=method, type=self.log_type, args=args, **kwargs)
 
-	def log_call(self, method: Callable, type: LogType, **kwargs):
-		self.log(level=LogLevel.DEBUG, type=type, msg=f'{method.__name__}({cutils.kwargs_str(**kwargs)})', **kwargs)
+	def log_call(self, method: Callable, type: LogType, args=(), **kwargs):
+		args_str = cutils.args_str(*args) if len(args) > 0 else ''
+		join_str = ', ' if len(args) * len(kwargs) > 0 else ''
+		self.log(
+			level=LogLevel.DEBUG, type=type,
+			msg=f'{method.__name__}({args_str}{join_str}{cutils.kwargs_str(**kwargs)})',
+			args=args, **kwargs)
 
-	def log_debug(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.DEBUG, type=type, msg=msg, **kwargs)
+	def log_debug(self, type: LogType, msg: str, args=(), **kwargs):
+		self.log(level=LogLevel.DEBUG, type=type, msg=msg, args=args, **kwargs)
 
-	def log_info(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.INFO, type=type, msg=msg, **kwargs)
+	def log_info(self, type: LogType, msg: str, args=(), **kwargs):
+		self.log(level=LogLevel.INFO, type=type, msg=msg, args=args, **kwargs)
 
-	def log_warning(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.WARNING, type=type, msg=msg, **kwargs)
+	def log_warning(self, type: LogType, msg: str, args=(), **kwargs):
+		self.log(level=LogLevel.WARNING, type=type, msg=msg, args=args, **kwargs)
 
-	def log_error(self, type: LogType, msg: str, **kwargs):
-		self.log(level=LogLevel.ERROR, type=type, msg=msg, **kwargs)
+	def log_error(self, type: LogType, msg: str, args=(), **kwargs):
+		self.log(level=LogLevel.ERROR, type=type, msg=msg, args=args, **kwargs)
 
 
 class Edict(Elog, PersistentMapping):
 
-	def __init__(self, data: dict):
+	def __init__(self, data: dict = {}):
+		super(Edict, self).__post_init__(**data)
 		data = self.init(data=data)
+
+		self._p_log = False
 		super(Edict, self).__init__(data)
-		super(Edict, self).__post_init__()
+		self._p_log = True
 
 	@staticmethod
 	def field(data: dict = {}):
@@ -138,10 +151,13 @@ class Edict(Elog, PersistentMapping):
 
 class Elist(Elog, PersistentList):
 
-	def __init__(self, data: list[any] = None):
+	def __init__(self, data: list[any] = []):
+		super(Elist, self).__post_init__(*data)
 		data = self.init(data=data)
+
+		self._p_log = False
 		super(Elist, self).__init__(initlist=data)
-		super(Elist, self).__post_init__()
+		self._p_log = True
 
 	@staticmethod
 	def field(data: list = []):
@@ -248,28 +264,24 @@ edict = list[T] | Edict
 
 
 class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __post_init__ to EPersists
+	# * WEAK PRIVATE (SHOULD LOG)
 	_id: str = None
 	_type: str = None
 	_connections: Elist = None
 
-	def __post_init__(self):
-		super(Entity, self).__post_init__()
+	def __init__(self):
+		print('__init__')
 
+	def __post_init__(self):
+		super(Entity, self).__post_init__(**self.__dict__)
+
+		self._p_log = False
 		self._id = shortuuid.uuid()
 		self._type = self.__class__.__name__.lower()
 		self._connections = Elist()
+		self._p_log = True
 
-		# * CONVERT PROPERTIES OF (LIST, TUPLES, DICT) TO SAFE VARIANTS (Elist, Edict)
-		for k, v in self.__dict__.items():
-			if isinstance(v, list | tuple | set):
-				self.__dict__[k] = Elist(data=v)
-			elif isinstance(v, dict):
-				self.__dict__[k] = Edict(data=v)
-
-		# * LOG __INIT__ METHOD FOR ENTITY
-		if not isinstance(self, Log):
-			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
-			self.log_call(method=self.__init__, type=LogType.ENTITY_INIT, **kwargs)
+		self.init(data=self.__dict__)  # * CONVERT INNER STRUCTURES TO SAFE VARIANTS!
 
 	def __setattr__(self, key, value):
 		super(Entity, self).__setattr__(key, value)
@@ -293,9 +305,13 @@ class Log(Persistent):
 	level: LogLevel
 	type: LogType
 	msg: str
-	data: dict = None  # ! It will never happend that you want to change logs.data
-	created: datetime = datetime.now()
+
+	# ! It will never happend that you want to change logs.data
+	created: datetime = None
+	args: tuple = None
+	kwargs: dict = None
 
 	def __post_init__(self):
-		if isinstance(self.data, dict):
-			self.data = deepcopy(self.data)
+		self.created = datetime.now()
+		self.args = tuple(deepcopy(self.args))
+		self.kwargs = deepcopy(self.kwargs)

@@ -17,9 +17,6 @@ class test_Edict(unittest.TestCase):
 		self.edict = Edict(data=data)
 		self._assertEqualLogs(1)
 
-	def test_is_logging(self):
-		self.assertTrue(self.edict.is_logging)
-
 	def test_logs(self):
 		self.assertEqual(
 			self.edict._p_logs[0].msg[:100], "__init__(a=True, b=123, c=1.23, d='data', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=T")
@@ -117,13 +114,13 @@ class test_Edict(unittest.TestCase):
 		all_logs = [
 			Log(
 				level=LogLevel.DEBUG, type=LogType.EDICT,
-				msg="__setitem__(key='b', item=321)", data=Edict({'key': 'b', 'item': 321})),
+				msg="__setitem__(key='b', item=321)", kwargs=Edict({'key': 'b', 'item': 321})),
 			Log(
 				level=LogLevel.DEBUG, type=LogType.EDICT,
 				msg="__setitem__(key='e', item=EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None))",
-				data=Edict({'item': EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None), 'key': 'e'})),
-			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="['f'].__setitem__(i=0, item=12.3)", data=Edict({'i': 0, 'item': 12.3})),
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="['g'].__setitem__(key='b', item=987)", data=Edict({'key': 'b', 'item': 987}))
+				kwargs=Edict({'item': EntitySmall(a=False, b=1234, c=1.234, d='new', e=None, f=None, g=None, h=None), 'key': 'e'})),
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST, msg="['f'].__setitem__(i=0, item=12.3)", kwargs=Edict({'i': 0, 'item': 12.3})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="['g'].__setitem__(key='b', item=987)", kwargs=Edict({'key': 'b', 'item': 987}))
 		]
 
 		self.assertEqual(self.edict._p_logs[1:], all_logs[:2])
@@ -142,8 +139,8 @@ class test_Edict(unittest.TestCase):
 		self._assertEqualLogs(3)
 
 		self.assertEqual(self.edict.logs[1:], [
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", data=Edict({'key': 'b'})),
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='e')", data=Edict({'key': 'e'})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", kwargs=Edict({'key': 'b'})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='e')", kwargs=Edict({'key': 'e'})),
 		])
 
 	def test_clear(self):
@@ -168,8 +165,8 @@ class test_Edict(unittest.TestCase):
 		self._assertEqualLogs(3)
 
 		self.assertEqual(self.edict._p_logs[1:], [
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='4')", data=Edict({'key': 'x', 'item': '4'})),
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='d', item=5)", data=Edict({'key': 'd', 'item': 5}))
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='4')", kwargs=Edict({'key': 'x', 'item': '4'})),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='d', item=5)", kwargs=Edict({'key': 'd', 'item': 5}))
 		])
 
 	def test_setdefault(self):
@@ -184,7 +181,7 @@ class test_Edict(unittest.TestCase):
 		self._assertEqualLogs(2)
 
 		self.assertEqual(self.edict._p_logs[1:], [
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='value')", data=Edict({'key': 'x', 'item': 'value'}))
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__setitem__(key='x', item='value')", kwargs=Edict({'key': 'x', 'item': 'value'}))
 		])
 
 	def test_pop(self):
@@ -195,7 +192,7 @@ class test_Edict(unittest.TestCase):
 		self._assertEqualLogs(2)
 
 		self.assertEqual(self.edict._p_logs[1:], [
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", data=Edict({'key': 'b'}))
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='b')", kwargs=Edict({'key': 'b'}))
 		])
 
 	def test_popitem(self):
@@ -205,7 +202,7 @@ class test_Edict(unittest.TestCase):
 		self._assertEqualLogs(2)
 
 		self.assertEqual(self.edict._p_logs[1:], [
-			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='a')", data=Edict({'key': 'a'}))
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="__delitem__(key='a')", kwargs=Edict({'key': 'a'}))
 		])
 
 

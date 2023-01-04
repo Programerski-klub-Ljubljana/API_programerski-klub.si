@@ -161,3 +161,16 @@ def kwargs_str(**kwargs) -> str:
 				args.append(f"{k}={v}")
 
 	return ', '.join(args)
+
+
+def args_str(*args) -> str:
+	arg = []
+	for i, v in enumerate(args):
+		if isinstance(v, Callable):
+			arg.append(f"{lambda_src(v)}")
+		elif isinstance(v, str):
+			arg.append(f"'{v}'")
+		else:
+			arg.append(f"{v}")
+
+	return ', '.join(arg)

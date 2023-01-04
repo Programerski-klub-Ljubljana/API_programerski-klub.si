@@ -1,49 +1,57 @@
 import unittest
+from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 
 from persistent.list import PersistentList
 
-from core.domain._entity import Edict, Elist, Elog, Log
+from core.domain._entity import Edict, Elist, Elog, Log, datetime
 from core.domain._enums import LogLevel, LogType
 from test.tutils import EntitySmall
 
 
 @dataclass
 class E(Elog):
-	v: int
+	v: any
 
-	@property
-	def data(self):
-		return self
-
-	@property
-	def __dict__(self):
-		return {'v': self.v}
+	def __post_init__(self):
+		super(E, self).__post_init__(**self.__dict__)
 
 
-class test_Elog(unittest.TestCase):
+class ElogTestCase(unittest.TestCase):
+	def _assertEqualLogs(self, arr1, arr2):
+		arr1 = deepcopy(arr1)
+		arr2 = deepcopy(arr2)
 
-	def _assertEqualLogs(self, size: int):
+		for l in arr1 + arr2:
+			l.created = 'now'
+		self.assertEqual(arr1, arr2)
+
+
+class test_Elog(ElogTestCase):
+
+	def _assertEqualLogsSize(self, size):
 		self.assertEqual(len(self.elog._p_logs), size)
-		self.assertEqual(len(self.elog.logs), size)
-		self.assertEqual(self.elog.logs, self.elog._p_logs)
+		self.assertEqual(self.elog._p_logs, self.elog.logs)
 
 	def setUp(self) -> None:
-		before = datetime.now() - timedelta(seconds=2)
+		self.before = datetime.now()
 		self.elog = E(0)
-		after = datetime.now() + timedelta(seconds=2)
+		self.after = datetime.now()
 
-		self.assertTrue(before < self.elog._created < after)
-		self.assertTrue(before < self.elog._p_updated < after)
-		self._assertEqualLogs(0)
-
-	def test_inheritance(self):
+	def test_init(self):
 		self.assertIsInstance(self.elog, Elog)
+
 		self.assertEqual(self.elog._p_log, True)
-		self.assertEqual(self.elog._p_logs, PersistentList())
-		self.assertIsInstance(self.elog._created, datetime)
-		self.assertIsInstance(self.elog._p_updated, datetime)
+		self.assertIsInstance(self.elog._p_logs, PersistentList)
+		self.assertTrue(self.before < self.elog._p_created < self.after)
+		self.assertTrue(self.before < self.elog._p_updated < self.elog.logs[0].created)
+
+		self._assertEqualLogs(self.elog._p_logs, [
+			Log(
+				level=LogLevel.DEBUG,
+				type=LogType.ENTITY_INIT,
+				msg='__init__(v=0)', args=(), kwargs={'v': 0})
+		])
 
 	def test_init_with_dict(self):
 		data = {
@@ -171,47 +179,153 @@ class test_Elog(unittest.TestCase):
 		self.assertIsInstance(data_out[3], Elist)
 		self.assertIsInstance(data_out[4], Elist)
 
+	def test_logs(self):
+		es = EntitySmall(
+			a=False, b=321, c=3.21, d='trs',
+			e=EntitySmall(a=False, b=321, c=3.21, d='trs', e=EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None), f=None,
+			              g=None, h=None),
+			f=Elist([1, 2, 3, EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)]),
+			g=Edict({'a': 'a', 'b': EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)}), h=None)
+
+		# * FIRST LEVEL CHANGES
+		es.e.a = True  # ! SHOULD LOGS
+		es.e.e.b = 123  # ! SHOULD NOT LOGS
+
+		# * SECOND LEVEL CHANGES
+		es.f[3].b = 123
+		es.g['b'].b = 123
+
+		# * CHECK FIRST LEVEL CHANGES
+		logs = es.logs
+		self.assertIsInstance(logs, list)
+		self._assertEqualLogs(es._p_logs, [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.ENTITY_INIT,
+				msg=''.join([
+					"__init__(a=False, b=321, c=3.21, d='trs', ",
+					"e=EntitySmall(",
+					"a=False, b=321, c=3.21, d='trs', e=EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None), "
+					"f=None, g=None, h=None), ",
+					"f=[1, 2, 3, EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)], ",
+					"g={'a': 'a', 'b': EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)}, h=None)"
+				]), created='now', args=(),
+				kwargs={
+					'a': False, 'b': 321, 'c': 3.21, 'd': 'trs',
+					'e': EntitySmall(
+						a=False, b=321, c=3.21, d='trs', e=EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None),
+						f=None, g=None, h=None),
+					'f': [1, 2, 3, EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)],
+					'g': {'a': 'a', 'b': EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)}, 'h': None})])
+		self._assertEqualLogs(logs, es._p_logs + [
+			Log(level=LogLevel.DEBUG, type=LogType.ENTITY,
+			    msg="e.__setattr__(key='a', value=True)", created='now', args=(), kwargs={'key': 'a', 'value': True})
+		])
+
+		# * CHECK SECOND LEVEL CHANGES ELIST
+		logs = es.f.logs
+		self.assertIsInstance(logs, list)
+		self._assertEqualLogs(es.f._p_logs, [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.ELIST_INIT,
+				msg="__init__(1, 2, 3, EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None))",
+				created='now', args=(1, 2, 3, EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)), kwargs={})
+		])
+		self._assertEqualLogs(logs, es.f._p_logs + [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.ENTITY, msg="[3].__setattr__(key='b', value=123)", created='now', args=(),
+				kwargs={'key': 'b', 'value': 123})
+		])
+
+		# * CHECK SECOND LEVEL CHANGES DICT
+		logs = es.g.logs
+		self.assertIsInstance(logs, list)
+		self._assertEqualLogs(es.g._p_logs, [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.EDICT_INIT,
+				msg="__init__(a='a', b=EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None))",
+				created='now', args=(), kwargs={'a': 'a', 'b': EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)})
+		])
+		self._assertEqualLogs(logs, es.g._p_logs + [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.ENTITY,
+				msg="['b'].__setattr__(key='b', value=123)", created='now', args=(), kwargs={'key': 'b', 'value': 123})
+		])
+
+	def test_log_type(self):
+		e = EntitySmall(a=False, b=321, c=3.21, d='trs', e=None, f=None, g=None, h=None)
+		f = Elist([1, 2, 3])
+		g = Edict({'a': 'a'})
+
+		e.a = False
+		f[0] = 0
+		g['a'] = 'b'
+
+		self.assertEqual(self.elog.log_type, LogType.ENTITY)
+		self.assertEqual(e.log_type, LogType.ENTITY)
+		self.assertEqual(f.log_type, LogType.ELIST)
+		self.assertEqual(g.log_type, LogType.EDICT)
+
+		self.assertEqual(self.elog._p_logs[0].type, LogType.ENTITY_INIT)
+		self.assertEqual(e._p_logs[0].type, LogType.ENTITY_INIT)
+		self.assertEqual(f._p_logs[0].type, LogType.ELIST_INIT)
+		self.assertEqual(g._p_logs[0].type, LogType.EDICT_INIT)
+
+		self.assertEqual(e._p_logs[1].type, LogType.ENTITY)
+		self.assertEqual(f._p_logs[1].type, LogType.ELIST)
+		self.assertEqual(g._p_logs[1].type, LogType.EDICT)
+
 	def test_log(self):
 		entity = EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3))
 
+		before_change = datetime.now()
 		self.elog.log(
-			level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg0',
+			level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg0', args=[1, 1.3, "str", entity],
 			a=True, b=1, c=2.34, d='sadf',
 			e=entity,
 			f=[1, 2, 3],
 			g={'a': 'b'}, h=(1, 2, 3))
+		after_change = datetime.now()
 
-		self._assertEqualLogs(1)
+		self.assertTrue(self.before < self.elog._p_created < self.after)
 
-		self.assertEqual(self.elog.logs[0], Log(
-			level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg0',
-			data={
-				'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
-				'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
-				'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (1, 2, 3)
-			}))
+		# * TEST IF DATE IS UPDATED!
+		self.assertFalse(self.before < self.elog._p_updated < self.after)
+		self.assertTrue(before_change < self.elog._p_updated < after_change)
+
+		self._assertEqualLogs(self.elog.logs[1:], [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.ELIST, msg='msg0',
+				args=(1, 1.3, "str", entity),
+				kwargs={
+					'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
+					'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
+					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (1, 2, 3)
+				})
+		])
 
 	def test_log_outside_scope(self):
 		e0 = E(0)
 		e1 = E(e0)
 		e2 = E(e1)
 		self.elog = E(e2)
-		self._assertEqualLogs(0)
+		self._assertEqualLogsSize(1)
 
 		# * SHOULD LOGS ON FIRST LEVEL
 		self.elog.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0', a='a', b='b')
-		self._assertEqualLogs(1)
-		self.assertEqual(self.elog.logs[-1], Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0', data=Edict(data={'a': 'a', 'b': 'b'})))
+		self._assertEqualLogsSize(2)
+		self._assertEqualLogs([self.elog.logs[-1]],
+		                      [Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0', args=(), kwargs={'a': 'a', 'b': 'b'})])
 
 		# * SHOULD LOGS ON SECOND LEVEL
 		self.elog.v.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg1', a='a', b='b')
-		self.assertEqual(len(self.elog.logs), 2)
+		self.assertEqual(len(self.elog.logs), 3)
 		self.assertEqual(len(self.elog._p_logs), len(self.elog.logs) - 1)
-		self.assertEqual(self.elog.logs[-1], Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='v.msg1', data=Edict(data={'a': 'a', 'b': 'b'})))
+		self._assertEqualLogs([self.elog.logs[-1]],
+		                      [Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='v.msg1', args=(), kwargs={'a': 'a', 'b': 'b'})])
 
 		# * SHOULD NOT LOGS ON THIRD LEVEL
 		self.elog.v.v.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg2', a='a', b='b')
-		self.assertEqual(len(self.elog.logs), 2)
+		self.assertEqual(len(self.elog.logs), 3)
 
 	def test_log_call(self):
 		entity = EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3))
@@ -222,10 +336,14 @@ class test_Elog(unittest.TestCase):
 			a=True, b=1, c=2.34, d='sadf',
 			e=entity, f=[1, 2, 3], g={'a': 'b'}, h=(1, 2, 3))
 
-		self._assertEqualLogs(1)
+		self.elog.log_call(self.test_log_call, type=LogType.EDICT)
+		self.elog.log_call(self.test_log_call, type=LogType.EDICT, args=(1, 2))
+		self.elog.log_call(self.test_log_call, type=LogType.EDICT, key='key')
+		self.elog.log_call(self.test_log_call, type=LogType.EDICT, args=(1,), key='key')
 
-		self.assertEqual(
-			self.elog.logs[0],
+		self._assertEqualLogsSize(6)
+
+		self._assertEqualLogs(self.elog.logs[1:], [
 			Log(
 				level=LogLevel.DEBUG,
 				type=LogType.EDICT,
@@ -235,35 +353,43 @@ class test_Elog(unittest.TestCase):
 					"f=[1, 2, 3], ",
 					"g={'a': 'b'}, h=(1, 2, 3))"
 				]),
-				data={
+				args=(),
+				kwargs={
 					'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
 					'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
 					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (1, 2, 3)
-				}))
+				}),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg='test_log_call()', created='now', args=(), kwargs={}),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg='test_log_call(1, 2)', created='now', args=(1, 2), kwargs={}),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="test_log_call(key='key')", created='now', args=(), kwargs={'key': 'key'}),
+			Log(level=LogLevel.DEBUG, type=LogType.EDICT, msg="test_log_call(1, key='key')", created='now', args=(1,), kwargs={'key': 'key'})
+		])
 
 	def test_log_call_outside_scope(self):
 		e0 = E(0)
 		e1 = E(e0)
 		e2 = E(e1)
 		self.elog = E(e2)
-		self._assertEqualLogs(0)
+		self._assertEqualLogsSize(1)
 
 		# * SHOULD LOGS ON FIRST LEVEL
 		self.elog.log_call(method=self.test_log_outside_scope, type=LogType.ENTITY, a='a', b='b')
-		self._assertEqualLogs(1)
-		self.assertEqual(self.elog.logs[-1], Log(
-			level=LogLevel.DEBUG, type=LogType.ENTITY, msg="test_log_outside_scope(a='a', b='b')", data=Edict(data={'a': 'a', 'b': 'b'})))
+		self._assertEqualLogsSize(2)
+		self._assertEqualLogs(self.elog.logs[1:], [
+			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="test_log_outside_scope(a='a', b='b')", args=(), kwargs={'a': 'a', 'b': 'b'})
+		])
 
 		# * SHOULD LOGS ON SECOND LEVEL
 		self.elog.v.log_call(method=self.test_log_outside_scope, type=LogType.ENTITY, a='c', b='d')
-		self.assertEqual(len(self.elog.logs), 2)
+		self.assertEqual(len(self.elog.logs), 3)
 		self.assertEqual(len(self.elog._p_logs), len(self.elog.logs) - 1)
-		self.assertEqual(self.elog.logs[-1], Log(
-			level=LogLevel.DEBUG, type=LogType.ENTITY, msg="v.test_log_outside_scope(a='c', b='d')", data=Edict(data={'a': 'c', 'b': 'd'})))
+		self._assertEqualLogs(self.elog.logs[2:], [
+			Log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg="v.test_log_outside_scope(a='c', b='d')", args=(), kwargs={'a': 'c', 'b': 'd'})
+		])
 
 		# * SHOULD NOT LOGS ON THIRD LEVEL
 		self.elog.v.v.log_call(method=self.test_log_outside_scope, type=LogType.ENTITY, a='e', b='f')
-		self.assertEqual(len(self.elog.logs), 2)
+		self.assertEqual(len(self.elog.logs), 3)
 
 	def test_log_levels(self):
 		log_args = {
@@ -286,20 +412,21 @@ class test_Elog(unittest.TestCase):
 			self.elog.log_error: LogLevel.ERROR
 		}
 
-		for log_fun, log_level in level_mapping.items():
+		for i, (log_fun, log_level) in enumerate(level_mapping.items()):
 			log_fun(**log_args)
 
-		self.assertEqual(
-			self.elog.logs[-1],
-			Log(
-				level=log_level,
-				type=LogType.EDICT,
-				msg='msg',
-				data={
-					'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
-					'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
-					'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (3, 2, 1)
-				}))
-		count = len(LogLevel.values())
-		self.assertGreater(count, 3)
-		self._assertEqualLogs(count)
+			self._assertEqualLogs(
+				[self.elog.logs[-1]],
+				[Log(
+					level=log_level,
+					type=LogType.EDICT,
+					msg='msg',
+					args=(),
+					kwargs={
+						'a': True, 'b': 1, 'c': 2.34, 'd': 'sadf',
+						'e': EntitySmall(a=False, b=3, c=38.2, d='we3', e=None, f=[1], g={'a': 'b'}, h=(1, 2, 3)),
+						'f': [1, 2, 3], 'g': {'a': 'b'}, 'h': (3, 2, 1)
+					})
+				])
+
+			self._assertEqualLogsSize(2 + i)

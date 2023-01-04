@@ -31,7 +31,7 @@ class test_Entity(unittest.TestCase):
 
 		self.assertEqual(len(self.entity._id), len(shortuuid.uuid()))
 		self.assertEqual(self.entity._type, "fakeentity")
-		self.assertTrue(self.before < self.entity._created < self.after)
+		self.assertTrue(self.before < self.entity._p_created < self.after)
 		self.assertTrue(self.before < self.entity._p_updated < self.after)
 
 		self.assertIsInstance(self.entity._connections, Elist)
@@ -148,7 +148,7 @@ class test_Entity(unittest.TestCase):
 		])
 
 		for i in range(len(logs) - 1):
-			self.assertGreater(logs[i + 1]._created, logs[i]._created)
+			self.assertGreater(logs[i + 1]._p_created, logs[i]._p_created)
 
 	def test_log(self):
 		self.entity.log(level=LogLevel.DEBUG, type=LogType.ENTITY, msg='msg0')
