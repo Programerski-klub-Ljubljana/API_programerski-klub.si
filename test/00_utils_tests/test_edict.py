@@ -23,6 +23,7 @@ class test_Edict(unittest.TestCase):
 	def test_logs(self):
 		self.assertEqual(
 			self.edict._logs[0].msg[:100], "__init__(a=True, b=123, c=1.23, d='data', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=T")
+		self.assertEqual(self.edict._logs[0].type, LogType.EDICT_INIT)
 
 	def test_log_type(self):
 		self.assertEqual(self.edict.log_type, LogType.EDICT)

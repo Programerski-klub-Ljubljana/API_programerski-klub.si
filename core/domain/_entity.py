@@ -30,15 +30,8 @@ class Elog:
 		for k, v in iterator:
 			if isinstance(v, list | tuple | set):
 				data[k] = Elist(data=list(v), logs=logs)
-				if logs:
-					data[k]._logs.clear()
 			elif isinstance(v, dict):
 				data[k] = Edict(data=v, logs=logs)
-				if logs:
-					data[k]._logs.clear()
-			elif isinstance(v, Entity):
-				if v.is_logging:
-					v._logs.clear()
 
 		return data
 
@@ -64,9 +57,9 @@ class Elog:
 
 		lgs = deepcopy(self._logs)
 		for k, v in iterator:
-			if k not in ['_logs']:
-				if hasattr(v, '_logs'):
-					for l in deepcopy(v._logs):
+			if k not in ['_logs'] and hasattr(v, '_logs'):  # ! IGNORE LOGS IN _LOGS
+				for l in deepcopy(v._logs):  # ! ORIGINALNIH LOGOV SE NE SME SPREMINJATI!
+					if l.type not in [LogType.EDICT_INIT, LogType.ELIST_INIT, LogType.ENTITY_INIT]:  # ! IGNORE INIT LOGS IN SECOND LEVEL.
 						l.msg = f'{key_formator(k)}.{l.msg}'
 						lgs.append(l)
 		return sorted(lgs, key=lambda l: l._created)
@@ -86,7 +79,8 @@ class Elog:
 
 	def log(self, level: LogLevel, type: LogType, msg: str, **kwargs):
 		if self.is_logging:
-			log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=kwargs, logs=False))
+			# ! ZA LOGS DATA JE POTREBNO NAREDITI KOPIJE SAJ NOCES DA PROGRAM MODIFICIRA LOGE MED IZVAJANJEM
+			log_obj = Log(level=level, type=type, msg=msg, data=Edict(data=deepcopy(kwargs), logs=False))
 			self._logs.append(log_obj)
 
 	def _log_call(self, method: Callable, **kwargs):
@@ -121,7 +115,7 @@ class Edict(Elog, PersistentMapping):
 
 		if logs:
 			self._logs = Elist(logs=False)
-			self._log_call(method=self.__init__, **data)
+			self.log_call(method=self.__init__, type=LogType.EDICT_INIT, **data)
 
 	def __setitem__(self, key, item):
 		item = self.init(item, logs=True)
@@ -150,7 +144,7 @@ class Elist(Elog, PersistentList):
 		super(Elist, self).__init__(initlist=data)
 		if logs:
 			self._logs = Elist(logs=False)
-			self._log_call(method=self.__init__, args=data)
+			self.log_call(method=self.__init__, type=LogType.ELIST_INIT, args=data)
 
 	def __setitem__(self, i, item):
 		self._log_call(method=self.__setitem__, i=i, item=item)
@@ -290,7 +284,7 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 		# * LOG __INIT__ METHOD FOR ENTITY
 		if not isinstance(self, Log):
 			kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
-			self._log_call(self.__init__, **kwargs)
+			self.log_call(method=self.__init__, type=LogType.ENTITY_INIT, **kwargs)
 
 	def __setattr__(self, key, value):
 		# * IF LOGGING IS ACTIVATED, HAS DIARY INSIDE, IS NOT ZOODB PROPERTY, DO NOT LOG SETTING _logging FLAG

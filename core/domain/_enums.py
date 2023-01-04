@@ -38,3 +38,7 @@ class LogType(EntityEnum):
 	ENTITY = auto()
 	ELIST = auto()
 	EDICT = auto()
+
+	ENTITY_INIT = auto()
+	ELIST_INIT = auto()
+	EDICT_INIT = auto()
