@@ -17,7 +17,7 @@ class E(Elog):
 		super(E, self).__post_init__(**self.__dict__)
 
 
-class ElogTestCase(unittest.TestCase):
+class test_Elog(unittest.TestCase):
 	def _assertEqualLogs(self, arr1, arr2):
 		arr1 = deepcopy(arr1)
 		arr2 = deepcopy(arr2)
@@ -25,9 +25,6 @@ class ElogTestCase(unittest.TestCase):
 		for l in arr1 + arr2:
 			l.created = 'now'
 		self.assertEqual(arr1, arr2)
-
-
-class test_Elog(ElogTestCase):
 
 	def _assertEqualLogsSize(self, size):
 		self.assertEqual(len(self.elog._p_logs), size)
@@ -54,6 +51,16 @@ class test_Elog(ElogTestCase):
 		])
 
 	def test_init_with_dict(self):
+		data_out2 = Elog.init(data={'a': [1, 2, 3], 'b': {'a': 'a'}}, wrap=True)
+		self.assertIsInstance(data_out2, Edict)
+		self.assertIsInstance(data_out2['a'], Elist)
+		self.assertIsInstance(data_out2['b'], Edict)
+		self._assertEqualLogs(data_out2.logs, [
+			Log(
+				level=LogLevel.DEBUG, type=LogType.EDICT_INIT, msg="__init__(a=[1, 2, 3], b={'a': 'a'})", created='now', args=(),
+				kwargs={'a': [1, 2, 3], 'b': {'a': 'a'}})
+		])
+
 		data = {
 			'a': 'a',
 			'b': [
@@ -82,7 +89,7 @@ class test_Elog(ElogTestCase):
 			'd': (1, 2, 3),
 			'e': {1, 2, 3},
 		}
-		data_out = Elog.init(data=data)
+		data_out = Elog.init(data=data, wrap=False)
 
 		self.assertEqual(data_out['b'][0]['b']['a'], data['b'][0]['b']['a'])
 		self.assertEqual(data_out['b'][0]['c'][-1], data['b'][0]['c'][-1])
@@ -117,6 +124,15 @@ class test_Elog(ElogTestCase):
 		self.assertIsInstance(data_out['e'], Elist)
 
 	def test_init_with_list(self):
+		data_out2 = Elog.init(data=[[1, 2, 3], {'a': 'a'}], wrap=True)
+		self.assertIsInstance(data_out2, Elist)
+		self.assertIsInstance(data_out2[0], Elist)
+		self.assertIsInstance(data_out2[1], Edict)
+		self._assertEqualLogs(data_out2.logs, [
+			Log(level=LogLevel.DEBUG, type=LogType.ELIST_INIT, msg="__init__([1, 2, 3], {'a': 'a'})", created='now',
+				args=([1, 2, 3], {'a': 'a'}), kwargs={})
+		])
+
 		data = [
 			'a',
 			[
@@ -145,7 +161,7 @@ class test_Elog(ElogTestCase):
 			(1, 2, 3),
 			{1, 2, 3}
 		]
-		data_out = Elog.init(data=data)
+		data_out = Elog.init(data=data, wrap=False)
 
 		self.assertEqual(data_out[1][0]['b']['a'], data[1][0]['b']['a'])
 		self.assertEqual(data_out[1][0]['c'][-1], data[1][0]['c'][-1])

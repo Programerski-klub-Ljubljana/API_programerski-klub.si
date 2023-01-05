@@ -32,12 +32,14 @@ class Elog:
 		self.log_call(method=self.__init__, type=type, args=args, **kwargs)
 
 	@staticmethod
-	def init(data: any):
+	def init(data: any, wrap: bool):
 		if isinstance(data, list | tuple | set):
 			data = list(data)
 			iterator = enumerate(data)
+			wraper = Elist
 		elif isinstance(data, dict):
 			iterator = data.items()
+			wraper = Edict
 		else:
 			return data
 
@@ -47,7 +49,7 @@ class Elog:
 			elif isinstance(v, dict):
 				data[k] = Edict(data=v)
 
-		return data
+		return wraper(data=data) if wrap else data
 
 	@property
 	def logs(self):
@@ -120,20 +122,24 @@ class Elog:
 
 class Edict(Elog, PersistentMapping):
 
-	def __init__(self, data: dict = {}):
+	def __init__(self, data: dict = None):
+		if data is None:
+			data = {}
 		super(Edict, self).__post_init__(**data)
-		data = self.init(data=data)
+		data = self.init(data=data, wrap=False)
 
 		self._p_log = False
 		super(Edict, self).__init__(data)
 		self._p_log = True
 
 	@staticmethod
-	def field(data: dict = {}):
+	def field(data: dict = None):
+		if data is None:
+			data = {}
 		return field(default_factory=lambda: Edict(data=data))
 
 	def __setitem__(self, key, item):
-		item = self.init(item)
+		item = self.init(data=item, wrap=True)
 		self._log_call(method=self.__setitem__, key=key, item=item)
 		super(Edict, self).__setitem__(key=key, v=item)
 
@@ -151,35 +157,37 @@ class Edict(Elog, PersistentMapping):
 
 class Elist(Elog, PersistentList):
 
-	def __init__(self, data: list[any] = []):
+	def __init__(self, data: list[any] = ()):
 		super(Elist, self).__post_init__(*data)
-		data = self.init(data=data)
+		data = self.init(data=data, wrap=False)
 
 		self._p_log = False
 		super(Elist, self).__init__(initlist=data)
 		self._p_log = True
 
 	@staticmethod
-	def field(data: list = []):
+	def field(data: list = ()):
 		return field(default_factory=lambda: Elist(data=data))
 
 	def __setitem__(self, i, item):
+		item = self.init(data=item, wrap=True)
 		self._log_call(method=self.__setitem__, i=i, item=item)
 		super(Elist, self).__setitem__(i=i, item=item)
 
-	def __add__(self, other: any):
+	def __add__(self, other: list):
+		self._log_call(method=self.__add__, other=other)
 		elist = super(Elist, self).__add__(other=other)
 		elist._p_logs = self._p_logs
-		elist._log_call(method=self.__add__, other=other)
 		return elist
 
-	def __radd__(self, other):
+	def __radd__(self, other: list):
 		elist = super(Elist, self).__radd__(other=other)
 		elist._p_logs = self._p_logs
 		elist._log_call(method=self.__radd__, other=other)
 		return elist
 
-	def __iadd__(self, other):
+	def __iadd__(self, other: list):
+		other = self.init(data=other, wrap=False)
 		elist = super(Elist, self).__iadd__(other=other)
 		elist._logs = self._p_logs
 		elist._log_call(method=self.__iadd__, other=other)
@@ -214,10 +222,7 @@ class Elist(Elog, PersistentList):
 
 	def append(self, item: object):
 		self._log_call(method=self.append, item=item)
-		if cutils.is_object(item):
-			for k, v in item.__dict__.items():
-				if isinstance(v, list | tuple):
-					setattr(item, k, PersistentList(v))
+		item = self.init(data=item, wrap=True)
 		super(Elist, self).append(item)
 
 	def clear(self):
@@ -226,6 +231,7 @@ class Elist(Elog, PersistentList):
 
 	def insert(self, i, item):
 		self._log_call(method=self.insert, i=i, item=item)
+		item = self.init(data=item, wrap=True)
 		super(Elist, self).insert(i, item)
 
 	def pop(self, i=-1):
@@ -241,11 +247,13 @@ class Elist(Elog, PersistentList):
 		super(Elist, self).reverse()
 
 	def sort(self, reverse: bool = False, key: Callable = None):
-		self._log_call(method=self.sort, reverse=reverse, key=key)
+		key_src = cutils.lambda_src(key)
+		self._log_call(method=self.sort, reverse=reverse, key=key_src)
 		super(Elist, self).sort(reverse=reverse, key=key)
 
-	def extend(self, other):
+	def extend(self, other: list):
 		self._log_call(method=self.extend, other=other)
+		other = self.init(data=other, wrap=True)
 		super(Elist, self).extend(other)
 
 	def random(self, k: int = None):
@@ -269,9 +277,6 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 	_type: str = None
 	_connections: Elist = None
 
-	def __init__(self):
-		print('__init__')
-
 	def __post_init__(self):
 		super(Entity, self).__post_init__(**self.__dict__)
 
@@ -281,7 +286,7 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 		self._connections = Elist()
 		self._p_log = True
 
-		self.init(data=self.__dict__)  # * CONVERT INNER STRUCTURES TO SAFE VARIANTS!
+		self.init(data=self.__dict__, wrap=False)  # * CONVERT INNER STRUCTURES TO SAFE VARIANTS!
 
 	def __setattr__(self, key, value):
 		super(Entity, self).__setattr__(key, value)
