@@ -25,7 +25,7 @@ class test_Edict(unittest.TestCase):
 
 	def setUp(self) -> None:
 		self.before = datetime.now()
-		self.edict = Edict(data=Entity_fixtures.dict(EntityBig, level=2))
+		self.edict = Edict(data=Entity_fixtures.dict(cls=EntityBig, level=2))
 		self.after = datetime.now()
 
 	def test_init(self):

@@ -139,8 +139,8 @@ class Edict(Elog, PersistentMapping):
 		return field(default_factory=lambda: Edict(data=data))
 
 	def __setitem__(self, key, item):
-		item = self.init(data=item, wrap=True)
 		self._log_call(method=self.__setitem__, key=key, item=item)
+		item = self.init(data=item, wrap=True)
 		super(Edict, self).__setitem__(key=key, v=item)
 
 	def __delitem__(self, key):
@@ -170,8 +170,8 @@ class Elist(Elog, PersistentList):
 		return field(default_factory=lambda: Elist(data=data))
 
 	def __setitem__(self, i, item):
-		item = self.init(data=item, wrap=True)
 		self._log_call(method=self.__setitem__, i=i, item=item)
+		item = self.init(data=item, wrap=True)
 		super(Elist, self).__setitem__(i=i, item=item)
 
 	def __add__(self, other: list):
@@ -289,9 +289,10 @@ class Entity(Elog, Persistent):  # TODO: Try to add EPersists and refactor __pos
 		self.init(data=self.__dict__, wrap=False)  # * CONVERT INNER STRUCTURES TO SAFE VARIANTS!
 
 	def __setattr__(self, key, value):
-		super(Entity, self).__setattr__(key, value)
 		if not key.startswith('_p_'):
 			self._log_call(method=self.__setattr__, key=key, value=value)
+		value = self.init(data=value, wrap=True)
+		super(Entity, self).__setattr__(key, value)
 
 	def equal(self, entity):
 		return self == entity
