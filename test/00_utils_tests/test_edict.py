@@ -42,7 +42,7 @@ class test_Edict(unittest.TestCase):
 		self.assertEqual(init_log.level, LogLevel.DEBUG)
 		self.assertEqual(init_log.type, LogType.EDICT_INIT)
 		self.assertTrue(self.before < init_log.created < self.after)
-		self.assertEqual(init_log.args, tuple())
+		self.assertEqual(init_log.args, [])
 
 		self.assertEqual(
 			str(init_log.kwargs)[:300],

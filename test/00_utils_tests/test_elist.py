@@ -59,13 +59,7 @@ class test_Elist(unittest.TestCase):
 
 		self.assertEqual(init_log.kwargs, {})
 
-		self.assertEqual(
-			str(init_log.args)[:300],
-			"(3.21, False, 321, 'mata', EntityBig(a=True, b=32, c=0.23, d='asd', "
-			"e=EntityBig(a=True, b=32, c=0.23, d='asd', e=None, f=None, g=None, h=None, "
-			"j=EntitySmall(a=True, b=32, c=0.23, d='asd', "
-			"e=EntitySmall(a=True, b=32, c=0.23, d='asd', "
-			"e=EntitySmall(a=True, b=32, c=0.23, d='asd', e=None, f=None, g=None")
+		self.assertEqual(init_log.args, "this is fucked!")
 
 		self.assertEqual(
 			str(init_log.args)[-300:],

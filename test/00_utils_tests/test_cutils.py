@@ -3,11 +3,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from persistent.list import PersistentList
+from persistent.mapping import PersistentMapping
+
 from core import cutils
-from test.tutils import Cutils_fixtures
+from core.domain._entity import Entity, Elist, Edict
+from test.tutils import Cutils_fixtures, EntitySmall
 
 
-class test_validate(unittest.TestCase):
+class test_cutils(unittest.TestCase):
 
 	def test_root_path(self):
 		result = cutils.root_path('api')
@@ -20,25 +24,51 @@ class test_validate(unittest.TestCase):
 		self.assertEqual(-12.0, round(cutils.age(today.year + 12, today.month, today.day), 2))
 
 	def test_is_iterable(self):
-		for ele in Cutils_fixtures.iterables:
-			self.assertTrue(cutils.is_iterable(ele), ele)
-
-		for ele in Cutils_fixtures.dicts + Cutils_fixtures.values + Cutils_fixtures.objects:
-			self.assertFalse(cutils.is_iterable(ele), ele)
+		self.assertFalse(cutils.is_iterable(1))
+		self.assertFalse(cutils.is_iterable(1.3))
+		self.assertFalse(cutils.is_iterable(True))
+		self.assertFalse(cutils.is_iterable('asdf'))
+		self.assertTrue(cutils.is_iterable([1, 2, 3]))
+		self.assertTrue(cutils.is_iterable((1, 2, 3)))
+		self.assertTrue(cutils.is_iterable({1, 2, 3}))
+		self.assertFalse(cutils.is_iterable({'a': 1}))
+		self.assertTrue(cutils.is_iterable(PersistentList([1, 2, 3])))
+		self.assertFalse(cutils.is_iterable(PersistentMapping({'a': 1})))
+		self.assertTrue(cutils.is_iterable(Elist()))
+		self.assertFalse(cutils.is_iterable(Edict()))
+		self.assertFalse(cutils.is_iterable(Entity()))
 
 	def test_is_mappable(self):
-		for ele in Cutils_fixtures.dicts:
-			self.assertTrue(cutils.is_mappable(ele), ele)
-
-		for ele in Cutils_fixtures.iterables + Cutils_fixtures.values + Cutils_fixtures.objects:
-			self.assertFalse(cutils.is_mappable(ele), ele)
+		self.assertFalse(cutils.is_mappable(1))
+		self.assertFalse(cutils.is_mappable(1.3))
+		self.assertFalse(cutils.is_mappable(True))
+		self.assertFalse(cutils.is_mappable('asdf'))
+		self.assertFalse(cutils.is_mappable([1, 2, 3]))
+		self.assertFalse(cutils.is_mappable((1, 2, 3)))
+		self.assertFalse(cutils.is_mappable({1, 2, 3}))
+		self.assertTrue(cutils.is_mappable({'a': 1}))
+		self.assertFalse(cutils.is_mappable(PersistentList([1, 2, 3])))
+		self.assertTrue(cutils.is_mappable(PersistentMapping({'a': 1})))
+		self.assertFalse(cutils.is_mappable(Elist()))
+		self.assertTrue(cutils.is_mappable(Edict()))
+		self.assertFalse(cutils.is_mappable(Entity()))
+		self.assertFalse(cutils.is_mappable(EntitySmall(False, 1, 2.3, "asdf", None, None, None, None)))
 
 	def test_is_object(self):
-		for ele in Cutils_fixtures.objects:
-			self.assertTrue(cutils.is_object(ele), ele)
-
-		for ele in Cutils_fixtures.dicts + Cutils_fixtures.iterables + Cutils_fixtures.values:
-			self.assertFalse(cutils.is_object(ele), ele)
+		self.assertFalse(cutils.is_object(1))
+		self.assertFalse(cutils.is_object(1.3))
+		self.assertFalse(cutils.is_object(True))
+		self.assertFalse(cutils.is_object('asdf'))
+		self.assertFalse(cutils.is_object([1, 2, 3]))
+		self.assertFalse(cutils.is_object((1, 2, 3)))
+		self.assertFalse(cutils.is_object({1, 2, 3}))
+		self.assertFalse(cutils.is_object({'a': 1}))
+		self.assertFalse(cutils.is_object(PersistentList([1, 2, 3])))
+		self.assertFalse(cutils.is_object(PersistentMapping({'a': 1})))
+		self.assertFalse(cutils.is_object(Elist()))
+		self.assertFalse(cutils.is_object(Edict()))
+		self.assertTrue(cutils.is_object(Entity()))
+		self.assertTrue(cutils.is_object(EntitySmall(False, 1, 2.3, "asdf", None, None, None, None)))
 
 	def test_object_path(self):
 		self.assertEqual(Cutils_fixtures.tree_wide, cutils.object_path(Cutils_fixtures.tree_wide, '/'))
@@ -70,7 +100,9 @@ class test_validate(unittest.TestCase):
 
 	def test_object_json_max_depth_width(self):
 		self.assertEqual(cutils.object_json(Cutils_fixtures.tree_deep, max_width=2, max_depth=0), 'MAX_DEPTH_LIST')
-		self.assertEqual(cutils.object_json(Cutils_fixtures.tree_deep, max_width=2, max_depth=1), ['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_WIDTH'])
+		self.assertEqual(
+			cutils.object_json(Cutils_fixtures.tree_deep, max_width=2, max_depth=1),
+			['MAX_DEPTH_OBJECT', 'MAX_DEPTH_OBJECT', 'MAX_WIDTH'])
 		self.assertEqual(cutils.object_json(Cutils_fixtures.tree_deep, max_width=1, max_depth=2), [
 			{'child': 'MAX_DEPTH_LIST', 'data': 1},
 			'MAX_WIDTH'

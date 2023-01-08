@@ -43,7 +43,7 @@ def is_mappable(ele: object) -> bool:
 
 
 def is_object(ele: object) -> bool:
-	return hasattr(ele, "__dict__") and not is_iterable(ele)
+	return hasattr(ele, "__dict__") and not is_mappable(ele) and not is_iterable(ele)
 
 
 def object_path(data: list | dict | object, path: str = None) -> object:
@@ -69,7 +69,8 @@ def object_json(
 		depth: int = 0,
 		max_depth: int = 3,
 		max_width: int = 10,
-		ignore: list[str] = ('_dnevnik', '_povezave')):
+		ignore: list[str] = ('_p_logs', '_connections')):
+
 	if is_iterable(obj):  # LIST PROCESSING...
 		if depth >= max_depth:
 			return 'MAX_DEPTH_LIST'

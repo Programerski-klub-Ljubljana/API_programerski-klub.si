@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 from persistent.list import PersistentList
+from persistent.mapping import PersistentMapping
 
 from core.domain._entity import Entity, elist, edict, Edict, Elist
 
@@ -35,11 +36,11 @@ class SmallNode:
 	def __init__(self, v, child):
 		self.data = v
 		self.child = child
-		self._dnevnik = '_dnevnik'
+		self._p_logs = '_dnevnik'
 
 
 class Cutils_fixtures:
-	dicts = [{'key': 1, 'key2': 'asdf'}, {}]
+	dicts = [{'key': 1, 'key2': 'asdf'}, {}, PersistentMapping()]
 	iterables = [[1, "asdf", True], (1, "asdf", True), {1, 2, 3}, PersistentList()]
 	values = [None, True, 1, 1.2, "asdf"]
 	objects = [BigNode(c=[])]

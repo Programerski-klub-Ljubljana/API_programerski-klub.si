@@ -319,5 +319,5 @@ class Log(Persistent):
 
 	def __post_init__(self):
 		self.created = datetime.now()
-		self.args = tuple(deepcopy(self.args))
-		self.kwargs = deepcopy(self.kwargs)
+		self.args = cutils.object_json(self.args, max_depth=3, max_width=30)
+		self.kwargs = cutils.object_json(self.kwargs, max_depth=3, max_width=30)

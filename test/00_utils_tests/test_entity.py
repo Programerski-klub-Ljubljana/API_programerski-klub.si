@@ -59,7 +59,7 @@ class test_Entity(unittest.TestCase):
 		self.assertEqual(init_log.level, LogLevel.DEBUG)
 		self.assertEqual(init_log.type, LogType.ENTITY_INIT)
 		self.assertTrue(self.before < init_log.created < self.after)
-		self.assertEqual(init_log.args, tuple())
+		self.assertEqual(init_log.args, [])
 
 		self.assertEqual(str(init_log.kwargs)[:300],
 		                 "{'a': True, 'b': 32, 'c': 0.23, 'd': 'asd', 'e': EntityBig(a=True, b=32, c=0.23, d='asd', e=EntityBig(a=True, b=32, c=0.23, d='asd', e=None, f=None, g=None, h=None, j=EntitySmall(a=True, b=32, c=0.23, d='asd', e=EntitySmall(a=True, b=32, c=0.23, d='asd', e=EntitySmall(a=True, b=32, c=0.23, d='asd', ")
